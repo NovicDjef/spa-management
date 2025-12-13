@@ -1,26 +1,48 @@
 {
-  "name": "spa-management",
-  "version": "0.1.0",
+  "name": "spa-management-pwa",
+  "version": "1.0.0",
+  "description": "Application PWA de gestion de spa pour massothérapie et esthétique",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "next lint",
+    "prisma:generate": "prisma generate",
+    "prisma:push": "prisma db push",
+    "prisma:studio": "prisma studio"
   },
   "dependencies": {
-    "next": "16.0.10",
-    "react": "19.2.1",
-    "react-dom": "19.2.1"
+    "@hookform/resolvers": "^3.3.0",
+    "@prisma/client": "^5.15.0",
+    "@reduxjs/toolkit": "^2.11.1",
+    "bcryptjs": "^2.4.3",
+    "date-fns": "^3.6.0",
+    "framer-motion": "^11.2.0",
+    "lucide-react": "^0.561.0",
+    "next": "^16.0.10",
+    "next-auth": "^4.24.7",
+    "next-pwa": "^5.6.0",
+    "qrcode": "^1.5.3",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "react-hook-form": "^7.51.0",
+    "react-redux": "^9.2.0",
+    "sharp": "^0.34.5",
+    "zod": "^3.23.0"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.0.10",
-    "tailwindcss": "^4",
-    "typescript": "^5"
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^20.12.0",
+    "@types/qrcode": "^1.5.5",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "autoprefixer": "^10.4.0",
+    "eslint": "^8.57.0",
+    "eslint-config-next": "^14.2.0",
+    "postcss": "^8.4.0",
+    "prisma": "^5.15.0",
+    "tailwindcss": "^3.4.0",
+    "typescript": "^5.4.0"
   }
 }
