@@ -98,8 +98,8 @@ export function AddNoteForm({ clientId, onNoteAdded }: AddNoteFormProps) {
         </div>
 
         <div className="p-3 bg-spa-beige-50 rounded-xl text-sm text-gray-600">
-          <strong>Note:</strong> Votre nom et la date/heure seront automatiquement enregistrés
-          avec cette note. Vous ne pourrez pas modifier les notes une fois ajoutées.
+          <strong>Note:</strong> Votre nom ainsi que la date et l’heure seront automatiquement enregistrés.
+            La note est modifiable pendant 24 heures après son ajout, puis ne pourra plus être modifiée.
         </div>
       </div>
     </motion.form>

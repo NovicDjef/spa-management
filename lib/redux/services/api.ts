@@ -242,6 +242,19 @@ export const api = createApi({
       ],
     }),
 
+    // NOTES - Modifier une note
+    updateNote: builder.mutation<{ note: Note; message: string }, { noteId: string; content: string }>({
+      query: ({ noteId, content }) => ({
+        url: `/notes/${noteId}`,
+        method: 'PUT',
+        body: { content },
+      }),
+      invalidatesTags: (result, error, { noteId }) => [
+        { type: 'Note', id: noteId },
+        'Client', // Invalider tous les clients pour rafraîchir les notes incluses
+      ],
+    }),
+
     // ASSIGNMENTS - Assigner un client (SECRETAIRE/ADMIN)
     assignClient: builder.mutation<{ assignment: any; message: string }, Assignment>({
       query: (assignment) => ({
@@ -376,6 +389,7 @@ export const {
   useGetClientByIdQuery,
   useGetNotesQuery,
   useAddNoteMutation,
+  useUpdateNoteMutation,
   useAssignClientMutation,
   useGetProfessionalsQuery,
   // User management hooks

@@ -13,8 +13,8 @@ import {
   Mail,
   MapPin,
   Calendar,
-  Heart,
-  Sparkles,
+  Hand,
+  Wand2,
   Loader2,
   FileText,
   AlertCircle,
@@ -109,13 +109,13 @@ export default function ClientDetailPage() {
                 }`}
               >
                 {client.serviceType === 'MASSOTHERAPIE' ? (
-                  <Heart className="w-8 h-8 text-spa-menthe-600" />
+                  <Hand className="w-8 h-8 text-spa-menthe-600" />
                 ) : (
-                  <Sparkles className="w-8 h-8 text-spa-lavande-600" />
+                  <Wand2 className="w-8 h-8 text-spa-lavande-600" />
                 )}
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-gray-800 mb-1">
+                <h1 className="text-1xl font-bold text-gray-800 mb-1">
                   {client.prenom} {client.nom}
                 </h1>
                 {age && <p className="text-gray-600">{age} ans</p>}
@@ -321,7 +321,12 @@ export default function ClientDetailPage() {
               <AddNoteForm clientId={clientId} />
 
               {/* Liste des notes */}
-              <NotesList notes={notes} isLoading={isLoading} currentUserId={currentUser?.id} />
+              <NotesList 
+                notes={notes} 
+                isLoading={isLoading} 
+                currentUserId={currentUser?.id} 
+                currentUserRole={currentUser?.role}
+              />
             </div>
           )}
         </motion.div>

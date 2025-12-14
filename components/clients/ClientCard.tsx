@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { User, Phone, Mail, Calendar, Heart, Sparkles } from 'lucide-react';
+import { User, Phone, Mail, Calendar, Hand, Wand2 } from 'lucide-react';
 import Link from 'next/link';
 
 interface ClientCardProps {
@@ -50,9 +50,9 @@ export function ClientCard({ client, showActions = false, onAssign }: ClientCard
                 : 'bg-gradient-to-br from-spa-lavande-100 to-spa-lavande-200'
             }`}>
               {client.serviceType === 'MASSOTHERAPIE' ? (
-                <Heart className={`w-6 h-6 text-spa-menthe-600`} />
+                <Hand className={`w-6 h-6 text-spa-menthe-600`} />
               ) : (
-                <Sparkles className={`w-6 h-6 text-spa-lavande-600`} />
+                <Wand2 className={`w-6 h-6 text-spa-lavande-600`} />
               )}
             </div>
             <div>

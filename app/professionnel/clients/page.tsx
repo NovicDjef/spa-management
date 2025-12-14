@@ -6,7 +6,7 @@ import { Header } from '@/components/layout/Header';
 import { SearchBar } from '@/components/clients/SearchBar';
 import { ClientCard } from '@/components/clients/ClientCard';
 import { Users, Loader2, ClipboardList } from 'lucide-react';
-import { useGetClientsQuery } from '@/lib/redux/services/api';
+import { useGetAssignedClientsQuery } from '@/lib/redux/services/api';
 import { useAppSelector } from '@/lib/redux/hooks';
 
 interface Client {
@@ -39,19 +39,17 @@ const formatDateShort = (dateString: string) => {
 };
 
 export default function ClientsPage() {
-  // L'endpoint /clients retourne automatiquement les clients assignés pour MASSO/ESTH
-  const { data: clientsData, isLoading } = useGetClientsQuery({});
-
   const currentUser = useAppSelector((state) => state.auth.user);
-  console.log('=== CURRENT USER ===');
-  console.log('currentUser:', currentUser);
+  const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
+  
+  // Utiliser useGetAssignedClientsQuery avec polling automatique toutes les 30 secondes
+  // Le polling ne s'active que si l'utilisateur est connecté
+  const { data: clientsData, isLoading } = useGetAssignedClientsQuery(undefined, {
+    pollingInterval: isAuthenticated ? 30000 : 0, // Rafraîchir toutes les 30 secondes si connecté, sinon pas de polling
+    skip: !isAuthenticated, // Ne pas faire de requête si l'utilisateur n'est pas connecté
+  });
 
   const clients = useMemo(() => clientsData?.clients || [], [clientsData?.clients]);
-
-  console.log('=== CLIENTS ASSIGNÉS ===');
-  console.log('clientsData:', clientsData);
-  console.log('clientsData?.clients:', clientsData?.clients);
-  console.log('clients final:', clients);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('ALL');
@@ -113,7 +111,7 @@ export default function ClientsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-spa-beige-50 via-white to-spa-menthe-50">
-      <Header user={currentUser} />
+      <Header />
 
       <div className="container-spa py-8">
         {/* En-tête */}

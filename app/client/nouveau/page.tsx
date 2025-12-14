@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Sparkles, Heart } from 'lucide-react';
+import { Hand, Wand2 } from 'lucide-react';
 import Link from 'next/link';
 
 export default function SelectServicePage() {
@@ -40,7 +40,7 @@ export default function SelectServicePage() {
           <Link href="/client/nouveau/massotherapie">
             <div className="card-spa group hover:scale-105 cursor-pointer min-h-[350px] flex flex-col items-center justify-center text-center p-8">
               <div className="w-24 h-24 bg-gradient-to-br from-spa-menthe-100 to-spa-menthe-200 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
-                <Heart className="w-12 h-12 text-spa-menthe-600" />
+                <Hand className="w-12 h-12 text-spa-menthe-600" />
               </div>
               <h2 className="text-2xl font-bold text-gray-800 mb-3">
                 Massothérapie
@@ -64,7 +64,7 @@ export default function SelectServicePage() {
           <Link href="/client/nouveau/esthetique">
             <div className="card-spa group hover:scale-105 cursor-pointer min-h-[350px] flex flex-col items-center justify-center text-center p-8">
               <div className="w-24 h-24 bg-gradient-to-br from-spa-lavande-100 to-spa-lavande-200 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
-                <Sparkles className="w-12 h-12 text-spa-lavande-600" />
+                <Wand2 className="w-12 h-12 text-spa-lavande-600" />
               </div>
               <h2 className="text-2xl font-bold text-gray-800 mb-3">
                 Soins Esthétiques

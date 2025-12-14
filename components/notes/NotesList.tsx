@@ -1,7 +1,9 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { FileText, Clock, User, AlertCircle } from 'lucide-react';
+import { useState } from 'react';
+import { FileText, Clock, User, AlertCircle, Edit2, X, Check, Loader2 } from 'lucide-react';
+import { useUpdateNoteMutation } from '@/lib/redux/services/api';
 
 interface Note {
   id: string;
@@ -19,9 +21,58 @@ interface NotesListProps {
   notes: Note[];
   isLoading?: boolean;
   currentUserId?: string;
+  currentUserRole?: string;
 }
 
-export function NotesList({ notes, isLoading = false, currentUserId }: NotesListProps) {
+export function NotesList({ notes, isLoading = false, currentUserId, currentUserRole }: NotesListProps) {
+  const [updateNote, { isLoading: isUpdating }] = useUpdateNoteMutation();
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState('');
+
+  // Vérifier si une note peut être modifiée (24h + auteur + rôle MASSOTHERAPEUTE ou ADMIN)
+  const canEditNote = (note: Note): boolean => {
+    if (!currentUserId || !currentUserRole) return false;
+    
+    // Vérifier que c'est la note de l'utilisateur actuel
+    if (note.author.id !== currentUserId) return false;
+    
+    // Vérifier le rôle (MASSOTHERAPEUTE ou ADMIN)
+    if (currentUserRole !== 'MASSOTHERAPEUTE' && currentUserRole !== 'ADMIN') return false;
+    
+    // Vérifier que moins de 24h se sont écoulées
+    const noteDate = new Date(note.createdAt);
+    const now = new Date();
+    const diffInMs = now.getTime() - noteDate.getTime();
+    const diffInHours = diffInMs / (1000 * 60 * 60);
+    
+    return diffInHours < 24;
+  };
+
+  const handleStartEdit = (note: Note) => {
+    setEditingNoteId(note.id);
+    setEditContent(note.content);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingNoteId(null);
+    setEditContent('');
+  };
+
+  const handleSaveEdit = async (noteId: string) => {
+    if (!editContent.trim()) return;
+
+    try {
+      await updateNote({
+        noteId,
+        content: editContent.trim(),
+      }).unwrap();
+      setEditingNoteId(null);
+      setEditContent('');
+    } catch (error) {
+      console.error('Erreur lors de la modification de la note:', error);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -115,6 +166,8 @@ export function NotesList({ notes, isLoading = false, currentUserId }: NotesList
 
       {notes.map((note, index) => {
         const isOwnNote = currentUserId === note.author.id;
+        const canEdit = canEditNote(note);
+        const isEditing = editingNoteId === note.id;
 
         return (
           <motion.div
@@ -126,11 +179,11 @@ export function NotesList({ notes, isLoading = false, currentUserId }: NotesList
           >
             {/* En-tête */}
             <div className="flex items-start justify-between mb-4">
-              <div className="flex items-start gap-3">
+              <div className="flex items-start gap-3 flex-1">
                 <div className="w-10 h-10 bg-gradient-to-br from-spa-rose-100 to-spa-lavande-100 rounded-full flex items-center justify-center flex-shrink-0">
                   <User className="w-5 h-5 text-spa-rose-600" />
                 </div>
-                <div>
+                <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <p className="font-semibold text-gray-800">
                       {note.author.prenom} {note.author.nom}
@@ -150,20 +203,79 @@ export function NotesList({ notes, isLoading = false, currentUserId }: NotesList
                   </div>
                 </div>
               </div>
+              {/* Bouton de modification */}
+              {canEdit && !isEditing && (
+                <button
+                  onClick={() => handleStartEdit(note)}
+                  className="flex items-center gap-1 px-3 py-1.5 text-sm text-spa-menthe-600 hover:text-spa-menthe-700 hover:bg-spa-menthe-50 rounded-lg transition-colors"
+                  title="Modifier la note (disponible pendant 24h)"
+                >
+                  <Edit2 className="w-4 h-4" />
+                  Modifier
+                </button>
+              )}
             </div>
 
-            {/* Contenu de la note */}
+            {/* Contenu de la note ou formulaire d'édition */}
             <div className="pl-13">
-              <div className="p-4 bg-spa-beige-50 rounded-xl">
-                <p className="text-gray-700 whitespace-pre-wrap">{note.content}</p>
-              </div>
+              {isEditing ? (
+                <div className="space-y-3">
+                  <textarea
+                    value={editContent}
+                    onChange={(e) => setEditContent(e.target.value)}
+                    rows={5}
+                    className="input-spa resize-none w-full"
+                    disabled={isUpdating}
+                    placeholder="Modifier votre note..."
+                  />
+                  <div className="flex items-center justify-end gap-2">
+                    <button
+                      onClick={handleCancelEdit}
+                      disabled={isUpdating}
+                      className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-2"
+                    >
+                      <X className="w-4 h-4" />
+                      Annuler
+                    </button>
+                    <button
+                      onClick={() => handleSaveEdit(note.id)}
+                      disabled={isUpdating || !editContent.trim()}
+                      className="px-4 py-2 text-sm bg-spa-menthe-500 text-white hover:bg-spa-menthe-600 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isUpdating ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Enregistrement...
+                        </>
+                      ) : (
+                        <>
+                          <Check className="w-4 h-4" />
+                          Enregistrer
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-4 bg-spa-beige-50 rounded-xl">
+                  <p className="text-gray-700 whitespace-pre-wrap">{note.content}</p>
+                </div>
+              )}
             </div>
 
             {/* Info de traçabilité */}
-            {!isOwnNote && (
+            {!isOwnNote && !isEditing && (
               <div className="mt-3 pl-13 flex items-center gap-2 text-xs text-gray-500">
                 <AlertCircle className="w-3 h-3" />
-                <span>Note ajoutée par un autre professionnel - non modifiable</span>
+                <span>
+                  Note ajoutée par <strong>{note.author.prenom} {note.author.nom}</strong> - non modifiable
+                </span>
+              </div>
+            )}
+            {isOwnNote && !canEdit && !isEditing && (
+              <div className="mt-3 pl-13 flex items-center gap-2 text-xs text-gray-500">
+                <AlertCircle className="w-3 h-3" />
+                <span>La modification n'est plus disponible (délai de 24h dépassé)</span>
               </div>
             )}
           </motion.div>

@@ -162,13 +162,90 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// Fonction utilitaire pour décoder le token JWT
+function decodeJWT(token: string): any {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    // Utiliser Buffer pour décoder en base64 (Node.js)
+    const jsonPayload = decodeURIComponent(
+      Buffer.from(base64, 'base64')
+        .toString()
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    return JSON.parse(jsonPayload);
+  } catch (error) {
+    return null;
+  }
+}
+
+// Fonction pour récupérer l'utilisateur depuis le token
+async function getCurrentUser(request: NextRequest) {
+  try {
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return null;
+    }
+
+    const token = authHeader.substring(7);
+    const decoded = decodeJWT(token);
+    
+    if (!decoded || !decoded.id) {
+      return null;
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.id },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+      },
+    });
+
+    return user;
+  } catch (error) {
+    console.error('Erreur lors de la récupération de l\'utilisateur:', error);
+    return null;
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search');
     const serviceType = searchParams.get('serviceType');
 
+    // Récupérer l'utilisateur connecté
+    const currentUser = await getCurrentUser(request);
+
     let where: any = {};
+
+    // Filtrer selon le rôle de l'utilisateur
+    if (currentUser) {
+      // Si l'utilisateur est MASSOTHERAPEUTE ou ESTHETICIENNE, ne retourner que les clients assignés
+      if (currentUser.role === 'MASSOTHERAPEUTE' || currentUser.role === 'ESTHETICIENNE') {
+        const assignments = await prisma.assignment.findMany({
+          where: { professionalId: currentUser.id },
+          select: { clientId: true },
+        });
+
+        const assignedClientIds = assignments.map((a) => a.clientId);
+
+        if (assignedClientIds.length === 0) {
+          // Aucun client assigné, retourner un tableau vide
+          return NextResponse.json({ clients: [] }, { status: 200 });
+        }
+
+        where.id = { in: assignedClientIds };
+      }
+      // Si SECRETAIRE ou ADMIN, retourner tous les clients (pas de filtre supplémentaire)
+    } else {
+      // Pas d'utilisateur connecté, retourner un tableau vide
+      return NextResponse.json({ clients: [] }, { status: 200 });
+    }
 
     if (search) {
       where.OR = [
@@ -194,13 +271,31 @@ export async function GET(request: NextRequest) {
             createdAt: true,
           },
         },
+        assignments: {
+          where: currentUser && (currentUser.role === 'MASSOTHERAPEUTE' || currentUser.role === 'ESTHETICIENNE')
+            ? { professionalId: currentUser.id }
+            : undefined,
+          select: {
+            assignedAt: true,
+          },
+          orderBy: {
+            assignedAt: 'desc',
+          },
+          take: 1,
+        },
       },
       orderBy: {
         createdAt: 'desc',
       },
     });
 
-    return NextResponse.json({ clients }, { status: 200 });
+    // Ajouter la date d'assignation aux clients
+    const clientsWithAssignment = clients.map((client) => ({
+      ...client,
+      assignedAt: client.assignments?.[0]?.assignedAt || client.createdAt,
+    }));
+
+    return NextResponse.json({ clients: clientsWithAssignment }, { status: 200 });
   } catch (error) {
     console.error('Erreur lors de la récupération des clients:', error);
     return NextResponse.json(
