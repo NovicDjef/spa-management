@@ -81,7 +81,7 @@ export function Header({ user: userProp }: HeaderProps) {
           {user && (
             <div className="hidden md:flex items-center gap-4">
               <div className="text-right">
-                <p className="font-medium text-gray-800">{user.name}</p>
+                <p className="font-medium text-gray-800">{user.nom} {user.prenom}</p>
                 <p className="text-sm text-gray-600">{getRoleLabel(user.role)}</p>
               </div>
               <div className="w-10 h-10 bg-gradient-to-br from-spa-rose-100 to-spa-lavande-100 rounded-full flex items-center justify-center">
@@ -125,7 +125,7 @@ export function Header({ user: userProp }: HeaderProps) {
                 <User className="w-6 h-6 text-spa-rose-600" />
               </div>
               <div>
-                <p className="font-medium text-gray-800">{user.name}</p>
+                <p className="font-medium text-gray-800">{user.nom} {user.prenom}</p>
                 <p className="text-sm text-gray-600">{getRoleLabel(user.role)}</p>
                 <p className="text-xs text-gray-500">{user.email}</p>
               </div>

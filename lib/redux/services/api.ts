@@ -33,6 +33,7 @@ export interface Client {
   createdAt: string;
   assignedAt?: string; // Date d'assignation
   lastVisit?: string; // Date de dernière visite
+  notes?: Note[]; // Notes incluses dans la réponse de /clients/:id
   // Tous les autres champs...
   [key: string]: any;
 }
@@ -199,8 +200,9 @@ export const api = createApi({
     }),
 
     // CLIENTS - Clients assignés au professionnel connecté
+    // Note: L'endpoint /clients retourne automatiquement les clients assignés selon le rôle
     getAssignedClients: builder.query<{ clients: Client[] }, void>({
-      query: () => '/clients/assigned',
+      query: () => '/clients',
       transformResponse: (response: any) => response.data || response,
       providesTags: ['Client', 'Assignment'],
     }),
@@ -208,14 +210,22 @@ export const api = createApi({
     // CLIENTS - Détail d'un client
     getClientById: builder.query<{ client: Client }, string>({
       query: (id) => `/clients/${id}`,
-      transformResponse: (response: any) => response.data || response,
+      transformResponse: (response: any) => {
+        // L'API retourne { success: true, data: {...client} }
+        // On transforme en { client: {...} }
+        return { client: response.data || response };
+      },
       providesTags: (result, error, id) => [{ type: 'Client', id }],
     }),
 
     // NOTES - Récupérer les notes d'un client
     getNotes: builder.query<{ notes: Note[] }, string>({
       query: (clientId) => `/clients/${clientId}/notes`,
-      transformResponse: (response: any) => response.data || response,
+      transformResponse: (response: any) => {
+        // L'API retourne { success: true, data: [...notes] }
+        // On transforme en { notes: [...] }
+        return { notes: response.data || response };
+      },
       providesTags: (result, error, clientId) => [{ type: 'Note', id: clientId }],
     }),
 
@@ -226,7 +236,10 @@ export const api = createApi({
         method: 'POST',
         body: { content },
       }),
-      invalidatesTags: (result, error, { clientId }) => [{ type: 'Note', id: clientId }],
+      invalidatesTags: (result, error, { clientId }) => [
+        { type: 'Note', id: clientId },
+        { type: 'Client', id: clientId }, // Invalider aussi le client pour rafraîchir les notes incluses
+      ],
     }),
 
     // ASSIGNMENTS - Assigner un client (SECRETAIRE/ADMIN)

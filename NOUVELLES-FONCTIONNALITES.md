@@ -1,482 +1,371 @@
-# 🎨 Nouvelles Fonctionnalités - Spa Renaissance
+# 🔒 Nouvelles Fonctionnalités de Sécurité et Permissions
 
-## ✅ Mise à jour complète - 13 décembre 2025
+## ✅ Fonctionnalités Implémentées
 
----
+### 1. **Système de Blocage des Employés** 🚫
 
-## 🎨 1. Changement de Palette de Couleurs
+L'ADMIN peut maintenant activer/désactiver n'importe quel employé (SECRETAIRE, MASSOTHERAPEUTE, ESTHETICIENNE).
 
-### Couleur de Base: #7bacaf (Turquoise Spa)
-
-L'application utilise maintenant une palette de couleurs turquoise apaisante au lieu du rose.
-
-### Fichiers Modifiés
-
-1. **tailwind.config.js**
-   - Nouvelle palette `spa.turquoise` avec 10 nuances (50-900)
-   - Couleur de base #7bacaf définie comme nuance 400
-   - Couleur primaire changée: `primary: '#7bacaf'`
-   - Ombres mises à jour avec rgba turquoise
-
-2. **app/layout.tsx**
-   - Theme color pour mobile: `themeColor: '#7bacaf'`
-
-3. **app/globals.css**
-   - Tous les composants mis à jour:
-     - `.btn-primary`: Dégradé turquoise-500 → turquoise-600
-     - `.btn-outline`: Bordure et texte turquoise
-     - `.input-spa`: Focus turquoise
-     - `.checkbox-spa`: Couleur turquoise
-     - `.loading-spinner`: Bordure turquoise
-     - `.gradient-text`: Commence par turquoise
-     - Scrollbar: Dégradé turquoise → lavande
-     - Sélection de texte: Fond turquoise-300
-     - Focus outline: Turquoise
-
-### Palette Complète
-
-```javascript
-spa.turquoise: {
-  50: '#f0f9fa',   // Très clair
-  100: '#d9f0f2',
-  200: '#b3e1e5',
-  300: '#8dcdd2',
-  400: '#7bacaf',  // ← Couleur de base
-  500: '#5a929a',
-  600: '#4a7882',
-  700: '#3d606a',
-  800: '#334e56',
-  900: '#2c4048',  // Très foncé
-}
+**Nouveau champ dans le modèle User:**
+```prisma
+isActive  Boolean  @default(true)
 ```
 
----
-
-## 📅 2. Assignations Groupées par Date
-
-### Page Modifiée: `app/professionnel/clients/page.tsx`
-
-Les professionnels (massothérapeutes et esthéticiennes) voient maintenant leurs clients assignés **groupés par date d'assignation**.
-
-### Fonctionnalités
-
-#### Groupement Automatique
-- Clients automatiquement regroupés par date d'assignation
-- Affichage de la date en français: "15 décembre 2025"
-- Dates triées de la plus récente à la plus ancienne
-- Nombre de clients par date affiché
-
-#### Filtre par Date
-- Nouveau champ de saisie de date
-- Permet de voir uniquement les assignations d'un jour spécifique
-- Bouton "Réinitialiser" pour retirer le filtre
-- Fonctionne en combinaison avec les autres filtres existants
-
-### Interface
-
-```
-┌─────────────────────────────────────────────┐
-│  [Filtre par date d'assignation]            │
-│  📅 [Date picker] [Réinitialiser]          │
-└─────────────────────────────────────────────┘
-
-━━━━━━━━━━  15 décembre 2025  ━━━━━━━━━━
-           3 clients assignés ce jour
-
-[Client 1]  [Client 2]  [Client 3]
-
-━━━━━━━━━━  14 décembre 2025  ━━━━━━━━━━
-           2 clients assignés ce jour
-
-[Client 4]  [Client 5]
-```
-
-### Exemple d'utilisation
-
-1. **Vue par défaut**: Tous les clients groupés par date
-   - 15 décembre: 5 clients
-   - 14 décembre: 3 clients
-   - 13 décembre: 2 clients
-
-2. **Avec filtre de date**: Uniquement les clients du 15 décembre
-   - 15 décembre: 5 clients
-
-3. **Combiné avec recherche**: Chercher "Martin" le 15 décembre
-   - 15 décembre: 2 clients (Martin trouvés)
-
----
-
-## 🎯 3. Module Campagnes Marketing (Admin)
-
-### Nouvelle Page: `/admin/marketing`
-
-Un module complet pour les campagnes marketing ciblées accessible uniquement aux administrateurs.
-
-### Fonctionnalités Principales
-
-#### 📊 Vue d'ensemble
-- Liste complète de tous les clients
-- Tableau avec: Nom, Email, Téléphone, Service, Dernière visite
-- Compteur de clients filtrés et sélectionnés
-
-#### 🔍 Filtres Avancés
-
-1. **Recherche**
-   - Par nom, prénom, email ou téléphone
-   - Recherche en temps réel
-
-2. **Type de Service**
-   - Tous les services
-   - Massothérapie uniquement
-   - Soins esthétiques uniquement
-
-3. **Inactivité Client** (NOUVEAU!)
-   - Tous les clients
-   - Pas de visite depuis 1 mois
-   - Pas de visite depuis 2 mois
-   - Pas de visite depuis 3 mois
-   - Pas de visite depuis 1 an
-
-#### ✅ Sélection de Clients
-
-- Case à cocher pour chaque client
-- Bouton "Tout sélectionner / Tout désélectionner"
-- Affichage du nombre de clients sélectionnés
-- Surbrillance visuelle des clients sélectionnés
-
-#### 📤 Export et Copie
-
-1. **Copier tous les emails**
-   - Copie les emails des clients sélectionnés (ou tous si aucune sélection)
-   - Format: email1@example.com, email2@example.com, ...
-   - Feedback visuel "Copié!"
-
-2. **Copier tous les téléphones**
-   - Copie les numéros des clients sélectionnés (ou tous si aucune sélection)
-   - Format: 514-123-4567, 438-987-6543, ...
-   - Feedback visuel "Copié!"
-
-3. **Exporter en CSV**
-   - Télécharge un fichier CSV avec toutes les données
-   - Colonnes: Nom, Prénom, Email, Téléphone, Service, Dernière visite
-   - Nom du fichier: `clients-export-2025-12-15.csv`
-   - Peut être ouvert dans Excel, Google Sheets, etc.
-
-#### 📧 Envoi de Messages
-
-**Modal d'envoi de message** avec:
-
-1. **Type de message**
-   - Email (📧)
-   - SMS (📱)
-
-2. **Contenu du message**
-   - Zone de texte pour le message
-   - Pour SMS: Limite de 160 caractères avec compteur
-   - Pour Email: Pas de limite
-
-3. **Destinataires**
-   - Affiche le nombre de clients sélectionnés
-   - Envoi uniquement aux clients sélectionnés
-
-4. **Actions**
-   - Bouton Annuler
-   - Bouton Envoyer (désactivé si pas de contenu)
-
-### Interface
-
-```
-┌─────────────────────────────────────────────────────────┐
-│  🎯 Campagnes Marketing                                 │
-│  125 clients • 15 sélectionnés                          │
-├─────────────────────────────────────────────────────────┤
-│  [📧 Copier emails]  [📱 Copier téléphones]            │
-│  [📥 Exporter CSV]   [📤 Envoyer message]              │
-├─────────────────────────────────────────────────────────┤
-│  Filtres:                                               │
-│  🔍 [Recherche...]                                      │
-│  📋 [Type de service ▼]                                 │
-│  📅 [Inactivité client ▼]                              │
-├─────────────────────────────────────────────────────────┤
-│  Tableau des clients                                    │
-│  ☑ Tout sélectionner                                   │
-│  ─────────────────────────────────────────────────────  │
-│  ☑ Sophie Martin | sophie@spa.com | 514-XXX-XXXX      │
-│  ☐ Jean Dupont   | jean@email.com | 438-XXX-XXXX      │
-│  ...                                                    │
-└─────────────────────────────────────────────────────────┘
-```
-
-### Cas d'Usage Pratiques
-
-#### 1. Campagne "Clients Inactifs 3 mois"
-
-**Objectif**: Réengager les clients qui n'ont pas visité depuis 3 mois
-
-1. Sélectionner filtre: "Pas de visite depuis 3 mois"
-2. Résultat: 25 clients trouvés
-3. Cliquer "Tout sélectionner"
-4. Cliquer "Envoyer message"
-5. Choisir "SMS"
-6. Écrire: "Bonjour! Nous vous offrons 20% de réduction sur votre prochain soin. Prenez RDV avant le 31 déc!"
-7. Envoyer → 25 clients reçoivent le SMS
-
-#### 2. Campagne "Newsletter Massothérapie"
-
-**Objectif**: Informer les clients massothérapie d'un nouveau service
-
-1. Sélectionner filtre: "Massothérapie"
-2. Résultat: 75 clients trouvés
-3. Cliquer "Copier emails"
-4. Ouvrir votre outil d'email marketing (Mailchimp, Sendinblue, etc.)
-5. Coller les emails copiés
-6. Créer et envoyer votre newsletter
-
-#### 3. Campagne "Promotion Ciblée"
-
-**Objectif**: Offre spéciale pour certains clients
-
-1. Utiliser la recherche pour trouver des clients spécifiques
-2. Sélectionner manuellement 5-10 clients VIP
-3. Cliquer "Envoyer message"
-4. Choisir "Email"
-5. Écrire un message personnalisé
-6. Envoyer
-
-#### 4. Analyse et Export
-
-**Objectif**: Analyser les données clients dans Excel
-
-1. Appliquer les filtres désirés (ex: Esthétique + Inactifs 2 mois)
-2. Cliquer "Exporter CSV"
-3. Ouvrir le fichier dans Excel
-4. Créer des graphiques, statistiques, etc.
-
----
-
-## 🔗 Accès aux Nouvelles Fonctionnalités
-
-### Pour les Administrateurs
-
-**Dashboard Admin** (`/professionnel/dashboard`)
-
-Deux nouveaux boutons en haut de page:
-
-```
-┌─────────────────────────────────────────┐
-│  [👥 Gérer les Employés]               │
-│  [🎯 Campagnes Marketing]              │
-└─────────────────────────────────────────┘
-```
-
-1. **Gérer les Employés**
-   - Créer, modifier, supprimer des employés
-   - Réinitialiser les mots de passe
-   - (Fonctionnalité existante)
-
-2. **Campagnes Marketing** (NOUVEAU!)
-   - Accès au module marketing complet
-   - Filtrage et export des données clients
-   - Envoi de messages ciblés
-
-### Pour les Professionnels
-
-**Page Mes Clients** (`/professionnel/clients`)
-
-- Vue automatiquement groupée par date d'assignation
-- Filtre par date disponible
-- Tous les filtres existants conservés
-
----
-
-## 🗄️ Modifications de la Base de Données
-
-### Interface Client Étendue
-
-Deux nouveaux champs optionnels ajoutés à l'interface `Client`:
-
-```typescript
-export interface Client {
-  id: string;
-  nom: string;
-  prenom: string;
-  telCellulaire: string;
-  courriel: string;
-  dateNaissance: string;
-  serviceType: 'MASSOTHERAPIE' | 'ESTHETIQUE';
-  createdAt: string;
-  assignedAt?: string;  // ← NOUVEAU: Date d'assignation
-  lastVisit?: string;   // ← NOUVEAU: Date de dernière visite
-}
-```
-
-### API Backend à Mettre à Jour
-
-Pour que toutes les fonctionnalités marchent, l'API backend doit retourner:
-
-1. **GET /api/clients/assigned**
-   - Ajouter le champ `assignedAt` (date d'assignation au professionnel)
-
-2. **GET /api/clients**
-   - Ajouter le champ `lastVisit` (date de dernière visite/rendez-vous)
-   - Format: ISO 8601 (ex: "2025-12-15T14:30:00Z")
-
-### Exemple de Réponse API
-
-```json
+**Comportement:**
+- Un employé désactivé ne peut PAS se connecter
+- Un employé désactivé ne peut PAS accéder aux dossiers clients
+- L'ADMIN ne peut PAS se désactiver lui-même
+- L'ADMIN ne peut PAS désactiver un autre ADMIN
+
+**Nouvelle route:**
+```http
+PATCH /api/users/:id/toggle-status
+Authorization: Bearer <admin_token>
+
+Body:
 {
-  "clients": [
-    {
-      "id": "client-1",
-      "nom": "Martin",
-      "prenom": "Sophie",
-      "telCellulaire": "514-555-1234",
-      "courriel": "sophie.martin@email.com",
-      "dateNaissance": "1985-03-15",
-      "serviceType": "MASSOTHERAPIE",
-      "createdAt": "2025-12-10T10:00:00Z",
-      "assignedAt": "2025-12-15T09:30:00Z",
-      "lastVisit": "2025-11-20T14:00:00Z"
-    }
-  ]
+  "isActive": false  // true pour activer, false pour désactiver
 }
 ```
 
 ---
 
-## 📊 Résumé des Changements
+### 2. **Secret Médical - Protection des Notes** 🏥
 
-### Couleurs
-- ✅ Palette complète turquoise (#7bacaf)
-- ✅ 14 fichiers CSS mis à jour
-- ✅ Cohérence visuelle sur toute l'application
+La SECRETAIRE ne peut plus voir les notes médicales des clients.
 
-### Assignations
-- ✅ Groupement par date automatique
-- ✅ Filtre par date d'assignation
-- ✅ Interface améliorée avec séparateurs visuels
+**Modifications:**
+- `GET /api/clients` - La SECRETAIRE voit la liste des clients SANS les notes
+- `GET /api/clients/:id` - La SECRETAIRE est BLOQUÉE (erreur 403)
+- Seuls MASSOTHERAPEUTE, ESTHETICIENNE et ADMIN peuvent consulter les dossiers complets
 
-### Marketing
-- ✅ Page admin dédiée
-- ✅ Filtres avancés (recherche, service, inactivité)
-- ✅ Sélection multiple de clients
-- ✅ Copie emails/téléphones en un clic
-- ✅ Export CSV complet
-- ✅ Envoi de messages (Email/SMS)
-- ✅ Statistiques en temps réel
+**Message d'erreur:**
+```
+"Accès refusé. Le secret médical vous empêche de consulter les dossiers clients."
+```
 
 ---
 
-## 🎯 Prochaines Étapes Suggérées
+### 3. **Permissions des Notes - Limite de 24h** ⏰
 
-### Backend
-1. Ajouter `assignedAt` lors de l'assignation d'un client
-2. Ajouter `lastVisit` lors de la création/modification d'un rendez-vous
-3. Créer endpoint `/api/messages/send` pour l'envoi réel d'emails/SMS
-4. Intégrer service d'email (SendGrid, AWS SES, Mailgun)
-5. Intégrer service SMS (Twilio, Vonage)
+Les professionnels peuvent modifier/supprimer leurs notes UNIQUEMENT pendant 24h après création.
 
-### Frontend
-1. Ajouter confirmation avant envoi de messages
-2. Ajouter historique des campagnes marketing
-3. Ajouter templates de messages pré-définis
-4. Ajouter statistiques d'engagement (taux d'ouverture, clics)
+**Règles:**
+- ✅ Un professionnel peut modifier/supprimer UNIQUEMENT ses propres notes
+- ✅ Un professionnel peut modifier/supprimer UNIQUEMENT pendant 24h
+- ✅ L'ADMIN peut modifier/supprimer TOUTES les notes à TOUT moment
+- ❌ Un MASSOTHERAPEUTE ne peut PAS modifier la note d'un autre MASSOTHERAPEUTE
 
-### Fonctionnalités Futures
-1. Segmentation automatique de clients
-2. Campagnes programmées (envoi différé)
-3. A/B testing de messages
-4. Tableaux de bord analytiques
-5. Intégration calendrier pour suivi des RDV
+**Routes modifiées:**
+```http
+PUT /api/notes/:noteId
+DELETE /api/notes/:noteId
+```
+
+**Messages d'erreur:**
+```json
+// Si pas l'auteur
+{
+  "error": "Vous ne pouvez modifier que vos propres notes"
+}
+
+// Si > 24h
+{
+  "error": "Vous ne pouvez plus modifier cette note (limite de 24h dépassée)"
+}
+```
 
 ---
 
-## 🚀 Comment Tester
+### 4. **Clients Multi-Professionnels** 👥
 
-### 1. Tester les Nouvelles Couleurs
+Un client peut être assigné à plusieurs professionnels (ex: 2 MASSOTHERAPEUTE).
+
+**Comportement:**
+- Tous les professionnels assignés peuvent voir le dossier du client
+- Tous les professionnels assignés peuvent ajouter des notes
+- Chaque professionnel ne peut modifier que ses propres notes
+- Toutes les notes sont visibles par tous les professionnels assignés
+
+---
+
+## 🔄 Migrations Prisma Requises
+
+### ⚠️ IMPORTANT - À FAIRE AVANT DE DÉMARRER
+
+Le schéma Prisma a été modifié. Vous devez créer une migration:
 
 ```bash
-npm run dev
+# 1. Générer le client Prisma
+npx prisma generate
+
+# 2. Créer et appliquer la migration
+npx prisma migrate dev --name add_isActive_field
+
+# 3. (Optionnel) Mettre à jour les données de seed
+npm run prisma:seed
 ```
 
-Visiter n'importe quelle page et vérifier:
-- Les boutons sont turquoise
-- Les inputs ont un focus turquoise
-- Les dégradés utilisent le turquoise
-- La barre de défilement est turquoise
+---
 
-### 2. Tester le Groupement par Date
+## 📊 Matrice des Permissions
 
-1. Se connecter en tant que professionnel (massothérapeute ou esthéticienne)
-2. Aller sur "Mes Clients Assignés"
-3. Vérifier que les clients sont groupés par date
-4. Essayer le filtre par date
-5. Combiner avec la recherche
-
-**Compte test**: sophie.martin@spa.com / password123
-
-### 3. Tester le Module Marketing
-
-1. Se connecter en tant qu'admin
-2. Cliquer sur "Campagnes Marketing" depuis le dashboard
-3. Essayer tous les filtres
-4. Sélectionner des clients
-5. Tester "Copier emails" et "Copier téléphones"
-6. Tester "Exporter CSV"
-7. Tester "Envoyer message"
-
-**Compte test admin**: admin@spa.com / admin123
+| Action | ADMIN | SECRETAIRE | MASSO/ESTH (assigné) | MASSO/ESTH (non assigné) |
+|--------|-------|------------|---------------------|-------------------------|
+| **Connexion (compte actif)** | ✅ | ✅ | ✅ | ✅ |
+| **Connexion (compte inactif)** | ✅ | ❌ | ❌ | ❌ |
+| **Voir liste clients** | ✅ | ✅ (sans notes) | ✅ (assignés seulement) | ❌ |
+| **Voir dossier client complet** | ✅ | ❌ | ✅ (assignés seulement) | ❌ |
+| **Voir notes du client** | ✅ | ❌ | ✅ (assignés seulement) | ❌ |
+| **Ajouter note** | ✅ | ❌ | ✅ (assignés seulement) | ❌ |
+| **Modifier sa note (<24h)** | ✅ | ❌ | ✅ | ❌ |
+| **Modifier sa note (>24h)** | ✅ | ❌ | ❌ | ❌ |
+| **Modifier note d'un autre** | ✅ | ❌ | ❌ | ❌ |
+| **Supprimer sa note (<24h)** | ✅ | ❌ | ✅ | ❌ |
+| **Supprimer sa note (>24h)** | ✅ | ❌ | ❌ | ❌ |
+| **Supprimer note d'un autre** | ✅ | ❌ | ❌ | ❌ |
+| **Assigner clients** | ✅ | ✅ | ❌ | ❌ |
+| **Bloquer/débloquer employés** | ✅ | ❌ | ❌ | ❌ |
 
 ---
 
-## 📱 Responsive Design
+## 📝 Fichiers Modifiés
 
-Toutes les nouvelles fonctionnalités sont **entièrement responsives**:
+### Schéma Prisma
+- ✅ `prisma/schema.prisma` - Ajout du champ `isActive`
 
-- **Mobile** (< 768px): Colonnes simples, boutons empilés
-- **Tablet** (768px - 1024px): 2 colonnes, layout optimisé
-- **Desktop** (> 1024px): 3-4 colonnes, utilisation complète de l'espace
+### Authentification
+- ✅ `src/modules/auth/auth.ts` - Vérification `isActive` dans le middleware
+- ✅ `src/modules/auth/auth.controller.ts` - Vérification `isActive` au login
 
----
+### Clients
+- ✅ `src/modules/clients/client.controller.ts`:
+  - `getClients()` - Masquage des notes pour SECRETAIRE
+  - `getClientById()` - Blocage de la SECRETAIRE
 
-## ♿ Accessibilité
+### Notes
+- ✅ `src/modules/notes/note.controller.ts`:
+  - `updateNote()` - Limite de 24h + vérification auteur
+  - `deleteNote()` - Limite de 24h + vérification auteur
 
-- Tous les boutons ont des labels clairs
-- Les icônes sont accompagnées de texte
-- Les contrastes de couleur respectent WCAG AA
-- Navigation au clavier supportée
-- Focus visible sur tous les éléments interactifs
-
----
-
-## 🎨 Identité Visuelle
-
-### Avant
-- Couleur principale: Rose (#e24965)
-- Ambiance: Féminine, énergique
-
-### Après
-- Couleur principale: Turquoise (#7bacaf)
-- Ambiance: Spa, apaisante, professionnelle
-
-Le turquoise évoque:
-- 🌊 L'eau et la relaxation
-- 🧘 Le bien-être et la sérénité
-- 💎 La qualité et le professionnalisme
-- ✨ Le renouveau et la fraîcheur
-
-Parfait pour une application de spa!
+### Utilisateurs (Employés)
+- ✅ `src/modules/users/user.controller.ts` - Nouveau: `toggleUserStatus()`
+- ✅ `src/modules/users/user.routes.ts` - Nouvelle route: `PATCH /:id/toggle-status`
 
 ---
 
-## ✨ Conclusion
+## 🧪 Tests Recommandés
 
-Toutes les fonctionnalités demandées ont été implémentées avec succès:
+### Test 1: Bloquer un Employé
 
-1. ✅ **Couleurs**: Application complète de la palette turquoise #7bacaf
-2. ✅ **Assignations**: Groupement par date avec filtre avancé
-3. ✅ **Marketing**: Module complet avec filtrage, export et envoi de messages
+```bash
+# 1. Connexion ADMIN
+curl -X POST http://localhost:5001/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@spa.com","password":"admin123"}'
 
-L'application Spa Renaissance est maintenant prête pour des campagnes marketing ciblées et une meilleure gestion des assignations!
+# 2. Désactiver un massothérapeute
+curl -X PATCH http://localhost:5001/api/users/<masso_id>/toggle-status \
+  -H "Authorization: Bearer <admin_token>" \
+  -H "Content-Type: application/json" \
+  -d '{"isActive": false}'
 
-**Spa Renaissance - L'excellence au service du bien-être** 🌊✨
+# 3. Essayer de se connecter avec le compte désactivé
+curl -X POST http://localhost:5001/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"masso1@spa.com","password":"masso123"}'
+
+# Résultat attendu: Erreur 403 "Votre compte a été désactivé"
+```
+
+### Test 2: SECRETAIRE ne voit pas les notes
+
+```bash
+# 1. Connexion SECRETAIRE
+curl -X POST http://localhost:5001/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"secretaire@spa.com","password":"secretaire123"}'
+
+# 2. Voir la liste des clients (SANS notes)
+curl http://localhost:5001/api/clients \
+  -H "Authorization: Bearer <secretaire_token>"
+
+# Résultat: clients visibles mais aucune note
+
+# 3. Essayer de voir un dossier complet
+curl http://localhost:5001/api/clients/<client_id> \
+  -H "Authorization: Bearer <secretaire_token>"
+
+# Résultat attendu: Erreur 403 "Le secret médical vous empêche..."
+```
+
+### Test 3: Limite de 24h pour modifier une note
+
+```bash
+# 1. Connexion MASSOTHERAPEUTE
+curl -X POST http://localhost:5001/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"masso1@spa.com","password":"masso123"}'
+
+# 2. Créer une note
+curl -X POST http://localhost:5001/api/notes/<client_id> \
+  -H "Authorization: Bearer <masso_token>" \
+  -H "Content-Type: application/json" \
+  -d '{"content":"Nouvelle note de test"}'
+
+# 3. Modifier immédiatement (< 24h) - DOIT FONCTIONNER
+curl -X PUT http://localhost:5001/api/notes/<note_id> \
+  -H "Authorization: Bearer <masso_token>" \
+  -H "Content-Type: application/json" \
+  -d '{"content":"Note modifiée"}'
+
+# 4. Attendre 24h+ et essayer de modifier
+# Résultat attendu: Erreur 403 "limite de 24h dépassée"
+
+# 5. ADMIN peut toujours modifier
+curl -X PUT http://localhost:5001/api/notes/<note_id> \
+  -H "Authorization: Bearer <admin_token>" \
+  -H "Content-Type: application/json" \
+  -d '{"content":"Admin modifie après 24h"}'
+
+# Résultat: SUCCÈS
+```
+
+### Test 4: Client avec plusieurs professionnels
+
+```bash
+# 1. ADMIN assigne un client à 2 MASSOTHERAPEUTE
+curl -X POST http://localhost:5001/api/assignments \
+  -H "Authorization: Bearer <admin_token>" \
+  -H "Content-Type: application/json" \
+  -d '{"clientId":"<client_id>","professionalId":"<masso1_id>"}'
+
+curl -X POST http://localhost:5001/api/assignments \
+  -H "Authorization: Bearer <admin_token>" \
+  -H "Content-Type: application/json" \
+  -d '{"clientId":"<client_id>","professionalId":"<masso2_id>"}'
+
+# 2. MASSO1 ajoute une note
+curl -X POST http://localhost:5001/api/notes/<client_id> \
+  -H "Authorization: Bearer <masso1_token>" \
+  -H "Content-Type: application/json" \
+  -d '{"content":"Note de MASSO1"}'
+
+# 3. MASSO2 peut voir cette note
+curl http://localhost:5001/api/clients/<client_id> \
+  -H "Authorization: Bearer <masso2_token>"
+
+# Résultat: MASSO2 voit la note de MASSO1
+
+# 4. MASSO2 ne peut PAS modifier la note de MASSO1
+curl -X PUT http://localhost:5001/api/notes/<note_id> \
+  -H "Authorization: Bearer <masso2_token>" \
+  -H "Content-Type: application/json" \
+  -d '{"content":"Tentative modification"}'
+
+# Résultat attendu: Erreur 403 "Vous ne pouvez modifier que vos propres notes"
+```
+
+---
+
+## 🎯 Cas d'Usage Réels
+
+### Scénario 1: Employé en Congé
+
+```
+Un MASSOTHERAPEUTE part en congé sabbatique pour 6 mois.
+L'ADMIN désactive son compte pour éviter tout accès non autorisé.
+
+Action: PATCH /api/users/:id/toggle-status { "isActive": false }
+
+Résultat:
+- Le MASSOTHERAPEUTE ne peut plus se connecter
+- Ses clients sont toujours visibles dans la liste
+- Un autre MASSOTHERAPEUTE peut être assigné à ses clients
+```
+
+### Scénario 2: Client Suivi par Plusieurs Professionnels
+
+```
+Une cliente vient pour MASSOTHERAPIE et ESTHETIQUE.
+Elle est assignée à:
+- Sophie (MASSOTHERAPEUTE)
+- Julie (ESTHETICIENNE)
+
+Résultats:
+- Sophie voit toutes les notes de massothérapie
+- Julie voit toutes les notes d'esthétique
+- Sophie ne voit PAS les notes de Julie (et vice-versa)
+- ADMIN voit TOUTES les notes
+- SECRETAIRE ne voit AUCUNE note
+```
+
+### Scénario 3: Correction Rapide de Note
+
+```
+Un MASSOTHERAPEUTE écrit une note avec une faute.
+Il a 24h pour la corriger.
+
+Jour 1 (< 24h):
+- PUT /api/notes/:id → SUCCÈS
+
+Jour 2 (> 24h):
+- PUT /api/notes/:id → ERREUR 403
+
+Solution: Demander à l'ADMIN de faire la correction
+```
+
+---
+
+## ⚠️ Points d'Attention
+
+### 1. Migration de Base de Données
+
+**CRITIQUE:** Le champ `isActive` doit être ajouté à la table `User`.
+
+```bash
+npx prisma migrate dev --name add_isActive_field
+```
+
+Tous les employés existants auront `isActive = true` par défaut.
+
+### 2. Frontend
+
+Le frontend doit être mis à jour pour:
+- Afficher l'état actif/inactif des employés
+- Permettre à l'ADMIN de bloquer/débloquer
+- Gérer l'erreur "Compte désactivé" au login
+- Masquer les notes pour la SECRETAIRE
+- Gérer l'erreur "Limite de 24h dépassée"
+
+### 3. Emails
+
+Considérer d'envoyer un email à l'employé quand:
+- Son compte est désactivé
+- Son compte est réactivé
+
+### 4. Audit Trail
+
+Pour un suivi complet, considérer d'ajouter:
+- Table `AuditLog` pour tracker qui a désactivé qui et quand
+- Log des tentatives de connexion avec compte désactivé
+
+---
+
+## 📚 Documentation API Mise à Jour
+
+Voir `API-DOCUMENTATION-COMPLETE.md` pour la documentation complète de toutes les routes.
+
+**Nouvelle route ajoutée:**
+- `PATCH /api/users/:id/toggle-status` - Activer/Désactiver un employé
+
+**Routes modifiées:**
+- `GET /api/clients` - Comportement différent pour SECRETAIRE
+- `GET /api/clients/:id` - SECRETAIRE bloquée
+- `PUT /api/notes/:noteId` - Limite de 24h ajoutée
+- `DELETE /api/notes/:noteId` - Limite de 24h ajoutée
+
+---
+
+**Date d'implémentation:** 2025-12-13
+**Version:** 2.0 - Sécurité et Permissions

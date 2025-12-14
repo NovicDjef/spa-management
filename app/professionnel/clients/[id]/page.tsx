@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Header } from '@/components/layout/Header';
 import { NotesList } from '@/components/notes/NotesList';
@@ -19,7 +19,7 @@ import {
   FileText,
   AlertCircle,
 } from 'lucide-react';
-import { useGetClientByIdQuery, useGetNotesQuery } from '@/lib/redux/services/api';
+import { useGetClientByIdQuery } from '@/lib/redux/services/api';
 import { useAppSelector } from '@/lib/redux/hooks';
 
 export default function ClientDetailPage() {
@@ -28,17 +28,12 @@ export default function ClientDetailPage() {
   const clientId = params.id as string;
 
   const { data: clientData, isLoading } = useGetClientByIdQuery(clientId);
-  const { data: notesData, isLoading: isLoadingNotes } = useGetNotesQuery(clientId);
 
-  const currentUser = useAppSelector((state) => state.auth.user) || {
-    id: '1',
-    name: 'Dr. Sophie Martin',
-    email: 'sophie@spa.com',
-    role: 'MASSOTHERAPEUTE',
-  };
+  const currentUser = useAppSelector((state) => state.auth.user);
 
   const client = clientData?.client;
-  const notes = notesData?.notes || [];
+  // Récupérer les notes depuis le client (incluses dans la réponse de /clients/:id)
+  const notes = client?.notes || [];
 
   const [activeTab, setActiveTab] = useState<'info' | 'notes'>('info');
 
@@ -326,7 +321,7 @@ export default function ClientDetailPage() {
               <AddNoteForm clientId={clientId} />
 
               {/* Liste des notes */}
-              <NotesList notes={notes} isLoading={isLoadingNotes} currentUserId={currentUser.id} />
+              <NotesList notes={notes} isLoading={isLoading} currentUserId={currentUser?.id} />
             </div>
           )}
         </motion.div>

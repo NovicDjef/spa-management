@@ -1,12 +1,12 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { Header } from '@/components/layout/Header';
 import { SearchBar } from '@/components/clients/SearchBar';
 import { ClientCard } from '@/components/clients/ClientCard';
 import { Users, Loader2, ClipboardList } from 'lucide-react';
-import { useGetAssignedClientsQuery } from '@/lib/redux/services/api';
+import { useGetClientsQuery } from '@/lib/redux/services/api';
 import { useAppSelector } from '@/lib/redux/hooks';
 
 interface Client {
@@ -39,27 +39,26 @@ const formatDateShort = (dateString: string) => {
 };
 
 export default function ClientsPage() {
-  const { data: clientsData, isLoading } = useGetAssignedClientsQuery();
+  // L'endpoint /clients retourne automatiquement les clients assignés pour MASSO/ESTH
+  const { data: clientsData, isLoading } = useGetClientsQuery({});
 
-  const currentUser = useAppSelector((state) => state.auth.user) || {
-    name: 'Dr. Sophie Martin',
-    email: 'sophie@spa.com',
-    role: 'MASSOTHERAPEUTE',
-  };
+  const currentUser = useAppSelector((state) => state.auth.user);
+  console.log('=== CURRENT USER ===');
+  console.log('currentUser:', currentUser);
 
-  const clients = clientsData?.clients || [];
+  const clients = useMemo(() => clientsData?.clients || [], [clientsData?.clients]);
 
-  const [filteredClients, setFilteredClients] = useState<Client[]>([]);
+  console.log('=== CLIENTS ASSIGNÉS ===');
+  console.log('clientsData:', clientsData);
+  console.log('clientsData?.clients:', clientsData?.clients);
+  console.log('clients final:', clients);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('ALL');
   const [selectedDate, setSelectedDate] = useState('');
-  const [groupedByDate, setGroupedByDate] = useState<{ [key: string]: Client[] }>({});
 
-  // useEffect(() => {
-  //   filterClients();
-  // }, [clients, searchQuery, selectedFilter, selectedDate]);
-
-  const filterClients = () => {
+  // Calculate filtered clients and grouped by date using useMemo
+  const { filteredClients, groupedByDate } = useMemo(() => {
     let filtered = [...clients];
 
     // Filter by search query
@@ -87,8 +86,6 @@ export default function ClientsPage() {
       });
     }
 
-    setFilteredClients(filtered);
-
     // Group by date
     const grouped: { [key: string]: Client[] } = {};
     filtered.forEach((client) => {
@@ -107,8 +104,11 @@ export default function ClientsPage() {
         sortedGrouped[key] = grouped[key];
       });
 
-    setGroupedByDate(sortedGrouped);
-  };
+    return {
+      filteredClients: filtered,
+      groupedByDate: sortedGrouped,
+    };
+  }, [clients, searchQuery, selectedFilter, selectedDate]);
 
 
   return (
