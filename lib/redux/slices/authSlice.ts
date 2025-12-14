@@ -4,7 +4,9 @@ import { api } from '../services/api';
 interface User {
   id: string;
   email: string;
-  name: string;
+  telephone: string;
+  nom: string;
+  prenom: string;
   role: string;
 }
 
@@ -79,16 +81,14 @@ const authSlice = createSlice({
     builder.addMatcher(
       api.endpoints.login.matchFulfilled,
       (state, { payload }) => {
-        state.user = payload.user;
-        state.token = payload.token || null;
+        state.user = payload.data.user;
+        state.token = payload.data.token;
         state.isAuthenticated = true;
 
         // Sauvegarder dans localStorage
         if (typeof window !== 'undefined') {
-          localStorage.setItem('user', JSON.stringify(payload.user));
-          if (payload.token) {
-            localStorage.setItem('token', payload.token);
-          }
+          localStorage.setItem('user', JSON.stringify(payload.data.user));
+          localStorage.setItem('token', payload.data.token);
         }
       }
     );

@@ -5,8 +5,8 @@ import { useState, useEffect } from 'react';
 import { Header } from '@/components/layout/Header';
 import { SearchBar } from '@/components/clients/SearchBar';
 import { ClientCard } from '@/components/clients/ClientCard';
-import { Users, UserPlus, Loader2, X } from 'lucide-react';
-import { useGetClientsQuery, useGetProfessionalsQuery, useAssignClientMutation } from '@/lib/redux/services/api';
+import { Users, UserPlus, Loader2, X, Target } from 'lucide-react';
+import { useGetClientsQuery, useGetUsersQuery, useAssignClientMutation } from '@/lib/redux/services/api';
 import { useAppSelector } from '@/lib/redux/hooks';
 import { hasPermission, isAdminOrSecretary } from '@/lib/permissions';
 
@@ -31,7 +31,7 @@ interface Professional {
 
 export default function DashboardPage() {
   const { data: clientsData, isLoading } = useGetClientsQuery({});
-  const { data: professionalsData } = useGetProfessionalsQuery();
+  const { data: usersData, isLoading: isLoadingUsers } = useGetUsersQuery({});
   const [assignClient, { isLoading: isAssigning }] = useAssignClientMutation();
 
   const currentUser = useAppSelector((state) => state.auth.user) || {
@@ -41,7 +41,17 @@ export default function DashboardPage() {
   };
 
   const clients = clientsData?.clients || [];
-  const professionals = professionalsData?.professionals || [];
+
+  // Debug: Afficher les données brutes
+  console.log('usersData:', usersData);
+  console.log('usersData?.users:', usersData?.users);
+
+  // Filtrer uniquement les professionnels (massothérapeutes et esthéticiennes)
+  const professionals = (usersData?.users || []).filter(
+    (user) => user.role === 'MASSOTHERAPEUTE' || user.role === 'ESTHETICIENNE'
+  );
+
+  console.log('professionals:', professionals);
 
   const [filteredClients, setFilteredClients] = useState<Client[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -86,21 +96,34 @@ export default function DashboardPage() {
   };
 
   const handleAssignSubmit = async () => {
-    if (!selectedClient || !selectedProfessional) return;
+    if (!selectedClient || !selectedProfessional) {
+      console.log('Assignation annulée - données manquantes:', {
+        selectedClient,
+        selectedProfessional
+      });
+      return;
+    }
+
+    console.log('Début de l\'assignation:', {
+      clientId: selectedClient.id,
+      clientNom: `${selectedClient.prenom} ${selectedClient.nom}`,
+      professionalId: selectedProfessional,
+    });
 
     try {
-      await assignClient({
+      const result = await assignClient({
         clientId: selectedClient.id,
         professionalId: selectedProfessional,
       }).unwrap();
 
+      console.log('Assignation réussie:', result);
       alert('Client assigné avec succès!');
       setShowAssignModal(false);
       setSelectedClient(null);
       setSelectedProfessional('');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erreur lors de l\'assignation:', error);
-      alert('Une erreur est survenue lors de l\'assignation');
+      alert(`Une erreur est survenue lors de l'assignation: ${error?.data?.message || error.message || 'Erreur inconnue'}`);
     }
   };
 
@@ -115,7 +138,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-spa-beige-50 via-white to-spa-rose-50">
+    <div className="min-h-screen bg-gradient-to-br from-spa-beige-50 via-white to-spa-turquoise-50">
       <Header user={currentUser} />
 
       <div className="container-spa py-8">
@@ -125,9 +148,9 @@ export default function DashboardPage() {
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          {/* Bouton Admin - Gestion Employés */}
+          {/* Boutons Admin */}
           {currentUser.role === 'ADMIN' && (
-            <div className="mb-6">
+            <div className="mb-6 flex gap-4">
               <a
                 href="/admin/employees"
                 className="inline-flex items-center gap-2 px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-colors"
@@ -135,13 +158,20 @@ export default function DashboardPage() {
                 <Users className="w-5 h-5" />
                 Gérer les Employés
               </a>
+              <a
+                href="/admin/marketing"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-spa-turquoise-600 text-white rounded-lg hover:bg-spa-turquoise-700 transition-colors"
+              >
+                <Target className="w-5 h-5" />
+                Campagnes Marketing
+              </a>
             </div>
           )}
 
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-spa-rose-100 to-spa-rose-200 rounded-full flex items-center justify-center">
-                <Users className="w-6 h-6 text-spa-rose-600" />
+              <div className="w-12 h-12 bg-gradient-to-br from-spa-turquoise-100 to-spa-turquoise-200 rounded-full flex items-center justify-center">
+                <Users className="w-6 h-6 text-spa-turquoise-600" />
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-gray-800">Gestion des Clients</h1>
@@ -171,7 +201,7 @@ export default function DashboardPage() {
         {/* Liste des clients */}
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
-            <Loader2 className="w-8 h-8 text-spa-rose-500 animate-spin" />
+            <Loader2 className="w-8 h-8 text-spa-turquoise-500 animate-spin" />
           </div>
         ) : filteredClients.length === 0 ? (
           <motion.div
@@ -237,8 +267,8 @@ export default function DashboardPage() {
             >
               <div className="flex items-start justify-between mb-6">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-gradient-to-br from-spa-rose-100 to-spa-rose-200 rounded-full flex items-center justify-center">
-                    <UserPlus className="w-6 h-6 text-spa-rose-600" />
+                  <div className="w-12 h-12 bg-gradient-to-br from-spa-turquoise-100 to-spa-turquoise-200 rounded-full flex items-center justify-center">
+                    <UserPlus className="w-6 h-6 text-spa-turquoise-600" />
                   </div>
                   <div>
                     <h2 className="text-xl font-bold text-gray-800">Assigner un client</h2>
@@ -257,26 +287,47 @@ export default function DashboardPage() {
 
               <div className="mb-6">
                 <label className="label-spa">
-                  Sélectionner un professionnel <span className="text-spa-rose-500">*</span>
+                  Sélectionner un professionnel <span className="text-spa-turquoise-500">*</span>
                 </label>
-                <select
-                  value={selectedProfessional}
-                  onChange={(e) => setSelectedProfessional(e.target.value)}
-                  className="input-spa"
-                >
-                  <option value="">Choisir un professionnel...</option>
-                  {professionals
-                    .filter((p) =>
-                      selectedClient.serviceType === 'MASSOTHERAPIE'
-                        ? p.role === 'MASSOTHERAPEUTE'
-                        : p.role === 'ESTHETICIENNE'
-                    )
-                    .map((professional) => (
-                      <option key={professional.id} value={professional.id}>
-                        {getProfessionalLabel(professional)}
-                      </option>
-                    ))}
-                </select>
+                {isLoadingUsers ? (
+                  <div className="input-spa flex items-center justify-center">
+                    <Loader2 className="w-5 h-5 text-spa-turquoise-500 animate-spin" />
+                    <span className="ml-2 text-gray-500">Chargement...</span>
+                  </div>
+                ) : (
+                  <select
+                    value={selectedProfessional}
+                    onChange={(e) => {
+                      console.log('Professional sélectionné:', e.target.value);
+                      setSelectedProfessional(e.target.value);
+                    }}
+                    className="input-spa"
+                  >
+                    <option value="">Choisir un professionnel...</option>
+                    {professionals
+                      .filter((p) => {
+                        const shouldInclude = selectedClient.serviceType === 'MASSOTHERAPIE'
+                          ? p.role === 'MASSOTHERAPEUTE'
+                          : p.role === 'ESTHETICIENNE';
+                        console.log(`Filtrage ${p.prenom} ${p.nom} (${p.role}):`, shouldInclude);
+                        return shouldInclude;
+                      })
+                      .map((professional) => {
+                        const label = getProfessionalLabel(professional);
+                        console.log('Option ajoutée:', label, professional.id);
+                        return (
+                          <option key={professional.id} value={professional.id}>
+                            {label}
+                          </option>
+                        );
+                      })}
+                  </select>
+                )}
+                {!isLoadingUsers && professionals.length === 0 && (
+                  <p className="text-sm text-red-600 mt-2">
+                    ⚠️ Aucun professionnel trouvé. Vérifiez que des utilisateurs avec le rôle MASSOTHERAPEUTE ou ESTHETICIENNE existent.
+                  </p>
+                )}
               </div>
 
               <div className="flex gap-3">

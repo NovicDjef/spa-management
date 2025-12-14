@@ -1,7 +1,7 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Header } from '@/components/layout/Header';
 import {
   Users,
@@ -33,6 +33,7 @@ type UserRole = 'ADMIN' | 'SECRETAIRE' | 'MASSOTHERAPEUTE' | 'ESTHETICIENNE';
 
 export default function EmployeesPage() {
   const currentUser = useAppSelector((state) => state.auth.user);
+  const [isMounted, setIsMounted] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('ALL');
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -43,6 +44,11 @@ export default function EmployeesPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [generatedPassword, setGeneratedPassword] = useState('');
   const [copiedPassword, setCopiedPassword] = useState(false);
+
+  // Éviter l'erreur d'hydratation
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Redux queries and mutations
   const { data: usersData, isLoading } = useGetUsersQuery({
@@ -161,6 +167,17 @@ export default function EmployeesPage() {
     setTimeout(() => setCopiedPassword(false), 2000);
   };
 
+  // Attendre le montage pour éviter l'erreur d'hydratation
+  if (!isMounted) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-spa-beige-50 via-white to-spa-menthe-50">
+        <div className="flex items-center justify-center min-h-screen">
+          <Loader2 className="w-8 h-8 text-spa-turquoise-500 animate-spin" />
+        </div>
+      </div>
+    );
+  }
+
   const openEditModal = (user: any) => {
     setSelectedUser(user);
     setFormData({
@@ -223,7 +240,7 @@ export default function EmployeesPage() {
                   placeholder="Rechercher par nom, prénom ou email..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-spa-rose-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-spa-turquoise-500 focus:border-transparent"
                 />
               </div>
 
@@ -233,7 +250,7 @@ export default function EmployeesPage() {
                 <select
                   value={roleFilter}
                   onChange={(e) => setRoleFilter(e.target.value)}
-                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-spa-rose-500 focus:border-transparent"
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-spa-turquoise-500 focus:border-transparent"
                 >
                   <option value="ALL">Tous les rôles</option>
                   <option value="ADMIN">Administrateur</option>
@@ -249,7 +266,7 @@ export default function EmployeesPage() {
         {/* Liste des employés */}
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
-            <Loader2 className="w-8 h-8 text-spa-rose-500 animate-spin" />
+            <Loader2 className="w-8 h-8 text-spa-turquoise-500 animate-spin" />
           </div>
         ) : users.length === 0 ? (
           <motion.div
@@ -298,10 +315,10 @@ export default function EmployeesPage() {
                 {/* Stats */}
                 <div className="flex items-center gap-4 mb-4 text-sm text-gray-600">
                   <div>
-                    <span className="font-medium">{user.assignedClientsCount || 0}</span> clients
+                    <span className="font-medium">{user._count?.assignedClients || 0}</span> clients
                   </div>
                   <div>
-                    <span className="font-medium">{user.notesCount || 0}</span> notes
+                    <span className="font-medium">{user._count?.notesCreated || 0}</span> notes
                   </div>
                 </div>
 
@@ -501,7 +518,7 @@ export default function EmployeesPage() {
                   </code>
                   <button
                     onClick={copyToClipboard}
-                    className="px-3 py-2 bg-spa-rose-500 text-white rounded-lg hover:bg-spa-rose-600 transition-colors"
+                    className="px-3 py-2 bg-spa-turquoise-500 text-white rounded-lg hover:bg-spa-turquoise-600 transition-colors"
                   >
                     {copiedPassword ? <Check className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
                   </button>

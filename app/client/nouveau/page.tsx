@@ -14,8 +14,12 @@ export default function SelectServicePage() {
         transition={{ duration: 0.6 }}
         className="text-center mb-12"
       >
-        <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-spa-rose-400 to-spa-lavande-400 rounded-full mb-4 shadow-soft-lg">
-          <Sparkles className="w-10 h-10 text-white" />
+        <div className="inline-flex items-center justify-center w-20 h-20 rounded-full mb-4 shadow-soft-lg overflow-hidden">
+          <img
+            src="/icons/icon-192x192.png"
+            alt="Spa Renaissance Logo"
+            className="w-full h-full object-cover"
+          />
         </div>
         <h1 className="text-3xl md:text-4xl font-bold gradient-text mb-3">
           Nouveau Dossier Client

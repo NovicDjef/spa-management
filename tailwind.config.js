@@ -7,8 +7,22 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Palette spa douce et apaisante
+        // Palette spa douce et apaisante - Couleur de base: #7bacaf (Turquoise Spa)
         spa: {
+          // Turquoise principale - Couleur de base de l'application
+          turquoise: {
+            50: '#f0f9fa',
+            100: '#d9f0f2',
+            200: '#b3e1e5',
+            300: '#8dcdd2',
+            400: '#7bacaf', // ← Couleur de base #7bacaf
+            500: '#5a929a',
+            600: '#4a7882',
+            700: '#3d606a',
+            800: '#334e56',
+            900: '#2c4048',
+          },
+          // Rose complémentaire (tons plus doux pour s'harmoniser)
           rose: {
             50: '#fdf4f5',
             100: '#fce7ea',
@@ -21,6 +35,7 @@ module.exports = {
             800: '#93203f',
             900: '#7d1f3a',
           },
+          // Lavande complémentaire
           lavande: {
             50: '#f7f5fc',
             100: '#ede9f8',
@@ -33,6 +48,7 @@ module.exports = {
             800: '#583589',
             900: '#4a2d70',
           },
+          // Menthe/Vert (conservé pour compatibilité)
           menthe: {
             50: '#f0fdf8',
             100: '#dcfcef',
@@ -45,6 +61,7 @@ module.exports = {
             800: '#14654c',
             900: '#12533f',
           },
+          // Beige neutre (harmonisé avec turquoise)
           beige: {
             50: '#faf9f7',
             100: '#f5f2ed',
@@ -58,9 +75,9 @@ module.exports = {
             900: '#584d43',
           },
         },
-        primary: '#e24965', // Rose spa
-        secondary: '#8e67d0', // Lavande
-        accent: '#26c68c', // Menthe
+        primary: '#7bacaf', // Turquoise spa - Couleur principale
+        secondary: '#5a929a', // Turquoise foncé
+        accent: '#ed7a8e', // Rose accent
         neutral: '#f5f2ed', // Beige clair
       },
       fontFamily: {
@@ -96,8 +113,8 @@ module.exports = {
         },
       },
       boxShadow: {
-        'soft': '0 2px 15px -3px rgba(226, 73, 101, 0.1), 0 10px 20px -2px rgba(226, 73, 101, 0.04)',
-        'soft-lg': '0 10px 40px -10px rgba(226, 73, 101, 0.15)',
+        'soft': '0 2px 15px -3px rgba(123, 172, 175, 0.1), 0 10px 20px -2px rgba(123, 172, 175, 0.04)',
+        'soft-lg': '0 10px 40px -10px rgba(123, 172, 175, 0.15)',
       },
     },
   },

@@ -31,6 +31,11 @@ export const PERMISSIONS = {
   DELETE_USER: ['ADMIN'],
   RESET_PASSWORD: ['ADMIN'],
 
+  // Permissions marketing (ADMIN uniquement)
+  VIEW_MARKETING: ['ADMIN'],
+  SEND_MARKETING_EMAIL: ['ADMIN'],
+  EXPORT_CLIENT_DATA: ['ADMIN'],
+
   // Permissions d'administration
   FULL_ACCESS: ['ADMIN'],
 } as const;
@@ -139,7 +144,7 @@ export function getRoleColor(role: Role | string): string {
     case 'ADMIN':
       return 'gray-800';
     case 'SECRETAIRE':
-      return 'spa-rose-500';
+      return 'spa-turquoise-500';
     case 'MASSOTHERAPEUTE':
       return 'spa-menthe-500';
     case 'ESTHETICIENNE':

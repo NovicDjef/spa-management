@@ -78,15 +78,15 @@ export function ClientCard({ client, showActions = false, onAssign }: ClientCard
 
         <div className="space-y-2 text-sm">
           <div className="flex items-center gap-2 text-gray-600">
-            <Phone className="w-4 h-4 text-spa-rose-500" />
+            <Phone className="w-4 h-4 text-spa-turquoise-500" />
             <span>{client.telCellulaire}</span>
           </div>
           <div className="flex items-center gap-2 text-gray-600">
-            <Mail className="w-4 h-4 text-spa-rose-500" />
+            <Mail className="w-4 h-4 text-spa-turquoise-500" />
             <span className="truncate">{client.courriel}</span>
           </div>
           <div className="flex items-center gap-2 text-gray-600">
-            <Calendar className="w-4 h-4 text-spa-rose-500" />
+            <Calendar className="w-4 h-4 text-spa-turquoise-500" />
             <span>
               Inscrit le {new Date(client.createdAt).toLocaleDateString('fr-CA')}
             </span>
@@ -101,7 +101,7 @@ export function ClientCard({ client, showActions = false, onAssign }: ClientCard
                 e.stopPropagation();
                 onAssign?.(client.id);
               }}
-              className="text-sm text-spa-rose-600 hover:text-spa-rose-700 font-medium transition-colors"
+              className="text-sm text-spa-turquoise-600 hover:text-spa-turquoise-700 font-medium transition-colors"
             >
               Assigner à un professionnel →
             </button>

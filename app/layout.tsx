@@ -6,7 +6,7 @@ import StoreProvider from '@/lib/redux/StoreProvider';
 const inter = Inter({ subsets: ['latin'] });
 
 export const viewport: Viewport = {
-  themeColor: '#e24965',
+  themeColor: '#7bacaf', // Turquoise Spa - Couleur principale
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,

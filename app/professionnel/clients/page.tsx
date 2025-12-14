@@ -18,7 +18,25 @@ interface Client {
   dateNaissance: string;
   serviceType: 'MASSOTHERAPIE' | 'ESTHETIQUE';
   createdAt: string;
+  assignedAt?: string; // Date d'assignation
 }
+
+// Fonction pour formater une date en "15 décembre 2023"
+const formatDateLong = (dateString: string) => {
+  const date = new Date(dateString);
+  const options: Intl.DateTimeFormatOptions = {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  };
+  return date.toLocaleDateString('fr-FR', options);
+};
+
+// Fonction pour formater une date en "YYYY-MM-DD"
+const formatDateShort = (dateString: string) => {
+  const date = new Date(dateString);
+  return date.toISOString().split('T')[0];
+};
 
 export default function ClientsPage() {
   const { data: clientsData, isLoading } = useGetAssignedClientsQuery();
@@ -34,10 +52,12 @@ export default function ClientsPage() {
   const [filteredClients, setFilteredClients] = useState<Client[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('ALL');
+  const [selectedDate, setSelectedDate] = useState('');
+  const [groupedByDate, setGroupedByDate] = useState<{ [key: string]: Client[] }>({});
 
-  useEffect(() => {
-    filterClients();
-  }, [clients, searchQuery, selectedFilter]);
+  // useEffect(() => {
+  //   filterClients();
+  // }, [clients, searchQuery, selectedFilter, selectedDate]);
 
   const filterClients = () => {
     let filtered = [...clients];
@@ -59,8 +79,37 @@ export default function ClientsPage() {
       filtered = filtered.filter((client) => client.serviceType === selectedFilter);
     }
 
+    // Filter by assignment date
+    if (selectedDate) {
+      filtered = filtered.filter((client) => {
+        const assignDate = client.assignedAt || client.createdAt;
+        return formatDateShort(assignDate) === selectedDate;
+      });
+    }
+
     setFilteredClients(filtered);
+
+    // Group by date
+    const grouped: { [key: string]: Client[] } = {};
+    filtered.forEach((client) => {
+      const dateKey = formatDateShort(client.assignedAt || client.createdAt);
+      if (!grouped[dateKey]) {
+        grouped[dateKey] = [];
+      }
+      grouped[dateKey].push(client);
+    });
+
+    // Sort dates in descending order (most recent first)
+    const sortedGrouped: { [key: string]: Client[] } = {};
+    Object.keys(grouped)
+      .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())
+      .forEach((key) => {
+        sortedGrouped[key] = grouped[key];
+      });
+
+    setGroupedByDate(sortedGrouped);
   };
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-spa-beige-50 via-white to-spa-menthe-50">
@@ -100,21 +149,42 @@ export default function ClientsPage() {
           </div>
         </motion.div>
 
-        {/* Barre de recherche */}
+        {/* Barre de recherche et filtre par date */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="mb-8"
+          className="mb-8 space-y-4"
         >
           <SearchBar
             onSearch={setSearchQuery}
             onFilterChange={setSelectedFilter}
             placeholder="Rechercher un client par nom, email ou téléphone..."
           />
+
+          {/* Filtre par date */}
+          <div className="glass rounded-2xl p-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Filtrer par date d'assignation
+            </label>
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="input-spa max-w-xs"
+            />
+            {selectedDate && (
+              <button
+                onClick={() => setSelectedDate('')}
+                className="ml-3 text-sm text-spa-turquoise-600 hover:text-spa-turquoise-700 font-medium"
+              >
+                Réinitialiser
+              </button>
+            )}
+          </div>
         </motion.div>
 
-        {/* Liste des clients */}
+        {/* Liste des clients groupés par date */}
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
             <Loader2 className="w-8 h-8 text-spa-menthe-500 animate-spin" />
@@ -129,34 +199,54 @@ export default function ClientsPage() {
               <Users className="w-10 h-10 text-gray-400" />
             </div>
             <h3 className="text-xl font-semibold text-gray-800 mb-2">
-              {searchQuery || selectedFilter !== 'ALL'
+              {searchQuery || selectedFilter !== 'ALL' || selectedDate
                 ? 'Aucun client trouvé'
                 : 'Aucun client assigné'}
             </h3>
             <p className="text-gray-600 max-w-md mx-auto">
-              {searchQuery || selectedFilter !== 'ALL'
+              {searchQuery || selectedFilter !== 'ALL' || selectedDate
                 ? 'Essayez de modifier vos critères de recherche'
                 : 'Aucun client ne vous a été assigné pour le moment. Les clients assignés par la secrétaire apparaîtront ici.'}
             </p>
           </motion.div>
         ) : (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-          >
-            {filteredClients.map((client, index) => (
+          <div className="space-y-8">
+            {Object.entries(groupedByDate).map(([date, dateClients], groupIndex) => (
               <motion.div
-                key={client.id}
+                key={date}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 * index }}
+                transition={{ delay: 0.1 * groupIndex }}
               >
-                <ClientCard client={client} showActions={false} />
+                {/* En-tête de date */}
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="h-px flex-1 bg-gradient-to-r from-transparent via-spa-turquoise-300 to-transparent"></div>
+                  <h2 className="text-xl font-bold text-spa-turquoise-700 px-4 py-2 glass rounded-full">
+                    {formatDateLong(date)}
+                  </h2>
+                  <div className="h-px flex-1 bg-gradient-to-r from-transparent via-spa-turquoise-300 to-transparent"></div>
+                </div>
+
+                <p className="text-sm text-gray-600 mb-4 text-center">
+                  {dateClients.length} client{dateClients.length !== 1 ? 's' : ''} assigné{dateClients.length !== 1 ? 's' : ''} ce jour
+                </p>
+
+                {/* Grille de clients pour cette date */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {dateClients.map((client, index) => (
+                    <motion.div
+                      key={client.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.05 * index }}
+                    >
+                      <ClientCard client={client} showActions={false} />
+                    </motion.div>
+                  ))}
+                </div>
               </motion.div>
             ))}
-          </motion.div>
+          </div>
         )}
       </div>
     </div>

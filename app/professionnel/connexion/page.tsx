@@ -55,20 +55,19 @@ export default function ConnexionPage() {
 
     if (!validate()) return;
 
-    // try {
-      router.push('/professionnel/dashboard');
-    //   const result = await login(formData).unwrap();
+    try {
+      const result = await login(formData).unwrap();
 
-    //   // Redirect based on user role
-    //   if (result.user.role === 'SECRETAIRE' || result.user.role === 'ADMIN') {
-    //     router.push('/professionnel/dashboard');
-    //   } else {
-    //     router.push('/professionnel/clients');
-    //   }
-    // } catch (error: any) {
-    //   console.error('Erreur de connexion:', error);
-    //   setGeneralError(error.data?.message || 'Identifiants invalides. Veuillez vérifier vos informations.');
-    // }
+      // Redirect based on user role
+      if (result.data.user.role === 'SECRETAIRE' || result.data.user.role === 'ADMIN') {
+        router.push('/professionnel/dashboard');
+      } else {
+        router.push('/professionnel/clients');
+      }
+    } catch (error: any) {
+      console.error('Erreur de connexion:', error);
+      setGeneralError(error.data?.message || 'Identifiants invalides. Veuillez vérifier vos informations.');
+    }
   };
 
   return (

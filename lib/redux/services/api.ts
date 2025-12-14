@@ -7,13 +7,19 @@ export interface LoginCredentials {
 }
 
 export interface AuthResponse {
-  user: {
-    id: string;
-    email: string;
-    name: string;
-    role: string;
+  success: boolean;
+  message: string;
+  data: {
+    user: {
+      id: string;
+      email: string;
+      telephone: string;
+      nom: string;
+      prenom: string;
+      role: string;
+    };
+    token: string;
   };
-  token?: string;
 }
 
 export interface Client {
@@ -25,6 +31,8 @@ export interface Client {
   dateNaissance: string;
   serviceType: 'MASSOTHERAPIE' | 'ESTHETIQUE';
   createdAt: string;
+  assignedAt?: string; // Date d'assignation
+  lastVisit?: string; // Date de dernière visite
   // Tous les autres champs...
   [key: string]: any;
 }
@@ -62,8 +70,10 @@ export interface User {
   prenom: string;
   role: 'ADMIN' | 'SECRETAIRE' | 'MASSOTHERAPEUTE' | 'ESTHETICIENNE';
   createdAt: string;
-  assignedClientsCount?: number;
-  notesCount?: number;
+  _count?: {
+    assignedClients: number;
+    notesCreated: number;
+  };
 }
 
 export interface CreateUserData {
@@ -84,11 +94,63 @@ export interface UpdateUserData {
   password?: string;
 }
 
+// Marketing Types
+export interface MarketingContact {
+  id: string;
+  nom: string;
+  prenom: string;
+  nomComplet: string;
+  courriel: string;
+  telCellulaire: string;
+  telMaison?: string;
+  telBureau?: string;
+  serviceType: 'MASSOTHERAPIE' | 'ESTHETIQUE';
+  gender?: 'HOMME' | 'FEMME' | 'AUTRE';
+  dateInscription: string;
+  derniereVisite?: string;
+  joursSansVisite?: number | null;
+}
+
+export interface MarketingContactsParams {
+  serviceType?: 'MASSOTHERAPIE' | 'ESTHETIQUE';
+  lastVisitMonths?: number;
+  lastVisitYears?: number;
+  gender?: 'HOMME' | 'FEMME' | 'AUTRE';
+  search?: string;
+}
+
+export interface SendIndividualEmailData {
+  clientId: string;
+  subject: string;
+  message: string;
+}
+
+export interface SendCampaignEmailData {
+  clientIds: string[];
+  subject: string;
+  message: string;
+}
+
+export interface MarketingStats {
+  totalClients: number;
+  newClientsLast30Days: number;
+  inactiveClients3Months: number;
+  clientsByService: {
+    MASSOTHERAPIE: number;
+    ESTHETIQUE: number;
+  };
+  clientsByGender: {
+    FEMME: number;
+    HOMME: number;
+    AUTRE: number;
+  };
+}
+
 // API Service avec RTK Query
 export const api = createApi({
   reducerPath: 'api',
   baseQuery: fetchBaseQuery({
-    baseUrl: '/api',
+    baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL,
     prepareHeaders: (headers, { getState }) => {
       // Ajouter le token d'authentification si disponible
       const token = (getState() as any).auth?.token;
@@ -128,24 +190,32 @@ export const api = createApi({
         if (serviceType && serviceType !== 'ALL') params.append('serviceType', serviceType);
         return `/clients?${params.toString()}`;
       },
+      transformResponse: (response: any) => {
+        // L'API retourne { success: true, data: { clients: [...] } }
+        // On extrait juste { clients: [...] }
+        return response.data || response;
+      },
       providesTags: ['Client'],
     }),
 
     // CLIENTS - Clients assignés au professionnel connecté
     getAssignedClients: builder.query<{ clients: Client[] }, void>({
       query: () => '/clients/assigned',
+      transformResponse: (response: any) => response.data || response,
       providesTags: ['Client', 'Assignment'],
     }),
 
     // CLIENTS - Détail d'un client
     getClientById: builder.query<{ client: Client }, string>({
       query: (id) => `/clients/${id}`,
+      transformResponse: (response: any) => response.data || response,
       providesTags: (result, error, id) => [{ type: 'Client', id }],
     }),
 
     // NOTES - Récupérer les notes d'un client
     getNotes: builder.query<{ notes: Note[] }, string>({
       query: (clientId) => `/clients/${clientId}/notes`,
+      transformResponse: (response: any) => response.data || response,
       providesTags: (result, error, clientId) => [{ type: 'Note', id: clientId }],
     }),
 
@@ -172,6 +242,7 @@ export const api = createApi({
     // PROFESSIONALS - Liste des pros (SECRETAIRE/ADMIN)
     getProfessionals: builder.query<{ professionals: Professional[] }, void>({
       query: () => '/professionals',
+      transformResponse: (response: any) => response.data || response,
       providesTags: ['Professional'],
     }),
 
@@ -195,12 +266,18 @@ export const api = createApi({
         if (search) params.append('search', search);
         return `/users?${params.toString()}`;
       },
+      transformResponse: (response: any) => {
+        // L'API retourne { success: true, data: [...] }
+        // On transforme en { users: [...] }
+        return { users: response.data || response };
+      },
       providesTags: ['User'],
     }),
 
     // Détails d'un employé
     getUserById: builder.query<{ user: User }, string>({
       query: (id) => `/users/${id}`,
+      transformResponse: (response: any) => response.data || response,
       providesTags: (result, error, id) => [{ type: 'User', id }],
     }),
 
@@ -232,6 +309,48 @@ export const api = createApi({
       }),
       invalidatesTags: (result, error, { id }) => [{ type: 'User', id }],
     }),
+
+    // MARKETING - Gestion des campagnes marketing (ADMIN UNIQUEMENT)
+
+    // Récupérer les contacts avec filtres
+    getMarketingContacts: builder.query<{ contacts: MarketingContact[]; total: number; filters: any }, MarketingContactsParams>({
+      query: (params) => {
+        const queryParams = new URLSearchParams();
+        if (params.serviceType) queryParams.append('serviceType', params.serviceType);
+        if (params.lastVisitMonths) queryParams.append('lastVisitMonths', params.lastVisitMonths.toString());
+        if (params.lastVisitYears) queryParams.append('lastVisitYears', params.lastVisitYears.toString());
+        if (params.gender) queryParams.append('gender', params.gender);
+        if (params.search) queryParams.append('search', params.search);
+        return `/marketing/contacts?${queryParams.toString()}`;
+      },
+      transformResponse: (response: any) => response.data || response,
+      providesTags: ['Client'],
+    }),
+
+    // Envoyer un email individuel
+    sendIndividualEmail: builder.mutation<{ message: string; recipient: any }, SendIndividualEmailData>({
+      query: (emailData) => ({
+        url: '/marketing/send-email/individual',
+        method: 'POST',
+        body: emailData,
+      }),
+    }),
+
+    // Envoyer une campagne email
+    sendCampaignEmail: builder.mutation<{ message: string; totalSent: number; totalFailed: number; failures?: any[] }, SendCampaignEmailData>({
+      query: (campaignData) => ({
+        url: '/marketing/send-email/campaign',
+        method: 'POST',
+        body: campaignData,
+      }),
+    }),
+
+    // Obtenir les statistiques marketing
+    getMarketingStats: builder.query<MarketingStats, void>({
+      query: () => '/marketing/stats',
+      transformResponse: (response: any) => response.data || response,
+      providesTags: ['Client'],
+    }),
   }),
 });
 
@@ -253,4 +372,9 @@ export const {
   useUpdateUserMutation,
   useDeleteUserMutation,
   useResetUserPasswordMutation,
+  // Marketing hooks
+  useGetMarketingContactsQuery,
+  useSendIndividualEmailMutation,
+  useSendCampaignEmailMutation,
+  useGetMarketingStatsQuery,
 } = api;
