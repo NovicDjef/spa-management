@@ -217,36 +217,107 @@ export default function ClientDetailPage() {
               </h2>
 
               {client.serviceType === 'MASSOTHERAPIE' ? (
-                <div className="space-y-6">
-                  {/* Raison de consultation */}
-                  {client.raisonConsultation && (
-                    <div>
-                      <h3 className="font-semibold text-gray-700 mb-2">Raison de consultation</h3>
-                      <p className="text-gray-600 bg-spa-beige-50 p-4 rounded-xl">
-                        {client.raisonConsultation}
-                      </p>
+                <div className="space-y-8">
+                  {/* Section: Consultation */}
+                  <div className="bg-gradient-to-r from-spa-menthe-50 to-spa-beige-50 p-6 rounded-xl">
+                    <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                      <span className="w-2 h-2 bg-spa-menthe-500 rounded-full"></span>
+                      Consultation
+                    </h3>
+                    <div className="space-y-4">
+                      {client.raisonConsultation && (
+                        <div>
+                          <p className="text-sm font-medium text-gray-600 mb-1">Raison de consultation</p>
+                          <p className="text-gray-800 bg-white p-3 rounded-lg">{client.raisonConsultation}</p>
+                        </div>
+                      )}
+                      {client.assuranceCouvert !== null && (
+                        <div>
+                          <p className="text-sm font-medium text-gray-600 mb-1">Assurance</p>
+                          <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${client.assuranceCouvert ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>
+                            {client.assuranceCouvert ? 'Couvert par assurance' : 'Non couvert'}
+                          </span>
+                        </div>
+                      )}
                     </div>
-                  )}
+                  </div>
 
-                  {/* Diagnostic médical */}
-                  {client.diagnosticMedical && (
-                    <div>
-                      <h3 className="font-semibold text-gray-700 mb-2">Diagnostic médical</h3>
-                      <p className="text-gray-600 bg-spa-beige-50 p-4 rounded-xl">
-                        {client.diagnosticMedicalDetails || 'Non'}
-                      </p>
+                  {/* Section: Historique médical */}
+                  <div className="bg-gradient-to-r from-spa-rose-50 to-spa-beige-50 p-6 rounded-xl">
+                    <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                      <span className="w-2 h-2 bg-spa-rose-500 rounded-full"></span>
+                      Historique médical
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {client.diagnosticMedical && (
+                        <div>
+                          <p className="text-sm font-medium text-gray-600 mb-1">Diagnostic médical</p>
+                          <p className="text-gray-800 bg-white p-3 rounded-lg">{client.diagnosticMedicalDetails || 'Oui'}</p>
+                        </div>
+                      )}
+                      {client.accidents && (
+                        <div>
+                          <p className="text-sm font-medium text-gray-600 mb-1">Accidents</p>
+                          <p className="text-gray-800 bg-white p-3 rounded-lg">{client.accidentsDetails || 'Oui'}</p>
+                        </div>
+                      )}
+                      {client.operationsChirurgicales && (
+                        <div>
+                          <p className="text-sm font-medium text-gray-600 mb-1">Opérations chirurgicales</p>
+                          <p className="text-gray-800 bg-white p-3 rounded-lg">{client.operationsChirurgicalesDetails || 'Oui'}</p>
+                        </div>
+                      )}
+                      {client.traitementsActuels && (
+                        <div>
+                          <p className="text-sm font-medium text-gray-600 mb-1">Traitements actuels</p>
+                          <p className="text-gray-800 bg-white p-3 rounded-lg">{client.traitementsActuels}</p>
+                        </div>
+                      )}
+                      {client.medicaments && (
+                        <div>
+                          <p className="text-sm font-medium text-gray-600 mb-1">Médicaments</p>
+                          <p className="text-gray-800 bg-white p-3 rounded-lg">{client.medicamentsDetails || 'Oui'}</p>
+                        </div>
+                      )}
+                      {client.allergies && (
+                        <div>
+                          <p className="text-sm font-medium text-gray-600 mb-1">Allergies</p>
+                          <p className="text-gray-800 bg-white p-3 rounded-lg">{client.allergiesDetails || 'Oui'}</p>
+                        </div>
+                      )}
+                      {client.ortheses && (
+                        <div>
+                          <p className="text-sm font-medium text-gray-600 mb-1">Orthèses</p>
+                          <p className="text-gray-800 bg-white p-3 rounded-lg">{client.orthesesDetails || 'Oui'}</p>
+                        </div>
+                      )}
+                      {client.problemesCardiaques && (
+                        <div>
+                          <p className="text-sm font-medium text-gray-600 mb-1">Problèmes cardiaques</p>
+                          <p className="text-gray-800 bg-white p-3 rounded-lg">{client.problemesCardiaquesDetails || 'Oui'}</p>
+                        </div>
+                      )}
+                      {client.maladiesGraves && (
+                        <div>
+                          <p className="text-sm font-medium text-gray-600 mb-1">Maladies graves</p>
+                          <p className="text-gray-800 bg-white p-3 rounded-lg">{client.maladiesGravesDetails || 'Oui'}</p>
+                        </div>
+                      )}
                     </div>
-                  )}
+                  </div>
 
-                  {/* Zones de douleur */}
+                  {/* Section: Zones de douleur */}
                   {client.zonesDouleur && client.zonesDouleur.length > 0 && (
-                    <div>
-                      <h3 className="font-semibold text-gray-700 mb-2">Zones de douleur</h3>
+                    <div className="bg-gradient-to-r from-spa-lavande-50 to-spa-beige-50 p-6 rounded-xl">
+                      <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                        <span className="w-2 h-2 bg-spa-lavande-500 rounded-full"></span>
+                        Zones de douleur
+                      </h3>
                       <div className="flex flex-wrap gap-2">
                         {client.zonesDouleur.map((zone: string) => (
                           <span
                             key={zone}
-                            className="px-3 py-1 bg-spa-rose-100 text-spa-rose-700 rounded-full text-sm"
+                            className="px-4 py-2 bg-spa-rose-100 text-spa-rose-700 rounded-full text-sm font-medium"
                           >
                             {zone}
                           </span>
@@ -255,19 +326,121 @@ export default function ClientDetailPage() {
                     </div>
                   )}
 
-                  {/* Informations supplémentaires */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-gray-200">
-                    <div>
-                      <p className="text-sm text-gray-500">Médicaments</p>
-                      <p className="font-medium text-gray-800">
-                        {client.medicamentsDetails || 'Non'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Allergies</p>
-                      <p className="font-medium text-gray-800">
-                        {client.allergiesDetails || 'Non'}
-                      </p>
+                  {/* Section: Conditions et symptômes */}
+                  <div className="bg-gradient-to-r from-amber-50 to-spa-beige-50 p-6 rounded-xl">
+                    <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                      <span className="w-2 h-2 bg-amber-500 rounded-full"></span>
+                      Conditions et symptômes
+                    </h3>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                      {client.raideurs && (
+                        <span className="px-3 py-2 bg-white rounded-lg text-sm text-gray-700 border border-gray-200">✓ Raideurs</span>
+                      )}
+                      {client.arthrose && (
+                        <span className="px-3 py-2 bg-white rounded-lg text-sm text-gray-700 border border-gray-200">✓ Arthrose</span>
+                      )}
+                      {client.hernieDiscale && (
+                        <span className="px-3 py-2 bg-white rounded-lg text-sm text-gray-700 border border-gray-200">✓ Hernie discale</span>
+                      )}
+                      {client.oedeme && (
+                        <span className="px-3 py-2 bg-white rounded-lg text-sm text-gray-700 border border-gray-200">✓ Œdème</span>
+                      )}
+                      {client.tendinite && (
+                        <span className="px-3 py-2 bg-white rounded-lg text-sm text-gray-700 border border-gray-200">✓ Tendinite</span>
+                      )}
+                      {client.mauxDeTete && (
+                        <span className="px-3 py-2 bg-white rounded-lg text-sm text-gray-700 border border-gray-200">✓ Maux de tête</span>
+                      )}
+                      {client.flatulence && (
+                        <span className="px-3 py-2 bg-white rounded-lg text-sm text-gray-700 border border-gray-200">✓ Flatulence</span>
+                      )}
+                      {client.troublesCirculatoires && (
+                        <span className="px-3 py-2 bg-white rounded-lg text-sm text-gray-700 border border-gray-200">✓ Troubles circulatoires</span>
+                      )}
+                      {client.hypothyroidie && (
+                        <span className="px-3 py-2 bg-white rounded-lg text-sm text-gray-700 border border-gray-200">✓ Hypothyroïdie</span>
+                      )}
+                      {client.diabete && (
+                        <span className="px-3 py-2 bg-white rounded-lg text-sm text-gray-700 border border-gray-200">✓ Diabète</span>
+                      )}
+                      {client.stresse && (
+                        <span className="px-3 py-2 bg-white rounded-lg text-sm text-gray-700 border border-gray-200">✓ Stressé</span>
+                      )}
+                      {client.premenopause && (
+                        <span className="px-3 py-2 bg-white rounded-lg text-sm text-gray-700 border border-gray-200">✓ Préménopause</span>
+                      )}
+                      {client.douleurMusculaire && (
+                        <span className="px-3 py-2 bg-white rounded-lg text-sm text-gray-700 border border-gray-200">✓ Douleur musculaire</span>
+                      )}
+                      {client.fibromyalgie && (
+                        <span className="px-3 py-2 bg-white rounded-lg text-sm text-gray-700 border border-gray-200">✓ Fibromyalgie</span>
+                      )}
+                      {client.rhumatisme && (
+                        <span className="px-3 py-2 bg-white rounded-lg text-sm text-gray-700 border border-gray-200">✓ Rhumatisme</span>
+                      )}
+                      {client.sciatique && (
+                        <span className="px-3 py-2 bg-white rounded-lg text-sm text-gray-700 border border-gray-200">✓ Sciatique</span>
+                      )}
+                      {client.bursite && (
+                        <span className="px-3 py-2 bg-white rounded-lg text-sm text-gray-700 border border-gray-200">✓ Bursite</span>
+                      )}
+                      {client.migraine && (
+                        <span className="px-3 py-2 bg-white rounded-lg text-sm text-gray-700 border border-gray-200">✓ Migraine</span>
+                      )}
+                      {client.diarrhee && (
+                        <span className="px-3 py-2 bg-white rounded-lg text-sm text-gray-700 border border-gray-200">✓ Diarrhée</span>
+                      )}
+                      {client.phlebite && (
+                        <span className="px-3 py-2 bg-white rounded-lg text-sm text-gray-700 border border-gray-200">✓ Phlébite</span>
+                      )}
+                      {client.hypertension && (
+                        <span className="px-3 py-2 bg-white rounded-lg text-sm text-gray-700 border border-gray-200">✓ Hypertension</span>
+                      )}
+                      {client.hypoglycemie && (
+                        <span className="px-3 py-2 bg-white rounded-lg text-sm text-gray-700 border border-gray-200">✓ Hypoglycémie</span>
+                      )}
+                      {client.burnOut && (
+                        <span className="px-3 py-2 bg-white rounded-lg text-sm text-gray-700 border border-gray-200">✓ Burn-out</span>
+                      )}
+                      {client.menopause && (
+                        <span className="px-3 py-2 bg-white rounded-lg text-sm text-gray-700 border border-gray-200">✓ Ménopause</span>
+                      )}
+                      {client.inflammationAigue && (
+                        <span className="px-3 py-2 bg-white rounded-lg text-sm text-gray-700 border border-gray-200">✓ Inflammation aiguë</span>
+                      )}
+                      {client.arteriosclerose && (
+                        <span className="px-3 py-2 bg-white rounded-lg text-sm text-gray-700 border border-gray-200">✓ Artériosclérose</span>
+                      )}
+                      {client.osteoporose && (
+                        <span className="px-3 py-2 bg-white rounded-lg text-sm text-gray-700 border border-gray-200">✓ Ostéoporose</span>
+                      )}
+                      {client.mauxDeDos && (
+                        <span className="px-3 py-2 bg-white rounded-lg text-sm text-gray-700 border border-gray-200">✓ Maux de dos</span>
+                      )}
+                      {client.fatigueDesJambes && (
+                        <span className="px-3 py-2 bg-white rounded-lg text-sm text-gray-700 border border-gray-200">✓ Fatigue des jambes</span>
+                      )}
+                      {client.troublesDigestifs && (
+                        <span className="px-3 py-2 bg-white rounded-lg text-sm text-gray-700 border border-gray-200">✓ Troubles digestifs</span>
+                      )}
+                      {client.constipation && (
+                        <span className="px-3 py-2 bg-white rounded-lg text-sm text-gray-700 border border-gray-200">✓ Constipation</span>
+                      )}
+                      {client.hyperthyroidie && (
+                        <span className="px-3 py-2 bg-white rounded-lg text-sm text-gray-700 border border-gray-200">✓ Hyperthyroïdie</span>
+                      )}
+                      {client.hypotension && (
+                        <span className="px-3 py-2 bg-white rounded-lg text-sm text-gray-700 border border-gray-200">✓ Hypotension</span>
+                      )}
+                      {client.insomnie && (
+                        <span className="px-3 py-2 bg-white rounded-lg text-sm text-gray-700 border border-gray-200">✓ Insomnie</span>
+                      )}
+                      {client.depressionNerveuse && (
+                        <span className="px-3 py-2 bg-white rounded-lg text-sm text-gray-700 border border-gray-200">✓ Dépression nerveuse</span>
+                      )}
+                      {client.autres && (
+                        <span className="px-3 py-2 bg-white rounded-lg text-sm text-gray-700 border border-gray-200">✓ {client.autres}</span>
+                      )}
                     </div>
                   </div>
                 </div>

@@ -253,7 +253,7 @@ export const api = createApi({
     // NOTES - Ajouter une note
     addNote: builder.mutation<{ note: Note; message: string }, { clientId: string; content: string }>({
       query: ({ clientId, content }) => ({
-        url: `/clients/${clientId}/notes`,
+        url: `/notes/${clientId}`,
         method: 'POST',
         body: { content },
       }),
