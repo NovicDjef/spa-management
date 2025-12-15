@@ -1,18 +1,22 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Search, Filter, X } from 'lucide-react';
+import { Search, Filter, X, Calendar } from 'lucide-react';
 import { useState } from 'react';
 
 interface SearchBarProps {
   onSearch: (query: string) => void;
   onFilterChange: (filter: string) => void;
+  onDateChange?: (date: string) => void;
+  selectedDate?: string;
   placeholder?: string;
 }
 
 export function SearchBar({
   onSearch,
   onFilterChange,
+  onDateChange,
+  selectedDate = '',
   placeholder = 'Rechercher par nom, email ou téléphone...',
 }: SearchBarProps) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -63,14 +67,14 @@ export function SearchBar({
         <button
           onClick={() => setShowFilters(!showFilters)}
           className={`px-6 py-3 rounded-xl border-2 transition-all duration-200 flex items-center gap-2 ${
-            showFilters || selectedFilter !== 'ALL'
+            showFilters || selectedFilter !== 'ALL' || selectedDate
               ? 'border-spa-rose-400 bg-spa-rose-50 text-spa-rose-700'
               : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
           }`}
         >
           <Filter className="w-5 h-5" />
           <span className="font-medium">Filtres</span>
-          {selectedFilter !== 'ALL' && (
+          {(selectedFilter !== 'ALL' || selectedDate) && (
             <span className="w-2 h-2 bg-spa-rose-500 rounded-full"></span>
           )}
         </button>
@@ -82,41 +86,71 @@ export function SearchBar({
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -10 }}
-          className="glass rounded-xl p-4"
+          className="glass rounded-xl p-4 space-y-4"
         >
-          <p className="text-sm font-medium text-gray-700 mb-3">Type de service</p>
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => handleFilterChange('ALL')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                selectedFilter === 'ALL'
-                  ? 'bg-spa-rose-500 text-white shadow-soft'
-                  : 'bg-white text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              Tous
-            </button>
-            <button
-              onClick={() => handleFilterChange('MASSOTHERAPIE')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                selectedFilter === 'MASSOTHERAPIE'
-                  ? 'bg-spa-menthe-500 text-white shadow-soft'
-                  : 'bg-white text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              Massothérapie
-            </button>
-            <button
-              onClick={() => handleFilterChange('ESTHETIQUE')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                selectedFilter === 'ESTHETIQUE'
-                  ? 'bg-spa-lavande-500 text-white shadow-soft'
-                  : 'bg-white text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              Esthétique
-            </button>
+          {/* Type de service */}
+          <div>
+            <p className="text-sm font-medium text-gray-700 mb-3">Type de service</p>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => handleFilterChange('ALL')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  selectedFilter === 'ALL'
+                    ? 'bg-spa-rose-500 text-white shadow-soft'
+                    : 'bg-white text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                Tous
+              </button>
+              <button
+                onClick={() => handleFilterChange('MASSOTHERAPIE')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  selectedFilter === 'MASSOTHERAPIE'
+                    ? 'bg-spa-menthe-500 text-white shadow-soft'
+                    : 'bg-white text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                Massothérapie
+              </button>
+              <button
+                onClick={() => handleFilterChange('ESTHETIQUE')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  selectedFilter === 'ESTHETIQUE'
+                    ? 'bg-spa-lavande-500 text-white shadow-soft'
+                    : 'bg-white text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                Esthétique
+              </button>
+            </div>
           </div>
+
+          {/* Filtre par date */}
+          {onDateChange && (
+            <div className="pt-4 border-t border-gray-200">
+              <label className="block text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-spa-turquoise-500" />
+                Filtrer par date d'assignation
+              </label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => onDateChange(e.target.value)}
+                  className="input-spa flex-1 max-w-xs"
+                />
+                {selectedDate && (
+                  <button
+                    onClick={() => onDateChange('')}
+                    className="px-3 py-2 text-sm text-spa-turquoise-600 hover:text-spa-turquoise-700 hover:bg-spa-turquoise-50 rounded-lg font-medium transition-colors flex items-center gap-1"
+                  >
+                    <X className="w-4 h-4" />
+                    Réinitialiser
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
         </motion.div>
       )}
     </div>

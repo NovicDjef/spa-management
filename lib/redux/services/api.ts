@@ -32,6 +32,7 @@ export interface Client {
   serviceType: 'MASSOTHERAPIE' | 'ESTHETIQUE';
   createdAt: string;
   assignedAt?: string; // Date d'assignation
+  hasNoteAfterAssignment?: boolean; // Indique si une note a été ajoutée après l'assignation
   lastVisit?: string; // Date de dernière visite
   notes?: Note[]; // Notes incluses dans la réponse de /clients/:id
   // Tous les autres champs...
@@ -155,6 +156,9 @@ export const api = createApi({
     prepareHeaders: (headers, { getState }) => {
       // Ajouter le token d'authentification si disponible
       const token = (getState() as any).auth?.token;
+      const user = (getState() as any).auth?.user;
+      console.log('prepareHeaders - token:', token ? 'présent' : 'absent');
+      console.log('prepareHeaders - user:', user);
       if (token) {
         headers.set('authorization', `Bearer ${token}`);
       }
@@ -203,7 +207,24 @@ export const api = createApi({
     // Note: L'endpoint /clients retourne automatiquement les clients assignés selon le rôle
     getAssignedClients: builder.query<{ clients: Client[] }, void>({
       query: () => '/clients',
-      transformResponse: (response: any) => response.data || response,
+      transformResponse: (response: any) => {
+        console.log('getAssignedClients - Réponse brute:', response);
+        console.log('getAssignedClients - response.data:', response.data);
+
+        // L'API retourne { success: true, data: { clients: [...] } }
+        // On extrait juste { clients: [...] }
+        const result = response.data || response;
+        console.log('getAssignedClients - Après transformation:', result);
+
+        // Log détaillé du premier client pour vérifier assignedAt et hasNoteAfterAssignment
+        if (result.clients && result.clients.length > 0) {
+          console.log('getAssignedClients - Premier client détaillé:', result.clients[0]);
+          console.log('getAssignedClients - assignedAt:', result.clients[0].assignedAt);
+          console.log('getAssignedClients - hasNoteAfterAssignment:', result.clients[0].hasNoteAfterAssignment);
+        }
+
+        return result;
+      },
       providesTags: ['Client', 'Assignment'],
     }),
 
@@ -238,7 +259,8 @@ export const api = createApi({
       }),
       invalidatesTags: (result, error, { clientId }) => [
         { type: 'Note', id: clientId },
-        { type: 'Client', id: clientId }, // Invalider aussi le client pour rafraîchir les notes incluses
+        { type: 'Client', id: clientId }, // Invalider le client spécifique
+        'Client', // Invalider la liste complète pour mettre à jour hasNoteAfterAssignment
       ],
     }),
 
@@ -295,7 +317,9 @@ export const api = createApi({
       transformResponse: (response: any) => {
         // L'API retourne { success: true, data: [...] }
         // On transforme en { users: [...] }
-        return { users: response.data || response };
+        const users = response.data || response;
+        // S'assurer que c'est toujours un tableau
+        return { users: Array.isArray(users) ? users : [] };
       },
       providesTags: ['User'],
     }),

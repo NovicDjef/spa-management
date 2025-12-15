@@ -1,11 +1,11 @@
 'use client';
 
-import { motion } from 'framer-motion';
-import { useState, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useMemo, useEffect } from 'react';
 import { Header } from '@/components/layout/Header';
 import { SearchBar } from '@/components/clients/SearchBar';
 import { ClientCard } from '@/components/clients/ClientCard';
-import { Users, Loader2, ClipboardList } from 'lucide-react';
+import { Users, Loader2, ClipboardList, X, Sparkles } from 'lucide-react';
 import { useGetAssignedClientsQuery } from '@/lib/redux/services/api';
 import { useAppSelector } from '@/lib/redux/hooks';
 
@@ -44,16 +44,52 @@ export default function ClientsPage() {
   
   // Utiliser useGetAssignedClientsQuery avec polling automatique toutes les 30 secondes
   // Le polling ne s'active que si l'utilisateur est connecté
-  const { data: clientsData, isLoading } = useGetAssignedClientsQuery(undefined, {
+  const { data: clientsData, isLoading, error } = useGetAssignedClientsQuery(undefined, {
     pollingInterval: isAuthenticated ? 30000 : 0, // Rafraîchir toutes les 30 secondes si connecté, sinon pas de polling
     skip: !isAuthenticated, // Ne pas faire de requête si l'utilisateur n'est pas connecté
   });
 
-  const clients = useMemo(() => clientsData?.clients || [], [clientsData?.clients]);
+  const clients = useMemo(() => {
+    console.log('ClientsPage - clientsData:', clientsData);
+    console.log('ClientsPage - clientsData?.clients:', clientsData?.clients);
+    console.log('ClientsPage - error:', error);
+    console.log('ClientsPage - currentUser:', currentUser);
+
+    // Log détaillé de chaque client pour vérifier assignedAt et hasNoteAfterAssignment
+    if (clientsData?.clients) {
+      clientsData.clients.forEach((client, index) => {
+        console.log(`Client ${index + 1}:`, {
+          nom: `${client.prenom} ${client.nom}`,
+          assignedAt: client.assignedAt,
+          hasNoteAfterAssignment: client.hasNoteAfterAssignment,
+          createdAt: client.createdAt,
+        });
+      });
+    }
+
+    return clientsData?.clients || [];
+  }, [clientsData?.clients, clientsData, error, currentUser]);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('ALL');
   const [selectedDate, setSelectedDate] = useState('');
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+
+  // Afficher le popup de bienvenue au chargement de la page (une fois par session)
+  useEffect(() => {
+    if (isAuthenticated && currentUser) {
+      // Vérifier si le popup a déjà été affiché dans cette session
+      const hasSeenWelcome = sessionStorage.getItem('hasSeenWelcome');
+      if (!hasSeenWelcome) {
+        // Attendre un peu pour que la page se charge complètement
+        const timer = setTimeout(() => {
+          setShowWelcomeModal(true);
+          sessionStorage.setItem('hasSeenWelcome', 'true');
+        }, 500);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [isAuthenticated, currentUser]);
 
   // Calculate filtered clients and grouped by date using useMemo
   const { filteredClients, groupedByDate } = useMemo(() => {
@@ -99,7 +135,12 @@ export default function ClientsPage() {
     Object.keys(grouped)
       .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())
       .forEach((key) => {
-        sortedGrouped[key] = grouped[key];
+        // Sort clients within each date group by assignedAt time (most recent first)
+        sortedGrouped[key] = grouped[key].sort((a, b) => {
+          const dateA = new Date(a.assignedAt || a.createdAt).getTime();
+          const dateB = new Date(b.assignedAt || b.createdAt).getTime();
+          return dateB - dateA; // Descending order (newest first)
+        });
       });
 
     return {
@@ -108,10 +149,96 @@ export default function ClientsPage() {
     };
   }, [clients, searchQuery, selectedFilter, selectedDate]);
 
+  // Function to check if client needs a note (shows "Nouveau RDV" badge)
+  // Le badge s'affiche si le client a été assigné MAIS n'a pas encore de note après l'assignation
+  const needsNote = (client: Client) => {
+    // Si pas d'assignation, pas de badge
+    if (!client.assignedAt) {
+      console.log(`needsNote - ${client.prenom} ${client.nom}: pas de assignedAt`);
+      return false;
+    }
+
+    // Si une note a été ajoutée après l'assignation, pas de badge
+    if (client.hasNoteAfterAssignment === true) {
+      console.log(`needsNote - ${client.prenom} ${client.nom}: note déjà ajoutée après assignation`);
+      return false;
+    }
+
+    // Sinon, le client a besoin d'une note -> afficher le badge
+    console.log(`needsNote - ${client.prenom} ${client.nom}: BESOIN D'UNE NOTE (badge affiché)`);
+    return true;
+  };
+
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-spa-beige-50 via-white to-spa-menthe-50">
-      <Header />
+    <>
+      {/* Popup de bienvenue */}
+      <AnimatePresence>
+        {showWelcomeModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={() => setShowWelcomeModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 relative overflow-hidden"
+            >
+              {/* Fond décoratif */}
+              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-spa-menthe-100 to-spa-menthe-200 rounded-full -mr-16 -mt-16 opacity-50"></div>
+              <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-br from-spa-turquoise-100 to-spa-turquoise-200 rounded-full -ml-12 -mb-12 opacity-50"></div>
+
+              {/* Contenu */}
+              <div className="relative z-10">
+                {/* Bouton fermer */}
+                <button
+                  onClick={() => setShowWelcomeModal(false)}
+                  className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full transition-colors"
+                  aria-label="Fermer"
+                >
+                  <X className="w-5 h-5 text-gray-500" />
+                </button>
+
+                {/* Icône */}
+                <div className="flex justify-center mb-6">
+                  <div className="w-20 h-20 bg-gradient-to-br from-spa-menthe-100 to-spa-menthe-200 rounded-full flex items-center justify-center">
+                    <Sparkles className="w-10 h-10 text-spa-menthe-600" />
+                  </div>
+                </div>
+
+                {/* Titre */}
+                <h2 className="text-2xl font-bold text-gray-800 text-center mb-4">
+                  Bienvenue sur votre espace professionnel
+                </h2>
+
+                {/* Message */}
+                <p className="text-gray-600 text-center leading-relaxed mb-6">
+                  Vous pouvez consulter les dossiers des clients qui vous ont été assignés et
+                  ajouter des notes de traitement. Cliquez sur un client pour voir son dossier complet.
+                </p>
+
+                {/* Bouton */}
+                <div className="flex justify-center">
+                  <button
+                    onClick={() => setShowWelcomeModal(false)}
+                    className="px-6 py-3 bg-gradient-to-r from-spa-menthe-500 to-spa-menthe-600 text-white rounded-xl font-medium hover:from-spa-menthe-600 hover:to-spa-menthe-700 transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
+                  >
+                    Compris, merci !
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="min-h-screen bg-gradient-to-br from-spa-beige-50 via-white to-spa-menthe-50">
+        <Header />
 
       <div className="container-spa py-8">
         {/* En-tête */}
@@ -133,53 +260,22 @@ export default function ClientsPage() {
               </p>
             </div>
           </div>
-
-          {/* Info box */}
-          <div className="glass rounded-2xl p-4 flex items-start gap-3">
-            <div className="w-2 h-2 bg-spa-menthe-500 rounded-full mt-2"></div>
-            <div className="text-sm text-gray-700">
-              <p className="font-medium mb-1">Bienvenue sur votre espace professionnel</p>
-              <p className="text-gray-600">
-                Vous pouvez consulter les dossiers des clients qui vous ont été assignés et
-                ajouter des notes de traitement. Cliquez sur un client pour voir son dossier complet.
-              </p>
-            </div>
-          </div>
         </motion.div>
 
-        {/* Barre de recherche et filtre par date */}
+        {/* Barre de recherche et filtres */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="mb-8 space-y-4"
+          className="mb-8"
         >
           <SearchBar
             onSearch={setSearchQuery}
             onFilterChange={setSelectedFilter}
+            onDateChange={setSelectedDate}
+            selectedDate={selectedDate}
             placeholder="Rechercher un client par nom, email ou téléphone..."
           />
-
-          {/* Filtre par date */}
-          <div className="glass rounded-2xl p-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Filtrer par date d'assignation
-            </label>
-            <input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="input-spa max-w-xs"
-            />
-            {selectedDate && (
-              <button
-                onClick={() => setSelectedDate('')}
-                className="ml-3 text-sm text-spa-turquoise-600 hover:text-spa-turquoise-700 font-medium"
-              >
-                Réinitialiser
-              </button>
-            )}
-          </div>
         </motion.div>
 
         {/* Liste des clients groupés par date */}
@@ -238,7 +334,11 @@ export default function ClientsPage() {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.05 * index }}
                     >
-                      <ClientCard client={client} showActions={false} />
+                      <ClientCard
+                        client={client}
+                        showActions={false}
+                        isNewAssignment={needsNote(client)}
+                      />
                     </motion.div>
                   ))}
                 </div>
@@ -247,6 +347,7 @@ export default function ClientsPage() {
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </>
   );
 }

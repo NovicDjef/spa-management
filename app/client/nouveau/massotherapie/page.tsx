@@ -234,14 +234,36 @@ export default function MassotherapieFormPage() {
   const handleSubmit = async () => {
     if (!validateStep(currentStep)) return;
 
+    const dataToSubmit = {
+      ...formData,
+      serviceType: 'MASSOTHERAPIE',
+    };
+
+    console.log('='.repeat(80));
+    console.log('📤 SOUMISSION DU FORMULAIRE MASSOTHÉRAPIE');
+    console.log('='.repeat(80));
+    console.log('Données complètes à envoyer au backend:');
+    console.log(JSON.stringify(dataToSubmit, null, 2));
+    console.log('='.repeat(80));
+    console.log('Endpoint:', 'POST /api/clients');
+    console.log('Service Type:', dataToSubmit.serviceType);
+    console.log('Zones de douleur sélectionnées:', dataToSubmit.zonesDouleur);
+    console.log('='.repeat(80));
+
     try {
-      await createClient({
-        ...formData,
-        serviceType: 'MASSOTHERAPIE',
-      }).unwrap();
+      const result = await createClient(dataToSubmit).unwrap();
+
+      console.log('✅ SUCCÈS - Réponse du backend:');
+      console.log(JSON.stringify(result, null, 2));
+      console.log('='.repeat(80));
 
       router.push('/client/confirmation');
     } catch (error: any) {
+      console.error('❌ ERREUR lors de la soumission:');
+      console.error('Détails:', error);
+      console.error('Message:', error.data?.message || error.message);
+      console.log('='.repeat(80));
+
       alert(error.data?.message || 'Une erreur est survenue lors de l\'enregistrement');
     }
   };

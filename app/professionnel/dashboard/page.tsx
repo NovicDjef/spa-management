@@ -1,7 +1,7 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Header } from '@/components/layout/Header';
 import { SearchBar } from '@/components/clients/SearchBar';
 import { ClientCard } from '@/components/clients/ClientCard';
@@ -31,7 +31,17 @@ interface Professional {
 
 export default function DashboardPage() {
   const { data: clientsData, isLoading } = useGetClientsQuery({});
-  const { data: usersData, isLoading: isLoadingUsers } = useGetUsersQuery({});
+  const { 
+    data: usersData, 
+    isLoading: isLoadingUsers, 
+    error: usersError,
+    refetch: refetchUsers 
+  } = useGetUsersQuery({}, {
+    // Refetch automatique si la requête échoue
+    refetchOnMountOrArgChange: true,
+    // Réessayer en cas d'échec
+    retry: 2,
+  });
   const [assignClient, { isLoading: isAssigning }] = useAssignClientMutation();
 
   const currentUser = useAppSelector((state) => state.auth.user) || {
@@ -42,16 +52,25 @@ export default function DashboardPage() {
 
   const clients = clientsData?.clients || [];
 
-  // Debug: Afficher les données brutes
-  console.log('usersData:', usersData);
-  console.log('usersData?.users:', usersData?.users);
-
   // Filtrer uniquement les professionnels (massothérapeutes et esthéticiennes)
-  const professionals = (usersData?.users || []).filter(
-    (user) => user.role === 'MASSOTHERAPEUTE' || user.role === 'ESTHETICIENNE'
-  );
-
-  console.log('professionals:', professionals);
+  // Utiliser useMemo pour éviter de recalculer à chaque render
+  const professionals = useMemo(() => {
+    // Vérifier que les données sont disponibles et valides
+    if (!usersData) {
+      return [];
+    }
+    
+    // S'assurer que users est un tableau
+    const users = usersData.users;
+    if (!users || !Array.isArray(users)) {
+      return [];
+    }
+    
+    // Filtrer les professionnels
+    return users.filter(
+      (user) => user && (user.role === 'MASSOTHERAPEUTE' || user.role === 'ESTHETICIENNE')
+    );
+  }, [usersData]);
 
   const [filteredClients, setFilteredClients] = useState<Client[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -323,11 +342,37 @@ export default function DashboardPage() {
                       })}
                   </select>
                 )}
-                {!isLoadingUsers && professionals.length === 0 && (
+                {/* Messages d'erreur et d'avertissement */}
+                {!isLoadingUsers && usersError && (
+                  <div className="text-sm text-yellow-600 mt-2">
+                    <p className="mb-2">
+                      ⚠️ Impossible de charger les professionnels. Veuillez réessayer.
+                    </p>
+                    <button
+                      onClick={() => refetchUsers()}
+                      className="text-sm text-spa-turquoise-600 hover:text-spa-turquoise-700 font-medium underline"
+                    >
+                      Réessayer
+                    </button>
+                  </div>
+                )}
+                {!isLoadingUsers && !usersError && usersData && professionals.length === 0 && (
                   <p className="text-sm text-red-600 mt-2">
                     ⚠️ Aucun professionnel trouvé. Vérifiez que des utilisateurs avec le rôle MASSOTHERAPEUTE ou ESTHETICIENNE existent.
                   </p>
                 )}
+                {!isLoadingUsers && !usersError && usersData && professionals.length > 0 && selectedClient && (() => {
+                  const filteredProfessionals = professionals.filter((p) => {
+                    return selectedClient.serviceType === 'MASSOTHERAPIE'
+                      ? p.role === 'MASSOTHERAPEUTE'
+                      : p.role === 'ESTHETICIENNE';
+                  });
+                  return filteredProfessionals.length === 0 ? (
+                    <p className="text-sm text-orange-600 mt-2">
+                      ⚠️ Aucun {selectedClient.serviceType === 'MASSOTHERAPIE' ? 'massothérapeute' : 'esthéticienne'} disponible pour ce type de service.
+                    </p>
+                  ) : null;
+                })()}
               </div>
 
               <div className="flex gap-3">

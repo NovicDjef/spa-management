@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { User, Phone, Mail, Calendar, Hand, Wand2 } from 'lucide-react';
+import { User, Phone, Mail, Calendar, Hand, Wand2, Bell } from 'lucide-react';
 import Link from 'next/link';
 
 interface ClientCardProps {
@@ -17,9 +17,10 @@ interface ClientCardProps {
   };
   showActions?: boolean;
   onAssign?: (clientId: string) => void;
+  isNewAssignment?: boolean;
 }
 
-export function ClientCard({ client, showActions = false, onAssign }: ClientCardProps) {
+export function ClientCard({ client, showActions = false, onAssign, isNewAssignment = false }: ClientCardProps) {
   const calculateAge = (birthDate: string) => {
     const today = new Date();
     const birth = new Date(birthDate);
@@ -39,8 +40,18 @@ export function ClientCard({ client, showActions = false, onAssign }: ClientCard
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
       whileHover={{ scale: 1.02 }}
-      className="card-spa p-6 cursor-pointer"
+      className={`card-spa p-6 cursor-pointer relative overflow-hidden ${
+        isNewAssignment ? 'ring-2 ring-orange-500 ring-offset-2' : ''
+      }`}
     >
+      {/* Badge pour nouvelle assignation */}
+      {isNewAssignment && (
+        <div className="absolute top-0 right-0 bg-gradient-to-r from-orange-500 to-red-500 text-white px-3 py-1 rounded-bl-xl shadow-lg flex items-center gap-1.5">
+          <Bell className="w-3.5 h-3.5 animate-pulse" />
+          <span className="text-xs font-bold uppercase tracking-wide">Nouveau RDV</span>
+        </div>
+      )}
+
       <Link href={`/professionnel/clients/${client.id}`}>
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-4">

@@ -5,7 +5,9 @@
       "Bash(npm install:*)",
       "Bash(npm run dev)",
       "Bash(node scripts/generate-icons.js:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(ls:*)",
+      "Bash(sips:*)"
     ]
   }
 }
