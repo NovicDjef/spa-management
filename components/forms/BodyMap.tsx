@@ -1,290 +1,571 @@
 'use client';
 
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState, useEffect } from 'react';
-import { RotateCcw, RotateCw } from 'lucide-react';
+import * as THREE from 'three';
+import { OrbitControls } from 'three-stdlib';
 
 interface BodyMapProps {
   selectedZones: string[];
   onZonesChange: (zones: string[]) => void;
+  gender?: 'HOMME' | 'FEMME';
 }
 
-// Zones du corps avec coordonnées pour vue AVANT
-const BODY_ZONES_FRONT = [
-  { id: 'tete', label: 'Tête', area: { cx: 50, cy: 12, rx: 8, ry: 6 } },
-  { id: 'cou', label: 'Cou', area: { cx: 50, cy: 20, rx: 4, ry: 3 } },
-  { id: 'epaule-gauche', label: 'Épaule G', area: { cx: 40, cy: 24, rx: 5, ry: 4 } },
-  { id: 'epaule-droite', label: 'Épaule D', area: { cx: 60, cy: 24, rx: 5, ry: 4 } },
-  { id: 'bras-gauche', label: 'Bras G', area: { cx: 25, cy: 35, rx: 6, ry: 12 } },
-  { id: 'bras-droit', label: 'Bras D', area: { cx: 75, cy: 35, rx: 6, ry: 12 } },
-  { id: 'avant-bras-gauche', label: 'Avant-bras G', area: { cx: 20, cy: 50, rx: 4, ry: 10 } },
-  { id: 'avant-bras-droit', label: 'Avant-bras D', area: { cx: 80, cy: 50, rx: 4, ry: 10 } },
-  { id: 'main-gauche', label: 'Main G', area: { cx: 18, cy: 65, rx: 3, ry: 3 } },
-  { id: 'main-droite', label: 'Main D', area: { cx: 82, cy: 65, rx: 3, ry: 3 } },
-  { id: 'poitrine', label: 'Poitrine', area: { cx: 50, cy: 28, rx: 8, ry: 5 } },
-  { id: 'abdomen', label: 'Abdomen', area: { cx: 50, cy: 40, rx: 7, ry: 6 } },
-  { id: 'bassin', label: 'Bassin', area: { cx: 50, cy: 50, rx: 8, ry: 4 } },
-  { id: 'cuisse-gauche', label: 'Cuisse G', area: { cx: 42, cy: 65, rx: 5, ry: 10 } },
-  { id: 'cuisse-droite', label: 'Cuisse D', area: { cx: 58, cy: 65, rx: 5, ry: 10 } },
-  { id: 'genou-gauche', label: 'Genou G', area: { cx: 42, cy: 80, rx: 4, ry: 4 } },
-  { id: 'genou-droit', label: 'Genou D', area: { cx: 58, cy: 80, rx: 4, ry: 4 } },
-  { id: 'mollet-gauche', label: 'Mollet G', area: { cx: 42, cy: 90, rx: 4, ry: 6 } },
-  { id: 'mollet-droit', label: 'Mollet D', area: { cx: 58, cy: 90, rx: 4, ry: 6 } },
-  { id: 'pied-gauche', label: 'Pied G', area: { cx: 42, cy: 98, rx: 4, ry: 3 } },
-  { id: 'pied-droit', label: 'Pied D', area: { cx: 58, cy: 98, rx: 4, ry: 3 } },
+// Zones du corps avec positions anatomiques précises
+const BODY_ZONES = [
+  // Tête et cou
+  { id: 'tete', label: 'Tête', position: { x: 0, y: 1.65, z: 0 }, size: 0.22, color: 0xff6b9d },
+  { id: 'cou', label: 'Cou', position: { x: 0, y: 1.35, z: 0 }, size: 0.15, color: 0xff6b9d },
+  
+  // Épaules et bras supérieurs
+  { id: 'epaule-gauche', label: 'Épaule G', position: { x: -0.32, y: 1.25, z: 0 }, size: 0.16, color: 0xffa07a },
+  { id: 'epaule-droite', label: 'Épaule D', position: { x: 0.32, y: 1.25, z: 0 }, size: 0.16, color: 0xffa07a },
+  { id: 'bras-gauche', label: 'Bras G', position: { x: -0.42, y: 0.95, z: 0 }, size: 0.14, color: 0xffa07a },
+  { id: 'bras-droit', label: 'Bras D', position: { x: 0.42, y: 0.95, z: 0 }, size: 0.14, color: 0xffa07a },
+  
+  // Avant-bras et mains
+  { id: 'coude-gauche', label: 'Coude G', position: { x: -0.48, y: 0.70, z: 0 }, size: 0.12, color: 0xffb347 },
+  { id: 'coude-droit', label: 'Coude D', position: { x: 0.48, y: 0.70, z: 0 }, size: 0.12, color: 0xffb347 },
+  { id: 'avant-bras-gauche', label: 'Avant-bras G', position: { x: -0.52, y: 0.45, z: 0 }, size: 0.13, color: 0xffb347 },
+  { id: 'avant-bras-droit', label: 'Avant-bras D', position: { x: 0.52, y: 0.45, z: 0 }, size: 0.13, color: 0xffb347 },
+  { id: 'poignet-gauche', label: 'Poignet G', position: { x: -0.54, y: 0.22, z: 0 }, size: 0.10, color: 0xffd700 },
+  { id: 'poignet-droit', label: 'Poignet D', position: { x: 0.54, y: 0.22, z: 0 }, size: 0.10, color: 0xffd700 },
+  { id: 'main-gauche', label: 'Main G', position: { x: -0.56, y: 0.08, z: 0.05 }, size: 0.11, color: 0xffd700 },
+  { id: 'main-droite', label: 'Main D', position: { x: 0.56, y: 0.08, z: 0.05 }, size: 0.11, color: 0xffd700 },
+  
+  // Torse avant
+  { id: 'poitrine', label: 'Poitrine', position: { x: 0, y: 1.10, z: 0.18 }, size: 0.28, color: 0x87ceeb },
+  { id: 'abdomen-haut', label: 'Abdomen supérieur', position: { x: 0, y: 0.80, z: 0.18 }, size: 0.26, color: 0x87ceeb },
+  { id: 'abdomen-bas', label: 'Abdomen inférieur', position: { x: 0, y: 0.55, z: 0.18 }, size: 0.24, color: 0x87ceeb },
+  
+  // Torse arrière
+  { id: 'dos-haut', label: 'Haut du dos', position: { x: 0, y: 1.10, z: -0.18 }, size: 0.28, color: 0x9370db },
+  { id: 'dos-milieu', label: 'Milieu du dos', position: { x: 0, y: 0.80, z: -0.18 }, size: 0.26, color: 0x9370db },
+  { id: 'dos-bas', label: 'Bas du dos', position: { x: 0, y: 0.50, z: -0.18 }, size: 0.24, color: 0x9370db },
+  { id: 'lombaires', label: 'Lombaires', position: { x: 0, y: 0.30, z: -0.18 }, size: 0.22, color: 0x9370db },
+  
+  // Bassin et hanches
+  { id: 'bassin', label: 'Bassin', position: { x: 0, y: 0.25, z: 0 }, size: 0.26, color: 0x98fb98 },
+  { id: 'hanche-gauche', label: 'Hanche G', position: { x: -0.22, y: 0.20, z: 0 }, size: 0.16, color: 0x98fb98 },
+  { id: 'hanche-droite', label: 'Hanche D', position: { x: 0.22, y: 0.20, z: 0 }, size: 0.16, color: 0x98fb98 },
+  { id: 'fessiers', label: 'Fessiers', position: { x: 0, y: 0.15, z: -0.20 }, size: 0.28, color: 0x98fb98 },
+  
+  // Cuisses
+  { id: 'cuisse-gauche-avant', label: 'Cuisse G avant', position: { x: -0.20, y: -0.10, z: 0.12 }, size: 0.18, color: 0xdda0dd },
+  { id: 'cuisse-droite-avant', label: 'Cuisse D avant', position: { x: 0.20, y: -0.10, z: 0.12 }, size: 0.18, color: 0xdda0dd },
+  { id: 'cuisse-gauche-arriere', label: 'Cuisse G arrière', position: { x: -0.20, y: -0.10, z: -0.12 }, size: 0.18, color: 0xdda0dd },
+  { id: 'cuisse-droite-arriere', label: 'Cuisse D arrière', position: { x: 0.20, y: -0.10, z: -0.12 }, size: 0.18, color: 0xdda0dd },
+  
+  // Genoux
+  { id: 'genou-gauche', label: 'Genou G', position: { x: -0.20, y: -0.40, z: 0 }, size: 0.14, color: 0xf0e68c },
+  { id: 'genou-droit', label: 'Genou D', position: { x: 0.20, y: -0.40, z: 0 }, size: 0.14, color: 0xf0e68c },
+  
+  // Mollets
+  { id: 'mollet-gauche', label: 'Mollet G', position: { x: -0.20, y: -0.60, z: -0.08 }, size: 0.14, color: 0xffb6c1 },
+  { id: 'mollet-droit', label: 'Mollet D', position: { x: 0.20, y: -0.60, z: -0.08 }, size: 0.14, color: 0xffb6c1 },
+  { id: 'tibia-gauche', label: 'Tibia G', position: { x: -0.20, y: -0.60, z: 0.08 }, size: 0.12, color: 0xffb6c1 },
+  { id: 'tibia-droit', label: 'Tibia D', position: { x: 0.20, y: -0.60, z: 0.08 }, size: 0.12, color: 0xffb6c1 },
+  
+  // Chevilles et pieds
+  { id: 'cheville-gauche', label: 'Cheville G', position: { x: -0.20, y: -0.80, z: 0 }, size: 0.10, color: 0xffa500 },
+  { id: 'cheville-droite', label: 'Cheville D', position: { x: 0.20, y: -0.80, z: 0 }, size: 0.10, color: 0xffa500 },
+  { id: 'pied-gauche', label: 'Pied G', position: { x: -0.20, y: -0.92, z: 0.08 }, size: 0.14, color: 0xffa500 },
+  { id: 'pied-droit', label: 'Pied D', position: { x: 0.20, y: -0.92, z: 0.08 }, size: 0.14, color: 0xffa500 },
 ];
 
-// Zones du corps avec coordonnées pour vue ARRIÈRE
-const BODY_ZONES_BACK = [
-  { id: 'tete', label: 'Tête', area: { cx: 50, cy: 12, rx: 8, ry: 6 } },
-  { id: 'cou', label: 'Cou', area: { cx: 50, cy: 20, rx: 4, ry: 3 } },
-  { id: 'epaule-gauche', label: 'Épaule G', area: { cx: 40, cy: 24, rx: 5, ry: 4 } },
-  { id: 'epaule-droite', label: 'Épaule D', area: { cx: 60, cy: 24, rx: 5, ry: 4 } },
-  { id: 'bras-gauche', label: 'Bras G', area: { cx: 25, cy: 35, rx: 6, ry: 12 } },
-  { id: 'bras-droit', label: 'Bras D', area: { cx: 75, cy: 35, rx: 6, ry: 12 } },
-  { id: 'avant-bras-gauche', label: 'Avant-bras G', area: { cx: 20, cy: 50, rx: 4, ry: 10 } },
-  { id: 'avant-bras-droit', label: 'Avant-bras D', area: { cx: 80, cy: 50, rx: 4, ry: 10 } },
-  { id: 'main-gauche', label: 'Main G', area: { cx: 18, cy: 65, rx: 3, ry: 3 } },
-  { id: 'main-droite', label: 'Main D', area: { cx: 82, cy: 65, rx: 3, ry: 3 } },
-  { id: 'dos-haut', label: 'Haut du dos', area: { cx: 50, cy: 30, rx: 8, ry: 5 } },
-  { id: 'dos-milieu', label: 'Milieu du dos', area: { cx: 50, cy: 40, rx: 8, ry: 6 } },
-  { id: 'dos-bas', label: 'Bas du dos', area: { cx: 50, cy: 50, rx: 8, ry: 4 } },
-  { id: 'hanche-gauche', label: 'Hanche G', area: { cx: 42, cy: 55, rx: 4, ry: 4 } },
-  { id: 'hanche-droite', label: 'Hanche D', area: { cx: 58, cy: 55, rx: 4, ry: 4 } },
-  { id: 'cuisse-gauche', label: 'Cuisse G', area: { cx: 42, cy: 70, rx: 5, ry: 10 } },
-  { id: 'cuisse-droite', label: 'Cuisse D', area: { cx: 58, cy: 70, rx: 5, ry: 10 } },
-  { id: 'genou-gauche', label: 'Genou G', area: { cx: 42, cy: 85, rx: 4, ry: 4 } },
-  { id: 'genou-droit', label: 'Genou D', area: { cx: 58, cy: 85, rx: 4, ry: 4 } },
-  { id: 'mollet-gauche', label: 'Mollet G', area: { cx: 42, cy: 93, rx: 4, ry: 5 } },
-  { id: 'mollet-droit', label: 'Mollet D', area: { cx: 58, cy: 93, rx: 4, ry: 5 } },
-  { id: 'pied-gauche', label: 'Pied G', area: { cx: 42, cy: 98, rx: 4, ry: 3 } },
-  { id: 'pied-droit', label: 'Pied D', area: { cx: 58, cy: 98, rx: 4, ry: 3 } },
-];
-
-
-export function BodyMap({ selectedZones, onZonesChange }: BodyMapProps) {
-  const [hoveredZone, setHoveredZone] = useState<string | null>(null);
-  const [view, setView] = useState<'front' | 'back'>('front');
+export function BodyMap({ selectedZones, onZonesChange, gender = 'HOMME' }: BodyMapProps) {
   const [isMobile, setIsMobile] = useState(false);
+  const [hoveredZone, setHoveredZone] = useState<string | null>(null);
+  const mountRef = useRef<HTMLDivElement>(null);
+  const controlsRef = useRef<OrbitControls>();
+  const rendererRef = useRef<THREE.WebGLRenderer>();
+  const sceneRef = useRef<THREE.Scene>();
+  const cameraRef = useRef<THREE.PerspectiveCamera>();
+  const zoneMarkersRef = useRef<Map<string, THREE.Mesh>>(new Map());
+  const raycasterRef = useRef(new THREE.Raycaster());
+  const mouseRef = useRef(new THREE.Vector2());
 
   useEffect(() => {
-    // Détecte si l'utilisateur est sur mobile
-    const checkIfMobile = () => {
-      setIsMobile(window.innerWidth < 768 || navigator.userAgent.match(/Android|iPhone|iPad|iPod/i));
-    };
+    const checkIfMobile = () => setIsMobile(window.innerWidth < 768);
     checkIfMobile();
     window.addEventListener('resize', checkIfMobile);
     return () => window.removeEventListener('resize', checkIfMobile);
   }, []);
 
+  useEffect(() => {
+    if (!mountRef.current) return;
+
+    const existingCanvas = mountRef.current.querySelector('canvas');
+    if (existingCanvas && mountRef.current.contains(existingCanvas)) {
+      mountRef.current.removeChild(existingCanvas);
+    }
+
+    // Scène
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf5f5f5);
+    scene.fog = new THREE.Fog(0xf5f5f5, 3, 5);
+    sceneRef.current = scene;
+
+    // Caméra
+    const camera = new THREE.PerspectiveCamera(
+      45,
+      mountRef.current.clientWidth / mountRef.current.clientHeight,
+      0.1,
+      1000
+    );
+    camera.position.set(0, 0.8, 3);
+    cameraRef.current = camera;
+
+    // Renderer avec meilleure qualité
+    const renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      alpha: true,
+      powerPreference: 'high-performance'
+    });
+    renderer.setSize(mountRef.current.clientWidth, mountRef.current.clientHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    mountRef.current.appendChild(renderer.domElement);
+    rendererRef.current = renderer;
+
+    // Lumières améliorées
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+    scene.add(ambientLight);
+
+    const keyLight = new THREE.DirectionalLight(0xffffff, 1.2);
+    keyLight.position.set(3, 4, 2);
+    keyLight.castShadow = true;
+    keyLight.shadow.mapSize.width = 2048;
+    keyLight.shadow.mapSize.height = 2048;
+    scene.add(keyLight);
+
+    const fillLight = new THREE.DirectionalLight(0xb8d4ff, 0.6);
+    fillLight.position.set(-3, 2, -2);
+    scene.add(fillLight);
+
+    const rimLight = new THREE.DirectionalLight(0xffffff, 0.4);
+    rimLight.position.set(0, 2, -3);
+    scene.add(rimLight);
+
+    // Fonction pour créer un corps anatomiquement précis
+    const createAnatomicalBody = (gender: 'HOMME' | 'FEMME') => {
+      const group = new THREE.Group();
+      
+      // Proportions basées sur le canon de 7.5 têtes
+      const headHeight = 0.24;
+      const isFemale = gender === 'FEMME';
+      
+      // Matériaux avec sous-surface scattering simulé
+      const skinMaterial = new THREE.MeshStandardMaterial({
+        color: "#e6c7b3",
+        roughness: 0.65,
+        metalness: 0.02,
+        emissive: 0xffdbcc,
+        emissiveIntensity: 0.05,
+      });
+
+      // === TÊTE ===
+      const headGroup = new THREE.Group();
+      
+      // Crâne
+      const skull = new THREE.Mesh(
+        new THREE.SphereGeometry(headHeight * 0.75, 64, 64),
+        skinMaterial
+      );
+      skull.scale.set(1, 1.15, 0.95);
+      skull.position.y = 1.65;
+      skull.castShadow = true;
+      headGroup.add(skull);
+      
+      // Mâchoire
+      const jaw = new THREE.Mesh(
+        new THREE.SphereGeometry(headHeight * 0.55, 32, 32, 0, Math.PI * 2, 0, Math.PI / 2),
+        skinMaterial
+      );
+      jaw.scale.set(0.9, 0.8, 0.85);
+      jaw.position.set(0, 1.52, 0.02);
+      jaw.castShadow = true;
+      headGroup.add(jaw);
+      
+      group.add(headGroup);
+
+      // === COU ===
+      const neckGeometry = new THREE.CylinderGeometry(0.09, 0.11, 0.18, 32);
+      const neck = new THREE.Mesh(neckGeometry, skinMaterial);
+      neck.position.y = 1.35;
+      neck.castShadow = true;
+      group.add(neck);
+
+      // === TORSE ===
+      const torsoGroup = new THREE.Group();
+      
+      // Poitrine (avec différence homme/femme)
+      const chestWidth = isFemale ? 0.30 : 0.35;
+      const chestDepth = isFemale ? 0.26 : 0.24;
+      
+      const chestGeometry = new THREE.CapsuleGeometry(chestWidth * 0.65, 0.38, 32, 64);
+      const chest = new THREE.Mesh(chestGeometry, skinMaterial);
+      chest.scale.set(1, 1, chestDepth / chestWidth);
+      chest.position.y = 1.08;
+      chest.castShadow = true;
+      torsoGroup.add(chest);
+      
+      // Abdomen
+      const abdomenGeometry = new THREE.CapsuleGeometry(chestWidth * 0.6, 0.32, 32, 64);
+      const abdomen = new THREE.Mesh(abdomenGeometry, skinMaterial);
+      abdomen.scale.set(1, 1, (chestDepth - 0.02) / chestWidth);
+      abdomen.position.y = 0.72;
+      abdomen.castShadow = true;
+      torsoGroup.add(abdomen);
+      
+      // Taille
+      const waistGeometry = new THREE.CapsuleGeometry(
+        isFemale ? chestWidth * 0.48 : chestWidth * 0.55,
+        0.20,
+        32,
+        64
+      );
+      const waist = new THREE.Mesh(waistGeometry, skinMaterial);
+      waist.position.y = 0.50;
+      waist.castShadow = true;
+      torsoGroup.add(waist);
+      
+      // Bassin
+      const pelvisWidth = isFemale ? chestWidth * 0.70 : chestWidth * 0.60;
+      const pelvisGeometry = new THREE.CapsuleGeometry(pelvisWidth * 0.65, 0.22, 32, 64);
+      const pelvis = new THREE.Mesh(pelvisGeometry, skinMaterial);
+      pelvis.position.y = 0.28;
+      pelvis.castShadow = true;
+      torsoGroup.add(pelvis);
+      
+      group.add(torsoGroup);
+
+      // === BRAS ===
+      const createArm = (side: 'left' | 'right') => {
+        const dir = side === 'left' ? -1 : 1;
+        const armGroup = new THREE.Group();
+
+        // Épaule
+        const shoulderGeometry = new THREE.SphereGeometry(0.11, 32, 32);
+        const shoulder = new THREE.Mesh(shoulderGeometry, skinMaterial);
+        shoulder.position.set(dir * 0.32, 1.25, 0);
+        shoulder.scale.set(1, 0.9, 0.95);
+        shoulder.castShadow = true;
+        armGroup.add(shoulder);
+
+        // Bras supérieur (plus de définition musculaire)
+        const upperArmGeometry = new THREE.CapsuleGeometry(0.075, 0.38, 16, 32);
+        const upperArm = new THREE.Mesh(upperArmGeometry, skinMaterial);
+        upperArm.position.set(dir * 0.42, 0.95, 0);
+        upperArm.rotation.z = dir * -0.10;
+        upperArm.scale.set(1, 1, 0.95);
+        upperArm.castShadow = true;
+        armGroup.add(upperArm);
+
+        // Coude
+        const elbowGeometry = new THREE.SphereGeometry(0.08, 32, 32);
+        const elbow = new THREE.Mesh(elbowGeometry, skinMaterial);
+        elbow.position.set(dir * 0.48, 0.70, 0);
+        elbow.scale.set(1, 0.85, 0.90);
+        elbow.castShadow = true;
+        armGroup.add(elbow);
+
+        // Avant-bras
+        const forearmGeometry = new THREE.CapsuleGeometry(0.065, 0.36, 16, 32);
+        const forearm = new THREE.Mesh(forearmGeometry, skinMaterial);
+        forearm.position.set(dir * 0.52, 0.45, 0);
+        forearm.rotation.z = dir * -0.08;
+        forearm.castShadow = true;
+        armGroup.add(forearm);
+
+        // Poignet
+        const wristGeometry = new THREE.CylinderGeometry(0.045, 0.050, 0.08, 16);
+        const wrist = new THREE.Mesh(wristGeometry, skinMaterial);
+        wrist.position.set(dir * 0.54, 0.22, 0);
+        wrist.castShadow = true;
+        armGroup.add(wrist);
+
+        // Main (plus détaillée)
+        const handGeometry = new THREE.SphereGeometry(0.075, 32, 32);
+        const hand = new THREE.Mesh(handGeometry, skinMaterial);
+        hand.position.set(dir * 0.56, 0.08, 0.05);
+        hand.scale.set(1, 1.2, 0.6);
+        hand.castShadow = true;
+        armGroup.add(hand);
+
+        return armGroup;
+      };
+      
+      group.add(createArm('left'));
+      group.add(createArm('right'));
+
+      // === JAMBES ===
+      const createLeg = (side: 'left' | 'right') => {
+        const dir = side === 'left' ? -1 : 1;
+        const legGroup = new THREE.Group();
+
+        // Cuisse (avec définition musculaire)
+        const thighGeometry = new THREE.CapsuleGeometry(0.13, 0.50, 32, 64);
+        const thigh = new THREE.Mesh(thighGeometry, skinMaterial);
+        thigh.position.set(dir * 0.20, 0.05, 0);
+        thigh.scale.set(1, 1, 0.92);
+        thigh.castShadow = true;
+        legGroup.add(thigh);
+
+        // Genou
+        const kneeGeometry = new THREE.SphereGeometry(0.10, 32, 32);
+        const knee = new THREE.Mesh(kneeGeometry, skinMaterial);
+        knee.position.set(dir * 0.20, -0.25, 0.02);
+        knee.scale.set(1, 0.75, 0.90);
+        knee.castShadow = true;
+        legGroup.add(knee);
+
+        // Mollet (forme anatomique)
+        const calfGeometry = new THREE.CapsuleGeometry(0.10, 0.45, 32, 64);
+        const calf = new THREE.Mesh(calfGeometry, skinMaterial);
+        calf.position.set(dir * 0.20, -0.52, 0);
+        calf.scale.set(1, 1, 0.88);
+        calf.castShadow = true;
+        legGroup.add(calf);
+
+        // Cheville
+        const ankleGeometry = new THREE.CylinderGeometry(0.055, 0.065, 0.12, 16);
+        const ankle = new THREE.Mesh(ankleGeometry, skinMaterial);
+        ankle.position.set(dir * 0.20, -0.80, 0);
+        ankle.castShadow = true;
+        legGroup.add(ankle);
+
+        // Pied (anatomiquement correct)
+        const footGroup = new THREE.Group();
+        
+        // Talon
+        const heelGeometry = new THREE.SphereGeometry(0.075, 32, 32);
+        const heel = new THREE.Mesh(heelGeometry, skinMaterial);
+        heel.position.set(dir * 0.20, -0.90, -0.02);
+        heel.scale.set(0.9, 0.7, 1);
+        heel.castShadow = true;
+        footGroup.add(heel);
+        
+        // Avant du pied
+        const footFrontGeometry = new THREE.CapsuleGeometry(0.070, 0.18, 16, 32);
+        const footFront = new THREE.Mesh(footFrontGeometry, skinMaterial);
+        footFront.position.set(dir * 0.20, -0.92, 0.10);
+        footFront.rotation.x = Math.PI / 2;
+        footFront.scale.set(0.95, 1, 0.75);
+        footFront.castShadow = true;
+        footGroup.add(footFront);
+        
+        legGroup.add(footGroup);
+
+        return legGroup;
+      };
+      
+      group.add(createLeg('left'));
+      group.add(createLeg('right'));
+
+      return group;
+    };
+
+    const body = createAnatomicalBody(gender);
+    scene.add(body);
+
+    // Marqueurs de zones (invisibles mais cliquables)
+    BODY_ZONES.forEach(zone => {
+      const markerGeometry = new THREE.SphereGeometry(zone.size, 16, 16);
+      const markerMaterial = new THREE.MeshBasicMaterial({
+        color: zone.color,
+        transparent: true,
+        opacity: 0,
+        depthTest: false,
+      });
+      const marker = new THREE.Mesh(markerGeometry, markerMaterial);
+      marker.position.set(zone.position.x, zone.position.y, zone.position.z);
+      marker.userData.zoneId = zone.id;
+      scene.add(marker);
+      zoneMarkersRef.current.set(zone.id, marker);
+    });
+
+    // Contrôles
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.08;
+    controls.rotateSpeed = 0.6;
+    controls.enablePan = false;
+    controls.minDistance = 2.2;
+    controls.maxDistance = 4;
+    controls.minPolarAngle = Math.PI / 6;
+    controls.maxPolarAngle = 5 * Math.PI / 6;
+    controls.target.set(0, 0.4, 0);
+    controlsRef.current = controls;
+
+    // Animation
+    let animationId: number;
+    const animate = () => {
+      animationId = requestAnimationFrame(animate);
+      controls.update();
+      
+      // Animation des zones sélectionnées
+      zoneMarkersRef.current.forEach((marker, zoneId) => {
+        if (selectedZones.includes(zoneId)) {
+          marker.material.opacity = 0.5 + Math.sin(Date.now() * 0.003) * 0.2;
+        } else if (hoveredZone === zoneId) {
+          marker.material.opacity = 0.3;
+        } else {
+          marker.material.opacity = 0;
+        }
+      });
+      
+      renderer.render(scene, camera);
+    };
+    animate();
+
+    // Gestion du redimensionnement
+    const handleResize = () => {
+      if (!mountRef.current) return;
+      const width = mountRef.current.clientWidth;
+      const height = mountRef.current.clientHeight;
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+      renderer.setSize(width, height);
+    };
+    window.addEventListener('resize', handleResize);
+
+    // Nettoyage
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      cancelAnimationFrame(animationId);
+      
+      const canvas = mountRef.current?.querySelector('canvas');
+      if (canvas && mountRef.current?.contains(canvas)) {
+        mountRef.current.removeChild(canvas);
+      }
+      
+      if (rendererRef.current) {
+        rendererRef.current.dispose();
+      }
+      if (sceneRef.current) {
+        sceneRef.current.traverse((object) => {
+          if (object instanceof THREE.Mesh) {
+            object.geometry?.dispose();
+            if (Array.isArray(object.material)) {
+              object.material.forEach(m => m.dispose());
+            } else {
+              object.material?.dispose();
+            }
+          }
+        });
+      }
+      zoneMarkersRef.current.clear();
+    };
+  }, [gender, selectedZones, hoveredZone]);
+
+  // Gestion des clics et hover
+  useEffect(() => {
+    if (!mountRef.current || !cameraRef.current) return;
+
+    const handlePointerMove = (event: PointerEvent) => {
+      const canvas = mountRef.current?.querySelector('canvas');
+      if (!canvas) return;
+
+      const rect = canvas.getBoundingClientRect();
+      mouseRef.current.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      mouseRef.current.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+      raycasterRef.current.setFromCamera(mouseRef.current, cameraRef.current!);
+      const intersects = raycasterRef.current.intersectObjects(
+        Array.from(zoneMarkersRef.current.values())
+      );
+
+      if (intersects.length > 0) {
+        const zoneId = intersects[0].object.userData.zoneId;
+        setHoveredZone(zoneId);
+        if (canvas instanceof HTMLCanvasElement) {
+          canvas.style.cursor = 'pointer';
+        }
+      } else {
+        setHoveredZone(null);
+        if (canvas instanceof HTMLCanvasElement) {
+          canvas.style.cursor = 'grab';
+        }
+      }
+    };
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const canvas = mountRef.current?.querySelector('canvas');
+      if (!canvas) return;
+
+      const rect = canvas.getBoundingClientRect();
+      mouseRef.current.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      mouseRef.current.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+      raycasterRef.current.setFromCamera(mouseRef.current, cameraRef.current!);
+      const intersects = raycasterRef.current.intersectObjects(
+        Array.from(zoneMarkersRef.current.values())
+      );
+
+      if (intersects.length > 0) {
+        const zoneId = intersects[0].object.userData.zoneId;
+        toggleZone(zoneId);
+      }
+    };
+
+    const canvas = mountRef.current.querySelector('canvas');
+    if (canvas) {
+      canvas.addEventListener('pointermove', handlePointerMove as EventListener);
+      canvas.addEventListener('pointerdown', handlePointerDown as EventListener);
+    }
+
+    return () => {
+      if (canvas) {
+        canvas.removeEventListener('pointermove', handlePointerMove as EventListener);
+        canvas.removeEventListener('pointerdown', handlePointerDown as EventListener);
+      }
+    };
+  }, []);
+
   const toggleZone = (zoneId: string) => {
     if (selectedZones.includes(zoneId)) {
-      onZonesChange(selectedZones.filter((z) => z !== zoneId));
+      onZonesChange(selectedZones.filter(z => z !== zoneId));
     } else {
       onZonesChange([...selectedZones, zoneId]);
     }
   };
-
-  const currentZones = view === 'front' ? BODY_ZONES_FRONT : BODY_ZONES_BACK;
-  const allZones = [...BODY_ZONES_FRONT, ...BODY_ZONES_BACK.filter(z => !BODY_ZONES_FRONT.find(fz => fz.id === z.id))];
-
-  // Silhouette SVG pour la vue avant (bras améliorés)
-  const FrontSilhouette = () => (
-    <svg viewBox="0 0 100 100" width="100%" height="100%">
-      {/* Tête */}
-      <circle cx="50" cy="12" r="6" fill="#f0f0f0" stroke="#ccc" />
-      {/* Cou */}
-      <rect x="46" y="17" width="8" height="6" fill="#f0f0f0" stroke="#ccc" />
-      {/* Torse */}
-      <path d="M 40 24 L 60 24 L 60 50 L 40 50 Z" fill="#f0f0f0" stroke="#ccc" />
-      {/* Épaules */}
-      <circle cx="40" cy="24" r="4" fill="#f0f0f0" stroke="#ccc" />
-      <circle cx="60" cy="24" r="4" fill="#f0f0f0" stroke="#ccc" />
-      {/* Bras gauche */}
-      <path d="M 40 24 L 25 30 L 20 50 L 35 45 Z" fill="#f0f0f0" stroke="#ccc" />
-      {/* Bras droit */}
-      <path d="M 60 24 L 75 30 L 80 50 L 65 45 Z" fill="#f0f0f0" stroke="#ccc" />
-      {/* Avant-bras gauche */}
-      <path d="M 20 50 L 15 60 L 20 70 L 25 65 Z" fill="#f0f0f0" stroke="#ccc" />
-      {/* Avant-bras droit */}
-      <path d="M 80 50 L 85 60 L 80 70 L 75 65 Z" fill="#f0f0f0" stroke="#ccc" />
-      {/* Mains */}
-      <circle cx="18" cy="65" r="3" fill="#f0f0f0" stroke="#ccc" />
-      <circle cx="82" cy="65" r="3" fill="#f0f0f0" stroke="#ccc" />
-      {/* Bassin */}
-      <path d="M 35 50 L 65 50 L 65 55 L 35 55 Z" fill="#f0f0f0" stroke="#ccc" />
-      {/* Jambes */}
-      <path d="M 40 55 L 40 70 L 35 70 L 35 90 L 45 90 L 45 70 L 40 70 Z" fill="#f0f0f0" stroke="#ccc" />
-      <path d="M 60 55 L 60 70 L 65 70 L 65 90 L 55 90 L 55 70 L 60 70 Z" fill="#f0f0f0" stroke="#ccc" />
-    </svg>
-  );
-
-  // Silhouette SVG pour la vue arrière
-const BackSilhouette = () => (
-  <svg viewBox="0 0 100 100" width="100%" height="100%">
-    {/* Tête */}
-    <circle cx="50" cy="12" r="6" fill="#f0f0f0" stroke="#ccc" />
-    {/* Cou */}
-    <rect x="46" y="17" width="8" height="6" fill="#f0f0f0" stroke="#ccc" />
-    {/* Dos */}
-    <path d="M 40 24 L 60 24 L 60 50 L 40 50 Z" fill="#f0f0f0" stroke="#ccc" />
-    {/* Épaules */}
-    <circle cx="40" cy="24" r="4" fill="#f0f0f0" stroke="#ccc" />
-    <circle cx="60" cy="24" r="4" fill="#f0f0f0" stroke="#ccc" />
-    {/* Bras gauche (arrière) */}
-    <path d="M 40 24 L 25 30 L 20 50 L 35 45 Z" fill="#f0f0f0" stroke="#ccc" />
-    {/* Bras droit (arrière) */}
-    <path d="M 60 24 L 75 30 L 80 50 L 65 45 Z" fill="#f0f0f0" stroke="#ccc" />
-    {/* Avant-bras gauche (arrière) */}
-    <path d="M 20 50 L 15 60 L 20 70 L 25 65 Z" fill="#f0f0f0" stroke="#ccc" />
-    {/* Avant-bras droit (arrière) */}
-    <path d="M 80 50 L 85 60 L 80 70 L 75 65 Z" fill="#f0f0f0" stroke="#ccc" />
-    {/* Mains (arrière) */}
-    <circle cx="18" cy="65" r="3" fill="#f0f0f0" stroke="#ccc" />
-    <circle cx="82" cy="65" r="3" fill="#f0f0f0" stroke="#ccc" />
-    {/* Bassin */}
-    <path d="M 35 50 L 65 50 L 65 55 L 35 55 Z" fill="#f0f0f0" stroke="#ccc" />
-    {/* Jambes */}
-    <path d="M 40 55 L 40 70 L 35 70 L 35 90 L 45 90 L 45 70 L 40 70 Z" fill="#f0f0f0" stroke="#ccc" />
-    <path d="M 60 55 L 60 70 L 65 70 L 65 90 L 55 90 L 55 70 L 60 70 Z" fill="#f0f0f0" stroke="#ccc" />
-  </svg>
-);
-
 
   return (
     <div className="card-spa">
       <div className="flex items-center justify-between mb-4">
         <div>
           <h3 className="text-lg font-semibold text-gray-800">
-            Indiquez les zones de douleur
+            Zones de douleur - Modèle 3D anatomique
           </h3>
           <p className="text-sm text-gray-600 mt-1">
-            Cliquez sur les zones du corps où vous ressentez de la douleur ou de l'inconfort
+            {isMobile
+              ? 'Faites glisser pour tourner, touchez une zone pour la sélectionner'
+              : 'Cliquez et faites glisser pour tourner, cliquez sur une zone pour la sélectionner'}
           </p>
         </div>
+      </div>
 
-        <button
-          onClick={() => setView(view === 'front' ? 'back' : 'front')}
-          className="flex items-center gap-2 px-4 py-2 bg-spa-menthe-100 hover:bg-spa-menthe-200 text-spa-menthe-700 rounded-lg transition-colors text-sm font-medium"
-          title={view === 'front' ? 'Voir la vue arrière' : 'Voir la vue avant'}
+      {hoveredZone && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-4 px-4 py-2 bg-spa-rose-50 border border-spa-rose-200 rounded-lg"
         >
-          {view === 'front' ? (
-            <>
-              <RotateCw className="w-4 h-4" />
-              Vue arrière
-            </>
-          ) : (
-            <>
-              <RotateCcw className="w-4 h-4" />
-              Vue avant
-            </>
-          )}
-        </button>
-      </div>
+          <p className="text-sm text-spa-rose-700 font-medium">
+            Zone survolée: {BODY_ZONES.find(z => z.id === hoveredZone)?.label}
+          </p>
+        </motion.div>
+      )}
 
-      {/* Carte du corps */}
-      <div className="relative w-full max-w-4xl mx-auto bg-gradient-to-b from-spa-beige-50 to-spa-beige-100 rounded-2xl p-8 border-2 border-spa-beige-200">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={view}
-            initial={{ opacity: 0, rotateY: -90 }}
-            animate={{ opacity: 1, rotateY: 0 }}
-            exit={{ opacity: 0, rotateY: 90 }}
-            transition={{ duration: 0.3 }}
-            style={{ perspective: '1000px' }}
-          >
-            <div className={`w-full ${isMobile ? 'h-[500px]' : 'h-[400px]'} relative`}>
-              {view === 'front' ? <FrontSilhouette /> : <BackSilhouette />}
+      <div
+        ref={mountRef}
+        className="relative w-full max-w-5xl mx-auto bg-gradient-to-br from-gray-50 via-white to-gray-50 rounded-3xl p-6 border border-gray-200 shadow-lg"
+        style={{ height: isMobile ? '500px' : '600px' }}
+      />
 
-              {/* Zones cliquables */}
-              <svg
-                viewBox="0 0 100 100"
-                className="absolute top-0 left-0 w-full h-full"
-              >
-                {currentZones.map((zone) => {
-                  const isSelected = selectedZones.includes(zone.id);
-                  const isHovered = hoveredZone === zone.id;
-
-                  return (
-                    <g key={`${view}-${zone.id}`}>
-                      {/* Zone cliquable (invisible, plus grande pour mobile) */}
-                      <ellipse
-                        cx={zone.area.cx}
-                        cy={zone.area.cy}
-                        rx={zone.area.rx * (isMobile ? 2.5 : 1.5)}
-                        ry={zone.area.ry * (isMobile ? 2.5 : 1.5)}
-                        fill="transparent"
-                        className="cursor-pointer"
-                        onClick={() => toggleZone(zone.id)}
-                        onMouseEnter={() => !isMobile && setHoveredZone(zone.id)}
-                        onMouseLeave={() => !isMobile && setHoveredZone(null)}
-                        onTouchStart={() => setHoveredZone(zone.id)}
-                        onTouchEnd={() => setHoveredZone(null)}
-                      />
-
-                      {/* Zone visible */}
-                      <motion.ellipse
-                        cx={zone.area.cx}
-                        cy={zone.area.cy}
-                        rx={zone.area.rx}
-                        ry={zone.area.ry}
-                        fill={
-                          isSelected
-                            ? '#e24965'
-                            : isHovered
-                            ? '#f4a8b4'
-                            : 'rgba(194, 180, 160, 0.3)'
-                        }
-                        stroke={
-                          isSelected
-                            ? '#c41e3a'
-                            : isHovered
-                            ? '#e24965'
-                            : '#c2b4a0'
-                        }
-                        strokeWidth={isSelected || isHovered ? '0.5' : '0.2'}
-                        className="cursor-pointer"
-                        onClick={() => toggleZone(zone.id)}
-                        onMouseEnter={() => !isMobile && setHoveredZone(zone.id)}
-                        onMouseLeave={() => !isMobile && setHoveredZone(null)}
-                        onTouchStart={() => setHoveredZone(zone.id)}
-                        onTouchEnd={() => setHoveredZone(null)}
-                        whileHover={!isMobile ? { scale: 1.1 } : {}}
-                        whileTap={{ scale: 0.95 }}
-                        transition={{ type: 'spring', stiffness: 400, damping: 10 }}
-                      />
-
-                      {/* Label */}
-                      {(isSelected || isHovered) && (
-                        <motion.text
-                          x={zone.area.cx}
-                          y={zone.area.cy - zone.area.ry - 1}
-                          textAnchor="middle"
-                          fontSize="4"
-                          fill="#1e293b"
-                          fontWeight="bold"
-                          className="pointer-events-none"
-                          initial={{ opacity: 0, y: 2 }}
-                          animate={{ opacity: 1, y: 0 }}
-                        >
-                          {zone.label}
-                        </motion.text>
-                      )}
-                    </g>
-                  );
-                })}
-              </svg>
-            </div>
-          </motion.div>
-        </AnimatePresence>
-
-        {/* Indicateur de vue */}
-        <div className="absolute top-4 left-4 px-3 py-1 bg-white/80 backdrop-blur-sm rounded-full text-xs font-medium text-gray-700">
-          {view === 'front' ? 'Vue avant' : 'Vue arrière'}
-        </div>
-      </div>
-
-      {/* Zones sélectionnées */}
       {selectedZones.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -295,44 +576,45 @@ const BackSilhouette = () => (
             Zones sélectionnées ({selectedZones.length}):
           </p>
           <div className="flex flex-wrap gap-2">
-            {selectedZones.map((zoneId) => {
-              const zone = allZones.find((z) => z.id === zoneId);
-              return (
-                <motion.button
-                  key={zoneId}
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  exit={{ scale: 0 }}
-                  onClick={() => toggleZone(zoneId)}
-                  className="inline-flex items-center gap-2 px-3 py-1 bg-spa-rose-100 text-spa-rose-700 rounded-full text-sm hover:bg-spa-rose-200 transition-colors"
-                >
-                  {zone?.label}
-                  <span className="text-spa-rose-500">✕</span>
-                </motion.button>
-              );
-            })}
+            <AnimatePresence>
+              {selectedZones.map(zoneId => {
+                const zone = BODY_ZONES.find(z => z.id === zoneId);
+                return (
+                  <motion.button
+                    key={zoneId}
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0, opacity: 0 }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => toggleZone(zoneId)}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-spa-rose-100 text-spa-rose-700 rounded-full text-sm font-medium hover:bg-spa-rose-200 transition-colors shadow-sm"
+                  >
+                    {zone?.label}
+                    <span className="text-spa-rose-500 font-bold">✕</span>
+                  </motion.button>
+                );
+              })}
+            </AnimatePresence>
           </div>
         </motion.div>
       )}
 
-      {/* Légende */}
-      <div className="mt-6 p-4 bg-spa-beige-50 rounded-xl">
-        <div className="flex items-center gap-4 text-sm flex-wrap">
+      <div className="mt-6 p-4 bg-gradient-to-r from-spa-beige-50 to-spa-rose-50 rounded-xl border border-spa-beige-200">
+        <div className="flex items-center justify-between flex-wrap gap-4 text-sm">
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-gray-400/30 border border-gray-400"></div>
-            <span className="text-gray-600">Non sélectionné</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-spa-rose-500"></div>
-            <span className="text-gray-600">Sélectionné</span>
+            <div className="w-3 h-3 rounded-full bg-spa-rose-500 animate-pulse"></div>
+            <span className="text-gray-700 font-medium">Zone sélectionnée</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-spa-rose-300"></div>
-            <span className="text-gray-600">Survol</span>
+            <span className="text-gray-600">Zone survolée</span>
+          </div>
+          <div className="text-gray-500 italic">
+            {selectedZones.length === 0 && 'Aucune zone sélectionnée'}
           </div>
         </div>
       </div>
     </div>
   );
 }
-

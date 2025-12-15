@@ -10,6 +10,7 @@ import { useCreateClientMutation } from '@/lib/redux/services/api';
 
 interface FormData {
   // Informations personnelles
+  selectedZones: string[]; 
   nom: string;
   prenom: string;
   adresse: string;
@@ -21,7 +22,7 @@ interface FormData {
   courriel: string;
   dateNaissance: string;
   occupation: string;
-  gender: string;
+  gender?: 'HOMME' | 'FEMME';
   assuranceCouvert: string;
 
   // Informations médicales
@@ -81,13 +82,14 @@ interface FormData {
   insomnie: boolean;
   depressionNerveuse: boolean;
   autres: string;
-
+  onZonesChange: (zones: string[]) => void;
   // Zones de douleur
   zonesDouleur: string[];
 }
 
 const initialFormData: FormData = {
   nom: '',
+  selectedZones: [],
   prenom: '',
   adresse: '',
   ville: '',
@@ -98,7 +100,7 @@ const initialFormData: FormData = {
   courriel: '',
   dateNaissance: '',
   occupation: '',
-  gender: '',
+  gender: 'HOMME',
   assuranceCouvert: '',
   raisonConsultation: '',
   diagnosticMedical: '',
@@ -155,6 +157,7 @@ const initialFormData: FormData = {
   depressionNerveuse: false,
   autres: '',
   zonesDouleur: [],
+  onZonesChange: () => {},
 };
 
 export default function MassotherapieFormPage() {
@@ -435,13 +438,13 @@ export default function MassotherapieFormPage() {
             checked={formData.gender === 'FEMME'}
             onChange={handleInputChange}
           />
-          <RadioField
+          {/* <RadioField
             label="Autre"
             name="gender"
             value="AUTRE"
             checked={formData.gender === 'AUTRE'}
             onChange={handleInputChange}
-          />
+          /> */}
         </div>
         {errors.gender && <p className="text-red-600 text-sm mt-2">{errors.gender}</p>}
       </div>
@@ -809,6 +812,7 @@ export default function MassotherapieFormPage() {
       <BodyMap
         selectedZones={formData.zonesDouleur}
         onZonesChange={(zones) => setFormData((prev) => ({ ...prev, zonesDouleur: zones }))}
+        gender={formData.gender}
       />
     </motion.div>
   );
