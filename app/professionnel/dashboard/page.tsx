@@ -209,7 +209,7 @@ export default function DashboardPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="mb-14 flex flex items-center justify-center"
+          className="mb-8"
         >
           <SearchBar
             onSearch={setSearchQuery}

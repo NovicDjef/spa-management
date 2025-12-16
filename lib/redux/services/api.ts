@@ -51,17 +51,9 @@ export interface Note {
   };
 }
 
-export interface Professional {
-  id: string;
-  email: string;
-  nom: string;
-  prenom: string;
-  role: string;
-}
 
 export interface Assignment {
   clientId: string;
-  professionalId: string;
 }
 
 export interface User {
@@ -166,7 +158,7 @@ export const api = createApi({
       return headers;
     },
   }),
-  tagTypes: ['Client', 'Note', 'Professional', 'Assignment', 'User'],
+  tagTypes: ['Client', 'Note', 'Assignment', 'User'],
   endpoints: (builder) => ({
     // AUTH - Connexion employé
     login: builder.mutation<AuthResponse, LoginCredentials>({
@@ -288,10 +280,10 @@ export const api = createApi({
     }),
 
     // PROFESSIONALS - Liste des pros (SECRETAIRE/ADMIN)
-    getProfessionals: builder.query<{ professionals: Professional[] }, void>({
-      query: () => '/professionals',
+    getProfessionals: builder.query<{ Users: User[] }, void>({
+      query: () => '/users',
       transformResponse: (response: any) => response.data || response,
-      providesTags: ['Professional'],
+      providesTags: ['User'],
     }),
 
     // USERS - Gestion des employés (ADMIN UNIQUEMENT)
