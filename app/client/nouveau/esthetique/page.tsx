@@ -176,39 +176,60 @@ export default function EsthetiqueFormPage() {
     }
   };
 
-  const renderProgressBar = () => (
-    <div className="mb-8">
-      <div className="flex justify-between items-center mb-2">
-        {Array.from({ length: totalSteps }, (_, i) => i + 1).map((step) => (
-          <div key={step} className="flex items-center flex-1">
-            <div
-              className={`flex items-center justify-center w-10 h-10 rounded-full font-semibold transition-all duration-300 ${
-                step < currentStep
-                  ? 'bg-spa-lavande-500 text-white'
-                  : step === currentStep
-                  ? 'bg-spa-rose-500 text-white scale-110'
-                  : 'bg-gray-200 text-gray-500'
-              }`}
-            >
-              {step < currentStep ? <Check className="w-5 h-5" /> : step}
+  const renderProgressBar = () => {
+    const steps = [
+      { number: 1, label: 'Personnel' },
+      { number: 2, label: 'Diagnostic Peau' },
+      { number: 3, label: 'Habitudes & Soins' },
+    ];
+
+    return (
+      <div className="mb-8">
+        <div className="flex justify-between items-start">
+          {steps.map((step, index) => (
+            <div key={step.number} className="flex items-center flex-1">
+              {/* Conteneur de l'étape (icône + label) */}
+              <div className="flex flex-col items-center flex-1">
+                {/* Icône de l'étape */}
+                <div
+                  className={`flex items-center justify-center w-10 h-10 rounded-full font-semibold transition-all duration-300 ${
+                    step.number < currentStep
+                      ? 'bg-spa-lavande-500 text-white'
+                      : step.number === currentStep
+                      ? 'bg-spa-rose-500 text-white scale-110'
+                      : 'bg-gray-200 text-gray-500'
+                  }`}
+                >
+                  {step.number < currentStep ? <Check className="w-5 h-5" /> : step.number}
+                </div>
+
+                {/* Label de l'étape */}
+                <span
+                  className={`text-xs mt-2 text-center transition-all duration-300 ${
+                    step.number === currentStep
+                      ? 'font-semibold text-spa-rose-600'
+                      : 'text-gray-600'
+                  }`}
+                >
+                  {step.label}
+                </span>
+              </div>
+
+              {/* Ligne de connexion */}
+              {index < steps.length - 1 && (
+                <div
+                  className={`h-1 flex-1 mx-2 transition-all duration-300 ${
+                    step.number < currentStep ? 'bg-spa-lavande-500' : 'bg-gray-200'
+                  }`}
+                  style={{ marginTop: '-24px' }} // Aligner avec le centre des icônes
+                />
+              )}
             </div>
-            {step < totalSteps && (
-              <div
-                className={`flex-1 h-1 mx-2 transition-all duration-300 ${
-                  step < currentStep ? 'bg-spa-lavande-500' : 'bg-gray-200'
-                }`}
-              />
-            )}
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
-      <div className="flex justify-between text-xs text-gray-600 mt-2">
-        <span className={currentStep === 1 ? 'font-semibold text-spa-rose-600' : ''}>Personnel</span>
-        <span className={currentStep === 2 ? 'font-semibold text-spa-rose-600' : ''}>Diagnostic Peau</span>
-        <span className={currentStep === 3 ? 'font-semibold text-spa-rose-600' : ''}>Habitudes & Soins</span>
-      </div>
-    </div>
-  );
+    );
+  };
 
   const renderStep1 = () => (
     <motion.div

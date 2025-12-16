@@ -7,9 +7,26 @@ import { useEffect, useState } from 'react';
 
 export default function ConfirmationPage() {
   const [showConfetti, setShowConfetti] = useState(true);
+  const [confettiPositions, setConfettiPositions] = useState<Array<{
+    x: number;
+    y: number;
+    rotate: number;
+    opacity: number;
+    color: string;
+  }>>([]);
 
   useEffect(() => {
-    // Hide confetti after 3 seconds
+    // Initialiser les confettis côté client
+    const positions = [...Array(50)].map(() => ({
+      x: Math.random() * window.innerWidth,
+      y: -20,
+      rotate: 0,
+      opacity: 1,
+      color: ['bg-spa-rose-400', 'bg-spa-lavande-400', 'bg-spa-menthe-400', 'bg-spa-beige-300'][Math.floor(Math.random() * 4)],
+    }));
+    setConfettiPositions(positions);
+
+    // Masquer les confettis après 3 secondes
     const timer = setTimeout(() => {
       setShowConfetti(false);
     }, 3000);
@@ -20,16 +37,16 @@ export default function ConfirmationPage() {
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
       {/* Confetti animation */}
-      {showConfetti && (
-        <div className="absolute inset-0 pointer-events-none">
-          {[...Array(50)].map((_, i) => (
+      {showConfetti && confettiPositions.length > 0 && (
+        <div className="absolute inset-0 pointer-events-none z-0">
+          {confettiPositions.map((confetti, i) => (
             <motion.div
               key={i}
               initial={{
-                x: Math.random() * window.innerWidth,
-                y: -20,
-                rotate: 0,
-                opacity: 1,
+                x: confetti.x,
+                y: confetti.y,
+                rotate: confetti.rotate,
+                opacity: confetti.opacity,
               }}
               animate={{
                 y: window.innerHeight + 20,
@@ -41,17 +58,13 @@ export default function ConfirmationPage() {
                 delay: Math.random() * 0.5,
                 ease: 'linear',
               }}
-              className={`absolute w-2 h-2 rounded-full ${
-                ['bg-spa-rose-400', 'bg-spa-lavande-400', 'bg-spa-menthe-400', 'bg-spa-beige-300'][
-                  Math.floor(Math.random() * 4)
-                ]
-              }`}
+              className={`absolute w-2 h-2 rounded-full ${confetti.color}`}
             />
           ))}
         </div>
       )}
 
-      <div className="max-w-2xl w-full">
+      <div className="max-w-2xl w-full z-10">
         {/* Icône de succès */}
         <motion.div
           initial={{ scale: 0, rotate: -180 }}

@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { useGetClientByIdQuery } from '@/lib/redux/services/api';
 import { useAppSelector } from '@/lib/redux/hooks';
+import { BodyMap } from '@/components/forms/BodyMap';
 
 export default function ClientDetailPage() {
   const params = useParams();
@@ -59,21 +60,48 @@ export default function ClientDetailPage() {
     );
   }
 
-  if (!client) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-spa-beige-50 via-white to-spa-menthe-50">
-        <Header user={currentUser} />
-        <div className="container-spa py-20 text-center">
-          <AlertCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Client non trouvé</h2>
-          <p className="text-gray-600 mb-6">Le client demandé n'existe pas ou vous n'y avez pas accès.</p>
-          <button onClick={() => router.back()} className="btn-primary">
-            Retour
-          </button>
+if (!client) {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-spa-beige-50 via-white to-spa-menthe-50">
+      <Header user={currentUser} />
+      <div className="container-spa py-20 px-4 flex flex-col items-center justify-center">
+        {/* Illustration moderne */}
+        <div className="relative mb-8">
+          <div className="absolute -inset-2 bg-spa-rose-100 rounded-full opacity-30 blur-xl animate-pulse-slow"></div>
+          <div className="relative bg-spa-rose-50 p-6 rounded-full shadow-lg">
+            <AlertCircle className="w-16 h-16 text-spa-rose-500" strokeWidth={1.5} />
+          </div>
         </div>
+
+        {/* Titre avec effet de dégradé */}
+        <h2 className="text-3xl font-bold mb-3 bg-clip-text text-transparent bg-gradient-to-r from-spa-rose-600 to-spa-menthe-600">
+          Accès restreint
+        </h2>
+
+        {/* Sous-titre avec typographie soignée */}
+        <p className="text-lg text-gray-600 max-w-md text-center mb-8 leading-relaxed">
+          Le client demandé n'est pas disponible ou vous n'avez pas les permissions nécessaires pour y accéder.
+        </p>
+
+        {/* Bouton avec effet hover élégant */}
+        <button
+          onClick={() => router.back()}
+          className="group relative inline-flex items-center justify-center px-6 py-3 overflow-hidden rounded-full bg-spa-menthe-600 text-white shadow-md transition-all duration-300 hover:shadow-lg active:scale-95"
+        >
+          <span className="absolute inset-0 bg-gradient-to-r from-spa-rose-500 to-spa-menthe-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
+          <span className="relative flex items-center gap-2">
+            <ArrowLeft className="w-4 h-4" />
+            Retour à la liste
+          </span>
+        </button>
+
+        {/* Élément décoratif optionnel */}
+        <div className="mt-12 w-full max-w-xs h-px bg-gradient-to-r from-transparent via-spa-rose-200 to-transparent"></div>
       </div>
-    );
-  }
+    </div>
+  );
+}
+
 
   const age = client.dateNaissance ? calculateAge(client.dateNaissance) : null;
 
@@ -306,23 +334,16 @@ export default function ClientDetailPage() {
                     </div>
                   </div>
 
-                  {/* Section: Zones de douleur */}
+                  {/* Section: Zones de douleur avec silhouette 3D */}
                   {client.zonesDouleur && client.zonesDouleur.length > 0 && (
-                    <div className="bg-gradient-to-r from-spa-lavande-50 to-spa-beige-50 p-6 rounded-xl">
-                      <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                        <span className="w-2 h-2 bg-spa-lavande-500 rounded-full"></span>
-                        Zones de douleur
-                      </h3>
-                      <div className="flex flex-wrap gap-2">
-                        {client.zonesDouleur.map((zone: string) => (
-                          <span
-                            key={zone}
-                            className="px-4 py-2 bg-spa-rose-100 text-spa-rose-700 rounded-full text-sm font-medium"
-                          >
-                            {zone}
-                          </span>
-                        ))}
-                      </div>
+                    <div className="">
+                      {/* Silhouette 3D interactive en mode consultation */}
+                        <BodyMap
+                          selectedZones={client.zonesDouleur}
+                          onZonesChange={() => {}}
+                          gender={client.gender}
+                          readOnly={true}
+                        />
                     </div>
                   )}
 
