@@ -47,7 +47,8 @@ export function hasPermission(userRole: Role | string | undefined | null, permis
   if (!userRole) return false;
 
   const allowedRoles = PERMISSIONS[permission];
-  return allowedRoles.includes(userRole as any);
+  // @ts-ignore - userRole est vérifié et compatible avec les rôles
+  return allowedRoles.includes(userRole);
 }
 
 /**

@@ -39,14 +39,15 @@ export default function DashboardPage() {
   } = useGetUsersQuery({}, {
     // Refetch automatique si la requête échoue
     refetchOnMountOrArgChange: true,
-    // Réessayer en cas d'échec
-    retry: 2,
   });
   const [assignClient, { isLoading: isAssigning }] = useAssignClientMutation();
 
   const currentUser = useAppSelector((state) => state.auth.user) || {
-    name: 'Marie Dubois',
+    id: 'temp-id',
     email: 'marie@spa.com',
+    telephone: '5141234567',
+    nom: 'Dubois',
+    prenom: 'Marie',
     role: 'SECRETAIRE',
   };
 
