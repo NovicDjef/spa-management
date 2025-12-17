@@ -239,7 +239,7 @@ export default function MassotherapieFormPage() {
 
     const dataToSubmit = {
       ...formData,
-      serviceType: 'MASSOTHERAPIE',
+      serviceType: 'MASSOTHERAPIE' as const,
     };
 
     console.log('='.repeat(80));

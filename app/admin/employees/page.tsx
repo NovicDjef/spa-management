@@ -199,7 +199,7 @@ export default function EmployeesPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-spa-beige-50 via-white to-spa-menthe-50">
-      <Header user={currentUser} />
+      <Header user={currentUser ?? undefined} />
 
       <div className="container-spa py-8">
         {/* En-tête */}

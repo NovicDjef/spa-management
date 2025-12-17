@@ -228,7 +228,7 @@ export default function MarketingPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-spa-beige-50 via-white to-spa-turquoise-50">
-      <Header user={currentUser} />
+      <Header user={currentUser ?? undefined} />
 
       <div className="container-spa py-8">
         {/* En-tête */}
@@ -550,17 +550,17 @@ export default function MarketingPage() {
                       </td>
                       <td className="px-6 py-4 text-sm">
                         {contact.joursSansVisite !== null ? (
-                          <span
-                            className={`font-medium ${
-                              contact.joursSansVisite > 90
-                                ? 'text-red-600'
-                                : contact.joursSansVisite > 60
-                                ? 'text-orange-600'
-                                : 'text-green-600'
-                            }`}
-                          >
-                            {contact.joursSansVisite} jours
-                          </span>
+                         <span
+                          className={`font-medium ${
+                            (contact.joursSansVisite ?? 0) > 90
+                              ? 'text-red-600'
+                              : (contact.joursSansVisite ?? 0) > 60
+                              ? 'text-orange-600'
+                              : 'text-green-600'
+                          }`}
+                        >
+                          {contact.joursSansVisite !== null ? `${contact.joursSansVisite} jours` : 'Jamais'}
+                        </span>
                         ) : (
                           <span className="text-gray-400">N/A</span>
                         )}

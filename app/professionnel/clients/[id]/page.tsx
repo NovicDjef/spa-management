@@ -52,7 +52,7 @@ export default function ClientDetailPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-spa-beige-50 via-white to-spa-menthe-50">
-        <Header user={currentUser} />
+        <Header user={currentUser ?? undefined} />
         <div className="flex items-center justify-center py-20">
           <Loader2 className="w-8 h-8 text-spa-rose-500 animate-spin" />
         </div>
@@ -63,7 +63,7 @@ export default function ClientDetailPage() {
 if (!client) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-spa-beige-50 via-white to-spa-menthe-50">
-      <Header user={currentUser} />
+      <Header user={currentUser ?? undefined} />
       <div className="container-spa py-20 px-4 flex flex-col items-center justify-center">
         {/* Illustration moderne */}
         <div className="relative mb-8">
@@ -107,7 +107,7 @@ if (!client) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-spa-beige-50 via-white to-spa-menthe-50">
-      <Header user={currentUser} />
+      <Header user={currentUser ?? undefined} />
 
       <div className="container-spa py-8">
         {/* Bouton retour */}

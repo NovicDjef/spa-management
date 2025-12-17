@@ -144,9 +144,9 @@ export default function EsthetiqueFormPage() {
     if (!validateStep(currentStep)) return;
 
     const dataToSubmit = {
-      ...formData,
-      serviceType: 'ESTHETIQUE',
-    };
+  ...formData,
+  serviceType: 'ESTHETIQUE' as const,  // Ajoutez 'as const' pour forcer le type littéral
+};
 
     console.log('='.repeat(80));
     console.log('📤 SOUMISSION DU FORMULAIRE ESTHÉTIQUE');

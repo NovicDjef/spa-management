@@ -10,10 +10,13 @@ import { logout } from '@/lib/redux/slices/authSlice';
 
 interface HeaderProps {
   user?: {
-    name: string;
+    id: string;
     email: string;
+    telephone: string;
+    nom: string;
+    prenom: string;
     role: string;
-  };
+  } | null;
 }
 
 export function Header({ user: userProp }: HeaderProps) {
