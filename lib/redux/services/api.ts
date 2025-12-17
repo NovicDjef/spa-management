@@ -54,6 +54,7 @@ export interface Note {
 
 export interface Assignment {
   clientId: string;
+  professionalId: string;
 }
 
 export interface User {
