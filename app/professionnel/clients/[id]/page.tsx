@@ -341,8 +341,6 @@ if (!client) {
                         <BodyMap
                           selectedZones={client.zonesDouleur}
                           onZonesChange={() => {}}
-                          gender={client.gender}
-                          readOnly={true}
                         />
                     </div>
                   )}

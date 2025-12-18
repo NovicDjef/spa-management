@@ -833,7 +833,6 @@ export default function MassotherapieFormPage() {
       <BodyMap
         selectedZones={formData.zonesDouleur}
         onZonesChange={(zones) => setFormData((prev) => ({ ...prev, zonesDouleur: zones }))}
-        gender={formData.gender}
       />
     </motion.div>
   );
