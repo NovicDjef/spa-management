@@ -44,6 +44,8 @@ interface FormData {
   orthesesDetails: string;
   allergies: boolean;
   allergiesDetails: string;
+  autreMaladie: boolean;
+  autreMaladieDetails: string;
 
   // Conditions médicales
   raideurs: boolean;
@@ -111,6 +113,7 @@ const initialFormData: FormData = {
   accidentsDetails: '',
   operationsChirurgicales: '',
   operationsChirurgicalesDetails: '',
+  autreMaladieDetails: '',
   traitementsActuels: '',
   problemesCardiaques: false,
   problemesCardiaquesDetails: '',
@@ -155,6 +158,7 @@ const initialFormData: FormData = {
   hypotension: false,
   insomnie: false,
   depressionNerveuse: false,
+  autreMaladie: false,
   autres: '',
   zonesDouleur: [],
   onZonesChange: () => {},
@@ -688,6 +692,11 @@ export default function MassotherapieFormPage() {
         className="mt-6"
       />
 
+      <div className="mt-6">
+        <label className="label-spa">
+           Autres informations à signaler ? (facultatif)
+        </label>
+
       <div className="mt-6 space-y-4">
         <CheckboxField
           label="Problèmes cardiaques"
@@ -756,6 +765,23 @@ export default function MassotherapieFormPage() {
             className="ml-8"
           />
         )}
+         <CheckboxField
+          label="Autre"
+          name="autreMaladie"
+          checked={formData.autreMaladie}
+          onChange={handleInputChange}
+        />
+        {formData.autreMaladie && (
+          <InputField
+            label="Précisez"
+            name="autreMaladieDetails"
+            value={formData.autreMaladieDetails}
+            onChange={handleInputChange}
+            rows={2}
+            className="ml-8"
+          />
+        )}
+      </div>
       </div>
     </motion.div>
   );
