@@ -64,6 +64,7 @@ export interface User {
   nom: string;
   prenom: string;
   role: 'ADMIN' | 'SECRETAIRE' | 'MASSOTHERAPEUTE' | 'ESTHETICIENNE';
+  isActive: boolean;
   createdAt: string;
   _count?: {
     assignedClients: number;
@@ -234,7 +235,7 @@ export const api = createApi({
 
     // NOTES - Récupérer les notes d'un client
     getNotes: builder.query<{ notes: Note[] }, string>({
-      query: (clientId) => `/clients/${clientId}/notes`,
+      query: (clientId) => `/clients/${clientId}`,
       transformResponse: (response: any) => {
         // L'API retourne { success: true, data: [...notes] }
         // On transforme en { notes: [...] }
@@ -353,6 +354,15 @@ export const api = createApi({
       invalidatesTags: (result, error, { id }) => [{ type: 'User', id }],
     }),
 
+    // Activer/Désactiver un employé
+    toggleUserStatus: builder.mutation<{ user: User; message: string }, { id: string }>({
+      query: ({ id }) => ({
+        url: `/users/${id}/toggle-status`,
+        method: 'PATCH',
+      }),
+      invalidatesTags: (result, error, { id }) => [{ type: 'User', id }],
+    }),
+
     // MARKETING - Gestion des campagnes marketing (ADMIN UNIQUEMENT)
 
     // Récupérer les contacts avec filtres
@@ -416,6 +426,7 @@ export const {
   useUpdateUserMutation,
   useDeleteUserMutation,
   useResetUserPasswordMutation,
+  useToggleUserStatusMutation,
   // Marketing hooks
   useGetMarketingContactsQuery,
   useSendIndividualEmailMutation,

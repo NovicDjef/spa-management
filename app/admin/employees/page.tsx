@@ -25,6 +25,7 @@ import {
   useUpdateUserMutation,
   useDeleteUserMutation,
   useResetUserPasswordMutation,
+  useToggleUserStatusMutation,
 } from '@/lib/redux/services/api';
 import { useAppSelector } from '@/lib/redux/hooks';
 import { getRoleLabel, getRoleColor } from '@/lib/permissions';
@@ -51,7 +52,7 @@ export default function EmployeesPage() {
   }, []);
 
   // Redux queries and mutations
-  const { data: usersData, isLoading } = useGetUsersQuery({
+  const { data: usersData, isLoading, refetch } = useGetUsersQuery({
     role: roleFilter !== 'ALL' ? roleFilter : undefined,
     search: searchQuery
   });
@@ -59,8 +60,16 @@ export default function EmployeesPage() {
   const [updateUser, { isLoading: isUpdating }] = useUpdateUserMutation();
   const [deleteUser, { isLoading: isDeleting }] = useDeleteUserMutation();
   const [resetPassword, { isLoading: isResetting }] = useResetUserPasswordMutation();
+  const [toggleUserStatus, { isLoading: isTogglingStatus }] = useToggleUserStatusMutation();
 
-  const users = usersData?.users || [];
+  const [users, setUsers] = useState<any[]>(usersData?.users || []);
+
+  // Mettre à jour les utilisateurs lorsque les données changent
+  useEffect(() => {
+    if (usersData?.users) {
+      setUsers(usersData.users);
+    }
+  }, [usersData?.users]);
 
   // Form states
   const [formData, setFormData] = useState({
@@ -195,6 +204,31 @@ export default function EmployeesPage() {
     setSelectedUser(user);
     setFormData({ ...formData, password: '' });
     setShowPasswordModal(true);
+  };
+
+  const handleToggleStatus = async (user: any) => {
+    if (!user) return;
+
+    // Empêcher l'admin de se désactiver lui-même
+    if (user.id === currentUser?.id) {
+      alert('⚠️ Vous ne pouvez pas désactiver votre propre compte.');
+      return;
+    }
+
+    try {
+      const result = await toggleUserStatus({ id: user.id }).unwrap();
+      // Rafraîchir les données pour obtenir l'état mis à jour
+      refetch();
+      alert(result.message || 'Statut de l\'employé mis à jour avec succès');
+      
+      // Mettre à jour localement l'état pour une réponse immédiate
+      setUsers(users.map(u => 
+        u.id === user.id ? { ...u, isActive: !(u.isActive ?? true) } : u
+      ));
+    } catch (error: any) {
+      console.error('Erreur toggle:', error);
+      alert(error.data?.message || 'Erreur lors du changement de statut');
+    }
   };
 
   return (
@@ -337,6 +371,14 @@ export default function EmployeesPage() {
                     title="Réinitialiser le mot de passe"
                   >
                     <Key className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handleToggleStatus(user)}
+                    disabled={isTogglingStatus}
+                    className={`px-3 py-2 rounded-lg hover:bg-opacity-80 transition-colors ${user.isActive ?? true ? 'bg-yellow-50 text-yellow-700' : 'bg-green-50 text-green-700'} ${isTogglingStatus ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    title={user.isActive ?? true ? "Désactiver l'employé" : "Activer l'employé"}
+                  >
+                    {isTogglingStatus ? <Loader2 className="w-4 h-4 animate-spin" /> : (user.isActive ?? true ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />)}
                   </button>
                   {user.id !== currentUser?.id && (
                     <button

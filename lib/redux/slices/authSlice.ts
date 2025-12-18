@@ -7,6 +7,7 @@ interface User {
   telephone: string;
   nom: string;
   prenom: string;
+  isActive?: boolean;
   role: string;
 }
 

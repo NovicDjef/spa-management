@@ -210,7 +210,7 @@ export default function DashboardPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="mb-8"
+          className="mb-4"
         >
           <SearchBar
             onSearch={setSearchQuery}
@@ -220,14 +220,14 @@ export default function DashboardPage() {
 
         {/* Liste des clients */}
         {isLoading ? (
-          <div className="flex items-center justify-center mt-8">
+          <div className="flex items-center justify-center mt-4">
             <Loader2 className="w-8 h-8 text-spa-turquoise-500 animate-spin" />
           </div>
         ) : filteredClients.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="text-center py-20"
+            className="text-center py-16"
           >
             <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Users className="w-10 h-10 text-gray-400" />
