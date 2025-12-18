@@ -126,7 +126,7 @@ export default function MarketingPage() {
 
   const exportToCSV = () => {
     // Téléchargement direct via l'API
-    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5001';
+    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
     const url = `${baseUrl}/marketing/contacts/export${serviceFilter ? `?serviceType=${serviceFilter}` : ''}`;
     const link = document.createElement('a');
     link.href = url;
