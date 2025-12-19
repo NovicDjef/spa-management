@@ -206,30 +206,32 @@ export default function EmployeesPage() {
     setShowPasswordModal(true);
   };
 
-  const handleToggleStatus = async (user: any) => {
-    if (!user) return;
 
-    // Empêcher l'admin de se désactiver lui-même
-    if (user.id === currentUser?.id) {
-      alert('⚠️ Vous ne pouvez pas désactiver votre propre compte.');
-      return;
-    }
+const handleToggleStatus = async (user: any) => {
+  if (!user) return;
 
-    try {
-      const result = await toggleUserStatus({ id: user.id }).unwrap();
-      // Rafraîchir les données pour obtenir l'état mis à jour
-      refetch();
-      alert(result.message || 'Statut de l\'employé mis à jour avec succès');
-      
-      // Mettre à jour localement l'état pour une réponse immédiate
-      setUsers(users.map(u => 
-        u.id === user.id ? { ...u, isActive: !(u.isActive ?? true) } : u
-      ));
-    } catch (error: any) {
-      console.error('Erreur toggle:', error);
-      alert(error.data?.message || 'Erreur lors du changement de statut');
-    }
-  };
+  if (user.id === currentUser?.id) {
+    alert('⚠️ Vous ne pouvez pas désactiver votre propre compte.');
+    return;
+  }
+
+  const nextStatus = !user.isActive;
+
+  try {
+    const result = await toggleUserStatus({ id: user.id, isActive: nextStatus }).unwrap();
+    
+    // Mise à jour locale immédiate
+    setUsers(users.map(u =>
+      u.id === user.id ? { ...u, isActive: nextStatus } : u
+    ));
+
+    alert(result.message || 'Statut de l\'employé mis à jour');
+  } catch (error: any) {
+    console.error('Erreur toggle:', error);
+    alert(error.data?.message || 'Erreur lors du changement de statut');
+  }
+};
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-spa-beige-50 via-white to-spa-menthe-50">
@@ -373,13 +375,22 @@ export default function EmployeesPage() {
                     <Key className="w-4 h-4" />
                   </button>
                   <button
-                    onClick={() => handleToggleStatus(user)}
-                    disabled={isTogglingStatus}
-                    className={`px-3 py-2 rounded-lg hover:bg-opacity-80 transition-colors ${user.isActive ?? true ? 'bg-yellow-50 text-yellow-700' : 'bg-green-50 text-green-700'} ${isTogglingStatus ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    title={user.isActive ?? true ? "Désactiver l'employé" : "Activer l'employé"}
-                  >
-                    {isTogglingStatus ? <Loader2 className="w-4 h-4 animate-spin" /> : (user.isActive ?? true ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />)}
-                  </button>
+  onClick={() => handleToggleStatus(user)}
+  disabled={isTogglingStatus}
+  className={`
+    px-3 py-2 rounded-lg hover:bg-opacity-80 transition-colors
+    ${user.isActive ? 'bg-green-50 text-green-700' : 'bg-yellow-50 text-yellow-700'}
+    ${isTogglingStatus ? 'opacity-50 cursor-not-allowed' : ''}
+  `}
+  title={user.isActive ? "Désactiver l'employé" : "Activer l'employé"}
+>
+  {isTogglingStatus
+    ? <Loader2 className="w-4 h-4 animate-spin" />
+    : (user.isActive ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />)
+  }
+</button>
+
+
                   {user.id !== currentUser?.id && (
                     <button
                       onClick={() => {
@@ -582,8 +593,223 @@ export default function EmployeesPage() {
       </AnimatePresence>
 
       {/* Modal Modifier - Similar structure */}
+      <AnimatePresence>
+  {showEditModal && selectedUser && (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        className="bg-white rounded-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+      >
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-gray-800">Modifier l'employé</h2>
+          <button
+            onClick={() => setShowEditModal(false)}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <form onSubmit={handleUpdateUser} className="space-y-4">
+          {errors.general && (
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <p className="text-red-800 text-sm">{errors.general}</p>
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="label-spa">Prénom *</label>
+              <input
+                type="text"
+                required
+                value={formData.prenom}
+                onChange={(e) => setFormData({ ...formData, prenom: e.target.value })}
+                className="input-spa"
+              />
+            </div>
+            <div>
+              <label className="label-spa">Nom *</label>
+              <input
+                type="text"
+                required
+                value={formData.nom}
+                onChange={(e) => setFormData({ ...formData, nom: e.target.value })}
+                className="input-spa"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="label-spa">Email *</label>
+            <input
+              type="email"
+              required
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              className="input-spa"
+            />
+          </div>
+
+          <div>
+            <label className="label-spa">Téléphone *</label>
+            <input
+              type="tel"
+              required
+              value={formData.telephone}
+              onChange={(e) => setFormData({ ...formData, telephone: e.target.value })}
+              className="input-spa"
+            />
+          </div>
+
+          <div>
+            <label className="label-spa">Rôle *</label>
+            <select
+              required
+              value={formData.role}
+              onChange={(e) => setFormData({ ...formData, role: e.target.value as UserRole })}
+              className="input-spa"
+            >
+              <option value="SECRETAIRE">Secrétaire</option>
+              <option value="MASSOTHERAPEUTE">Massothérapeute</option>
+              <option value="ESTHETICIENNE">Esthéticienne</option>
+              <option value="ADMIN">Administrateur</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="label-spa">Mot de passe (laisser vide pour ne pas changer)</label>
+            <input
+              type="password"
+              value={formData.password}
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              className="input-spa"
+              placeholder="Minimum 6 caractères"
+              minLength={6}
+            />
+          </div>
+
+          <div className="flex gap-3 pt-4">
+            <button
+              type="button"
+              onClick={() => setShowEditModal(false)}
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              Annuler
+            </button>
+            <button
+              type="submit"
+              disabled={isUpdating}
+              className="flex-1 btn-primary"
+            >
+              {isUpdating ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                  Modification...
+                </>
+              ) : (
+                'Modifier'
+              )}
+            </button>
+          </div>
+        </form>
+      </motion.div>
+    </div>
+  )}
+</AnimatePresence>
+
       {/* Modal Supprimer - Similar structure */}
+      <AnimatePresence>
+  {showDeleteModal && selectedUser && (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        className="bg-white rounded-2xl p-6 max-w-md w-full"
+      >
+        <h2 className="text-xl font-bold text-gray-800 mb-4">Supprimer l'employé</h2>
+        <p className="text-gray-600 mb-6">
+          Êtes-vous sûr de vouloir supprimer {selectedUser.prenom} {selectedUser.nom} ? Cette action est irréversible.
+        </p>
+        <div className="flex gap-3">
+          <button
+            onClick={() => setShowDeleteModal(false)}
+            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            Annuler
+          </button>
+          <button
+            onClick={handleDeleteUser}
+            disabled={isDeleting}
+            className="flex-1 btn-red"
+          >
+            {isDeleting ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                Suppression...
+              </>
+            ) : (
+              'Supprimer'
+            )}
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  )}
+</AnimatePresence>
+
       {/* Modal Réinitialiser mot de passe - Similar structure */}
+      <AnimatePresence>
+  {showPasswordModal && selectedUser && (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        className="bg-white rounded-2xl p-6 max-w-md w-full"
+      >
+        <h2 className="text-xl font-bold text-gray-800 mb-4">Réinitialiser le mot de passe</h2>
+        <p className="text-gray-600 mb-4">
+          Saisissez le nouveau mot de passe pour {selectedUser.prenom} {selectedUser.nom} :
+        </p>
+        <input
+          type="password"
+          placeholder="Nouveau mot de passe"
+          value={formData.password}
+          onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+          className="input-spa mb-4"
+        />
+        <div className="flex gap-3">
+          <button
+            onClick={() => setShowPasswordModal(false)}
+            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            Annuler
+          </button>
+          <button
+            onClick={handleResetPassword}
+            disabled={isResetting}
+            className="flex-1 btn-primary"
+          >
+            {isResetting ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                Réinitialisation...
+              </>
+            ) : (
+              'Réinitialiser'
+            )}
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  )}
+</AnimatePresence>
+
     </div>
   );
 }

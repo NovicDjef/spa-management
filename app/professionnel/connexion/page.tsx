@@ -66,7 +66,8 @@ export default function ConnexionPage() {
       }
     } catch (error: any) {
       console.error('Erreur de connexion:', error);
-      setGeneralError(error.data?.message || 'Identifiants invalides. Veuillez vérifier vos informations.');
+       const backendMessage = error?.data?.error || 'Identifiants invalides. Veuillez vérifier vos informations.';
+        setGeneralError(backendMessage);
     }
   };
 

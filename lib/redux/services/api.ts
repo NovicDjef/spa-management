@@ -354,14 +354,18 @@ export const api = createApi({
       invalidatesTags: (result, error, { id }) => [{ type: 'User', id }],
     }),
 
-    // Activer/Désactiver un employé
-    toggleUserStatus: builder.mutation<{ user: User; message: string }, { id: string }>({
-      query: ({ id }) => ({
-        url: `/users/${id}/toggle-status`,
-        method: 'PATCH',
-      }),
-      invalidatesTags: (result, error, { id }) => [{ type: 'User', id }],
-    }),
+   toggleUserStatus: builder.mutation<
+  { data: User; message: string },
+  { id: string; isActive: boolean }
+>({
+  query: ({ id, isActive }) => ({
+    url: `/users/${id}/toggle-status`,
+    method: 'PATCH',
+    body: { isActive }, // ⭐⭐ INDISPENSABLE
+  }),
+}),
+
+
 
     // MARKETING - Gestion des campagnes marketing (ADMIN UNIQUEMENT)
 
