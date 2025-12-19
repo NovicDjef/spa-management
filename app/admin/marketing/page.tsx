@@ -27,6 +27,7 @@ import {
 } from '@/lib/redux/services/api';
 import { useAppSelector } from '@/lib/redux/hooks';
 import { hasPermission } from '@/lib/permissions';
+import Link from 'next/link';
 
 export default function MarketingPage() {
   const router = useRouter();
@@ -229,6 +230,23 @@ export default function MarketingPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-spa-beige-50 via-white to-spa-turquoise-50">
       <Header user={currentUser ?? undefined} />
+        {/* Retour à l'accueil */}
+        <div className="container-spa py-8">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.8 }}
+              className="mt-8"
+              >
+              <Link
+                href="/admin"
+                className="text-spa-rose-600 hover:text-spa-rose-700 font-medium transition-colors"
+              >
+                ← Retour au dashboard
+              </Link>
+              </motion.div>
+        </div>
+         
 
       <div className="container-spa py-8">
         {/* En-tête */}

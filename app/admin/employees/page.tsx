@@ -17,7 +17,10 @@ import {
   X,
   Copy,
   Check,
-  AlertCircle
+  AlertCircle,
+  Star,
+  MessageSquare,
+  FileText,
 } from 'lucide-react';
 import {
   useGetUsersQuery,
@@ -29,6 +32,8 @@ import {
 } from '@/lib/redux/services/api';
 import { useAppSelector } from '@/lib/redux/hooks';
 import { getRoleLabel, getRoleColor } from '@/lib/permissions';
+import { ReviewsModal } from '@/components/reviews/ReviewsModal';
+import Link from 'next/link';
 
 type UserRole = 'ADMIN' | 'SECRETAIRE' | 'MASSOTHERAPEUTE' | 'ESTHETICIENNE';
 
@@ -45,6 +50,8 @@ export default function EmployeesPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [generatedPassword, setGeneratedPassword] = useState('');
   const [copiedPassword, setCopiedPassword] = useState(false);
+  const [showReviewsModal, setShowReviewsModal] = useState(false);
+  const [selectedUserForReviews, setSelectedUserForReviews] = useState<any>(null);
 
   // Éviter l'erreur d'hydratation
   useEffect(() => {
@@ -206,6 +213,11 @@ export default function EmployeesPage() {
     setShowPasswordModal(true);
   };
 
+  const openReviewsModal = (user: any) => {
+    setSelectedUserForReviews(user);
+    setShowReviewsModal(true);
+  };
+
 
 const handleToggleStatus = async (user: any) => {
   if (!user) return;
@@ -236,7 +248,22 @@ const handleToggleStatus = async (user: any) => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-spa-beige-50 via-white to-spa-menthe-50">
       <Header user={currentUser ?? undefined} />
-
+        {/* Retour à l'accueil */}
+        <div className="container-spa py-8">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.8 }}
+              className="mt-8"
+              >
+              <Link
+                href="/admin"
+                className="text-spa-rose-600 hover:text-spa-rose-700 font-medium transition-colors"
+              >
+                ← Retour au dashboard
+              </Link>
+              </motion.div>
+        </div>
       <div className="container-spa py-8">
         {/* En-tête */}
         <motion.div
@@ -349,13 +376,35 @@ const handleToggleStatus = async (user: any) => {
                 </div>
 
                 {/* Stats */}
-                <div className="flex items-center gap-4 mb-4 text-sm text-gray-600">
-                  <div>
-                    <span className="font-medium">{user._count?.assignedClients || 0}</span> clients
+                <div className="grid grid-cols-2 gap-2 mb-4 text-sm">
+                  <div className="flex items-center gap-1">
+                    <Users className="w-4 h-4 text-spa-turquoise-500" />
+                    <span className="font-medium">{user._count?.assignedClients || 0}</span>
+                    <span className="text-gray-600">clients</span>
                   </div>
-                  <div>
-                    <span className="font-medium">{user._count?.notesCreated || 0}</span> notes
+                  <div className="flex items-center gap-1">
+                    <FileText className="w-4 h-4 text-spa-menthe-500" />
+                    <span className="font-medium">{user._count?.notesCreated || 0}</span>
+                    <span className="text-gray-600">notes</span>
                   </div>
+
+                  {/* Stats d'avis (seulement pour professionnels) */}
+                  {(user.role === 'MASSOTHERAPEUTE' || user.role === 'ESTHETICIENNE') && (
+                    <>
+                      <div className="flex items-center gap-1">
+                        <Star className="w-4 h-4 text-yellow-500" />
+                        <span className="font-medium">
+                          {user.averageRating ? user.averageRating.toFixed(1) : '—'}
+                        </span>
+                        <span className="text-gray-600">/ 5</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <MessageSquare className="w-4 h-4 text-spa-rose-500" />
+                        <span className="font-medium">{user._count?.reviewsReceived || 0}</span>
+                        <span className="text-gray-600">avis</span>
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 {/* Actions */}
@@ -374,6 +423,18 @@ const handleToggleStatus = async (user: any) => {
                   >
                     <Key className="w-4 h-4" />
                   </button>
+
+                  {/* Bouton voir avis (seulement pour professionnels) */}
+                  {(user.role === 'MASSOTHERAPEUTE' || user.role === 'ESTHETICIENNE') && (
+                    <button
+                      onClick={() => openReviewsModal(user)}
+                      className="px-3 py-2 bg-yellow-50 text-yellow-700 rounded-lg hover:bg-yellow-100 transition-colors"
+                      title="Voir les avis"
+                    >
+                      <Star className="w-4 h-4" />
+                    </button>
+                  )}
+
                   <button
   onClick={() => handleToggleStatus(user)}
   disabled={isTogglingStatus}
@@ -809,6 +870,21 @@ const handleToggleStatus = async (user: any) => {
     </div>
   )}
 </AnimatePresence>
+
+        {/* Modal Avis */}
+        <AnimatePresence>
+          {showReviewsModal && selectedUserForReviews && (
+            <ReviewsModal
+              userId={selectedUserForReviews.id}
+              userName={`${selectedUserForReviews.prenom} ${selectedUserForReviews.nom}`}
+              isOpen={showReviewsModal}
+              onClose={() => {
+                setShowReviewsModal(false);
+                setSelectedUserForReviews(null);
+              }}
+            />
+          )}
+        </AnimatePresence>
 
     </div>
   );

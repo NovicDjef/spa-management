@@ -69,7 +69,9 @@ export interface User {
   _count?: {
     assignedClients: number;
     notesCreated: number;
+    reviewsReceived?: number;
   };
+  averageRating?: number;
 }
 
 export interface CreateUserData {
@@ -140,6 +142,40 @@ export interface MarketingStats {
     HOMME: number;
     AUTRE: number;
   };
+}
+
+// Review Types
+export interface Review {
+  id: string;
+  rating: number;
+  comment?: string;
+  createdAt: string;
+}
+
+export interface CreateReviewData {
+  professionalId: string;
+  rating: number;
+  comment?: string;
+}
+
+export interface ReviewStats {
+  averageRating: number;
+  totalReviews: number;
+  ratingDistribution: {
+    1: number;
+    2: number;
+    3: number;
+    4: number;
+    5: number;
+  };
+}
+
+export interface ProfessionalPublic {
+  id: string;
+  prenom: string;
+  nom: string;
+  role: 'MASSOTHERAPEUTE' | 'ESTHETICIENNE';
+  isActive: boolean;
 }
 
 // API Service avec RTK Query
@@ -408,6 +444,55 @@ export const api = createApi({
       transformResponse: (response: any) => response.data || response,
       providesTags: ['Client'],
     }),
+
+    // REVIEWS - Système d'avis clients
+
+    // Liste publique des professionnels (PUBLIC - pas de token requis)
+    getPublicProfessionals: builder.query<
+      { professionals: ProfessionalPublic[] },
+      { serviceType?: 'MASSOTHERAPIE' | 'ESTHETIQUE' } | void
+    >({
+      query: (params) => {
+        const queryParams = new URLSearchParams();
+        if (params && params.serviceType) {
+          queryParams.append('serviceType', params.serviceType);
+        }
+        return `/professionals/public?${queryParams.toString()}`;
+      },
+      transformResponse: (response: any) => response.data || response,
+    }),
+
+    // Créer un avis (PUBLIC - pas de token requis)
+    createReview: builder.mutation<{ message: string; review: Review }, CreateReviewData>({
+      query: (reviewData) => ({
+        url: '/reviews',
+        method: 'POST',
+        body: reviewData,
+      }),
+    }),
+
+    // Récupérer les avis d'un professionnel (PUBLIC)
+    getReviewsByProfessional: builder.query<
+      { averageRating: number; totalReviews: number; reviews: Review[] },
+      string
+    >({
+      query: (professionalId) => `/reviews/${professionalId}`,
+      transformResponse: (response: any) => response.data || response,
+    }),
+
+    // Statistiques détaillées des avis d'un employé (ADMIN)
+    getEmployeeReviews: builder.query<
+      {
+        user: { id: string; nom: string; prenom: string };
+        statistics: ReviewStats;
+        recentReviews: Review[];
+      },
+      string
+    >({
+      query: (userId) => `/users/${userId}/reviews`,
+      transformResponse: (response: any) => response.data || response,
+      providesTags: (result, error, userId) => [{ type: 'User', id: userId }],
+    }),
   }),
 });
 
@@ -436,4 +521,9 @@ export const {
   useSendIndividualEmailMutation,
   useSendCampaignEmailMutation,
   useGetMarketingStatsQuery,
+  // Review hooks
+  useGetPublicProfessionalsQuery,
+  useCreateReviewMutation,
+  useGetReviewsByProfessionalQuery,
+  useGetEmployeeReviewsQuery,
 } = api;

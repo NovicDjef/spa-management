@@ -82,8 +82,25 @@ export default function EsthetiqueFormPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [age, setAge] = useState<number | null>(null);
 
   const totalSteps = 3;
+
+  // Calculer l'âge à partir de la date de naissance
+  const calculateAge = (dateNaissance: string): number | null => {
+    if (!dateNaissance) return null;
+
+    const birthDate = new Date(dateNaissance);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+
+    return age;
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -92,6 +109,12 @@ export default function EsthetiqueFormPage() {
       ...prev,
       [name]: value,
     }));
+
+    // Calculer l'âge si le champ modifié est la date de naissance
+    if (name === 'dateNaissance') {
+      const calculatedAge = calculateAge(value);
+      setAge(calculatedAge);
+    }
 
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: '' }));
@@ -327,15 +350,20 @@ export default function EsthetiqueFormPage() {
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-        <InputField
-          label="Date de Naissance"
-          name="dateNaissance"
-          type="date"
-          value={formData.dateNaissance}
-          onChange={handleInputChange}
-          error={errors.dateNaissance}
-          required
-        />
+        <div>
+          <InputField
+            label="Date de Naissance"
+            name="dateNaissance"
+            type="date"
+            value={formData.dateNaissance}
+            onChange={handleInputChange}
+            error={errors.dateNaissance}
+            required
+          />
+          {age !== null && (
+            <p className="text-sm text-gray-600 mt-1">Âge: {age} ans</p>
+          )}
+        </div>
         <InputField
           label="Occupation"
           name="occupation"

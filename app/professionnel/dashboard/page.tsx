@@ -172,19 +172,14 @@ export default function DashboardPage() {
           {currentUser.role === 'ADMIN' && (
             <div className="mb-6 flex gap-4">
               <a
-                href="/admin/employees"
+                href="/admin"
                 className="inline-flex items-center gap-2 px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-colors"
               >
                 <Users className="w-5 h-5" />
-                Gérer les Employés
+                Statistiques Globales
               </a>
-              <a
-                href="/admin/marketing"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-spa-turquoise-600 text-white rounded-lg hover:bg-spa-turquoise-700 transition-colors"
-              >
-                <Target className="w-5 h-5" />
-                Campagnes Marketing
-              </a>
+              
+              
             </div>
           )}
 
