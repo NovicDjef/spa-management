@@ -16,7 +16,8 @@ import {
   Loader2,
   TrendingUp,
   Target,
-  AlertCircle
+  AlertCircle,
+  ArrowLeft,
 } from 'lucide-react';
 import {
   useGetMarketingContactsQuery,
@@ -230,25 +231,22 @@ export default function MarketingPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-spa-beige-50 via-white to-spa-turquoise-50">
       <Header user={currentUser ?? undefined} />
-        {/* Retour à l'accueil */}
-        <div className="container-spa py-8">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.8 }}
-              className="mt-8"
-              >
-              <Link
-                href="/admin"
-                className="text-spa-rose-600 hover:text-spa-rose-700 font-medium transition-colors"
-              >
-                ← Retour au dashboard
-              </Link>
-              </motion.div>
-        </div>
-         
 
       <div className="container-spa py-8">
+        {/* Bouton de retour */}
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="mb-6"
+        >
+          <Link
+            href="/admin"
+            className="inline-flex items-center gap-2 text-spa-turquoise-600 hover:text-spa-turquoise-700 transition-colors group"
+          >
+            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+            <span className="font-medium">Retour au tableau de bord</span>
+          </Link>
+        </motion.div>
         {/* En-tête */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}

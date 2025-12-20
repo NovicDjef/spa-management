@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 512" fill="none">
+  <!-- Wave pattern made of ovals -->
+  <g id="wave-pattern" fill="#6B9C9D">
+    <!-- Row 1 (smallest) -->
+    <ellipse cx="184" cy="140" rx="4" ry="6" opacity="0.6"/>
+    <ellipse cx="220" cy="146" rx="4.5" ry="7" opacity="0.65"/>
+    <ellipse cx="256" cy="154" rx="5" ry="8" opacity="0.7"/>
+    <ellipse cx="292" cy="164" rx="5.5" ry="9" opacity="0.75"/>
+    <ellipse cx="328" cy="176" rx="6" ry="10" opacity="0.8"/>
+
+    <!-- Row 2 -->
+    <ellipse cx="356" cy="188" rx="7" ry="11" opacity="0.82"/>
+    <ellipse cx="390" cy="198" rx="8" ry="13" opacity="0.84"/>
+    <ellipse cx="426" cy="208" rx="9" ry="15" opacity="0.86"/>
+    <ellipse cx="464" cy="218" rx="10" ry="17" opacity="0.88"/>
+    <ellipse cx="504" cy="228" rx="11" ry="19" opacity="0.9"/>
+
+    <!-- Row 3 (middle) -->
+    <ellipse cx="544" cy="236" rx="12" ry="21" opacity="0.92"/>
+    <ellipse cx="586" cy="244" rx="13" ry="23" opacity="0.93"/>
+    <ellipse cx="628" cy="250" rx="14" ry="25" opacity="0.94"/>
+    <ellipse cx="672" cy="254" rx="15" ry="27" opacity="0.95"/>
+    <ellipse cx="716" cy="256" rx="16" ry="29" opacity="0.96"/>
+
+    <!-- Row 4 -->
+    <ellipse cx="760" cy="256" rx="17" ry="31" opacity="0.97"/>
+    <ellipse cx="804" cy="254" rx="18" ry="33" opacity="0.98"/>
+    <ellipse cx="846" cy="250" rx="19" ry="35" opacity="0.99"/>
+    <ellipse cx="886" cy="244" rx="20" ry="37" opacity="1"/>
+    <ellipse cx="924" cy="236" rx="21" ry="39" opacity="1"/>
+
+    <!-- Row 5 (largest) -->
+    <ellipse cx="960" cy="226" rx="22" ry="41" opacity="1"/>
+    <ellipse cx="994" cy="214" rx="23" ry="43" opacity="1"/>
+    <ellipse cx="1026" cy="200" rx="24" ry="45" opacity="1"/>
+  </g>
+
+  <!-- Text: SPA RENAISSANCE -->
+  <text x="512" y="420" font-family="Arial, sans-serif" font-size="72" font-weight="300" fill="#8B8B8B" text-anchor="middle" letter-spacing="12">
+    SPA RENAISSANCE
+  </text>
+</svg>

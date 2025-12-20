@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { User, Briefcase, Sparkles } from 'lucide-react';
+import { User, Briefcase, Sparkles, Star, MessageSquare } from 'lucide-react';
 import Link from 'next/link';
 
 export default function HomePage() {
@@ -14,11 +14,11 @@ export default function HomePage() {
         transition={{ duration: 0.6 }}
         className="text-center mb-12"
       >
-        <div className="inline-flex items-center justify-center w-20 h-20 rounded-full mb-4 shadow-soft-lg overflow-hidden">
+        <div className="inline-flex items-center justify-center w-20 h-20 bg-white rounded-full mb-4 shadow-soft-lg overflow-hidden">
           <img
-            src="/icons/icon-192x192.png"
+            src="/logo_spa.svg"
             alt="Spa Renaissance Logo"
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain p-2"
           />
         </div>
         <h1 className="text-4xl md:text-5xl font-bold gradient-text mb-3">
@@ -97,13 +97,30 @@ export default function HomePage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.6 }}
-        className="mt-12 text-center"
+        className="mt-12 text-center space-y-4"
       >
         <div className="inline-flex items-center gap-2 px-6 py-3 glass rounded-full">
           <div className="w-2 h-2 bg-spa-menthe-500 rounded-full animate-pulse"></div>
           <span className="text-sm text-gray-700">
             Plateforme sécurisée et confidentielle
           </span>
+        </div>
+
+        {/* Lien vers les avis */}
+        <div className="flex justify-center">
+          <Link href="/avis">
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-full shadow-lg hover:shadow-xl transition-all cursor-pointer group"
+            >
+              <Star className="w-5 h-5 fill-white" />
+              <span className="font-medium">
+                Partagez votre expérience
+              </span>
+              <MessageSquare className="w-5 h-5" />
+            </motion.div>
+          </Link>
         </div>
       </motion.div>
 

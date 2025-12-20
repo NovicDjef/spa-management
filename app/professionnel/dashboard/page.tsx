@@ -5,8 +5,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { Header } from '@/components/layout/Header';
 import { SearchBar } from '@/components/clients/SearchBar';
 import { ClientCard } from '@/components/clients/ClientCard';
-import { Users, UserPlus, Loader2, X, Target } from 'lucide-react';
-import { useGetClientsQuery, useGetUsersQuery, useAssignClientMutation } from '@/lib/redux/services/api';
+import { Users, UserPlus, Loader2, X, Target, AlertCircle, Clock, UserCheck, User as UserIcon, ArrowRight } from 'lucide-react';
+import { useGetClientsQuery, useGetUsersQuery, useAssignClientMutation, useGetAssignmentHistoryQuery } from '@/lib/redux/services/api';
 import { useAppSelector } from '@/lib/redux/hooks';
 import { hasPermission, isAdminOrSecretary } from '@/lib/permissions';
 
@@ -19,6 +19,19 @@ interface Client {
   dateNaissance: string;
   serviceType: 'MASSOTHERAPIE' | 'ESTHETIQUE';
   createdAt: string;
+  assignedAt?: string;
+  assignedBy?: {
+    id: string;
+    nom: string;
+    prenom: string;
+    role: 'ADMIN' | 'SECRETAIRE';
+  } | null;
+  assignedTo?: {
+    id: string;
+    nom: string;
+    prenom: string;
+    role: 'MASSOTHERAPEUTE' | 'ESTHETICIENNE';
+  } | null;
 }
 
 interface Professional {
@@ -41,6 +54,7 @@ export default function DashboardPage() {
     refetchOnMountOrArgChange: true,
   });
   const [assignClient, { isLoading: isAssigning }] = useAssignClientMutation();
+  const { data: assignmentHistoryData, isLoading: isLoadingHistory } = useGetAssignmentHistoryQuery({ limit: 10 });
 
   const currentUser = useAppSelector((state) => state.auth.user) || {
     id: 'temp-id',
@@ -261,6 +275,129 @@ export default function DashboardPage() {
             ))}
           </motion.div>
         )}
+
+        {/* Historique des Assignations Récentes */}
+        {assignmentHistoryData && assignmentHistoryData.assignments && assignmentHistoryData.assignments.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="mt-8"
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-gradient-to-br from-spa-lavande-100 to-spa-lavande-200 rounded-full flex items-center justify-center">
+                <Clock className="w-5 h-5 text-spa-lavande-600" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-gray-800">Assignations Récentes</h2>
+                <p className="text-sm text-gray-600">
+                  Historique des {assignmentHistoryData.assignments.length} dernières assignations
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-soft overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gradient-to-r from-spa-beige-50 to-spa-turquoise-50 border-b border-gray-200">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        Date & Heure
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        Client
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        Service
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        Assigné à
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        Assigné par
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {assignmentHistoryData.assignments.map((assignment, index) => (
+                      <motion.tr
+                        key={assignment.id}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                        className="hover:bg-spa-beige-50 transition-colors"
+                      >
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            <Clock className="w-4 h-4 text-gray-400" />
+                            <div className="text-sm">
+                              <div className="font-medium text-gray-900">
+                                {new Date(assignment.assignedAt).toLocaleDateString('fr-CA')}
+                              </div>
+                              <div className="text-gray-500">
+                                {new Date(assignment.assignedAt).toLocaleTimeString('fr-CA', {
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 bg-spa-turquoise-100 rounded-full flex items-center justify-center">
+                              <UserIcon className="w-4 h-4 text-spa-turquoise-600" />
+                            </div>
+                            <div className="text-sm font-medium text-gray-900">
+                              {assignment.client.prenom} {assignment.client.nom}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span
+                            className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${
+                              assignment.client.serviceType === 'MASSOTHERAPIE'
+                                ? 'bg-spa-menthe-100 text-spa-menthe-700'
+                                : 'bg-spa-lavande-100 text-spa-lavande-700'
+                            }`}
+                          >
+                            {assignment.client.serviceType === 'MASSOTHERAPIE' ? 'Massothérapie' : 'Esthétique'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            <UserCheck className="w-4 h-4 text-green-500" />
+                            <div className="text-sm">
+                              <div className="font-medium text-gray-900">
+                                {assignment.professional.prenom} {assignment.professional.nom}
+                              </div>
+                              <div className="text-gray-500 text-xs">
+                                {assignment.professional.role === 'MASSOTHERAPEUTE' ? 'Massothérapeute' : 'Esthéticienne'}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            <UserIcon className="w-4 h-4 text-spa-turquoise-500" />
+                            <div className="text-sm">
+                              <div className="font-medium text-gray-900">
+                                {assignment.assignedBy.prenom} {assignment.assignedBy.nom}
+                              </div>
+                              <div className="text-gray-500 text-xs">
+                                {assignment.assignedBy.role === 'ADMIN' ? 'Admin' : 'Secrétaire'}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                      </motion.tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </motion.div>
+        )}
       </div>
 
       {/* Modal d'assignation */}
@@ -299,6 +436,44 @@ export default function DashboardPage() {
                   <X className="w-6 h-6" />
                 </button>
               </div>
+
+              {/* Avertissement si le client est déjà assigné */}
+              {selectedClient.assignedAt && selectedClient.assignedTo && (
+                <div className="mb-6 p-4 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <AlertCircle className="w-5 h-5 text-amber-600" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-amber-800 mb-2">⚠️ Client déjà assigné</h3>
+                      <div className="space-y-1.5 text-sm text-amber-900">
+                        <p>
+                          <strong>Assigné à:</strong> {selectedClient.assignedTo.prenom} {selectedClient.assignedTo.nom}
+                        </p>
+                        {selectedClient.assignedBy && (
+                          <p>
+                            <strong>Par:</strong> {selectedClient.assignedBy.prenom} {selectedClient.assignedBy.nom}
+                            <span className="text-amber-700 ml-1">
+                              ({selectedClient.assignedBy.role === 'ADMIN' ? 'Admin' : 'Secrétaire'})
+                            </span>
+                          </p>
+                        )}
+                        <p className="text-amber-700">
+                          Le {new Date(selectedClient.assignedAt).toLocaleDateString('fr-CA')} à{' '}
+                          {new Date(selectedClient.assignedAt).toLocaleTimeString('fr-CA', {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </p>
+                      </div>
+                      <p className="mt-3 text-xs text-amber-800 bg-amber-100 p-2 rounded">
+                        💡 <strong>Important:</strong> Une nouvelle assignation remplacera l'assignation existante.
+                        Assurez-vous de coordonner avec {selectedClient.assignedBy?.prenom || 'l\'équipe'}.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="mb-6">
                 <label className="label-spa">

@@ -12,6 +12,8 @@ import {
   TrendingUp,
   Calendar,
   ArrowRight,
+  MessageSquare,
+  ArrowLeft,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -39,6 +41,15 @@ export default function AdminDashboardPage() {
       iconColor: 'text-spa-rose-600',
     },
     {
+      title: 'Gestion des Avis',
+      description: 'Consulter tous les avis clients avec filtres avancés. Vue globale et statistiques détaillées.',
+      icon: MessageSquare,
+      href: '/admin/avis',
+      color: 'from-spa-lavande-500 to-spa-rose-500',
+      iconBg: 'bg-spa-lavande-50',
+      iconColor: 'text-spa-lavande-600',
+    },
+    {
       title: 'Statistiques Globales',
       description: 'Vue d\'ensemble des performances de l\'établissement et tendances.',
       icon: BarChart3,
@@ -46,7 +57,6 @@ export default function AdminDashboardPage() {
       color: 'from-spa-menthe-500 to-spa-turquoise-500',
       iconBg: 'bg-spa-menthe-50',
       iconColor: 'text-spa-menthe-600',
-      comingSoon: true,
     },
   ];
 
@@ -84,25 +94,22 @@ export default function AdminDashboardPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-spa-beige-50 via-white to-spa-turquoise-50">
       <Header user={currentUser ?? undefined} />
-
       <div className="container-spa py-8">
-        {/* Retour à l'accueil */}
-          <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.6, delay: 0.8 }}
-                className="mt-8"
-              >
-                <Link
-                  href="/professionnel/dashboard"
-                  className="text-spa-rose-600 hover:text-spa-rose-700 font-medium transition-colors"
-                >
-                  ← Retour au dashboard
-                </Link>
-              </motion.div>
-      </div>
+        {/* Bouton de retour */}
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="mb-6"
+        >
+          <Link
+            href="/professionnel/dashboard"
+            className="inline-flex items-center gap-2 text-spa-turquoise-600 hover:text-spa-turquoise-700 transition-colors group"
+          >
+            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+            <span className="font-medium">Retour au tableau de bord</span>
+          </Link>
+        </motion.div>
 
-      <div className="container-spa py-8">
         {/* En-tête */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -148,10 +155,8 @@ export default function AdminDashboardPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
-              onClick={() => !item.comingSoon && router.push(item.href)}
-              className={`card-spa group relative overflow-hidden ${
-                item.comingSoon ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:shadow-xl'
-              } transition-all duration-300`}
+              onClick={() => router.push(item.href)}
+              className="card-spa group relative overflow-hidden cursor-pointer hover:shadow-xl transition-all duration-300"
             >
               {/* Gradient Background */}
               <div
@@ -164,14 +169,7 @@ export default function AdminDashboardPage() {
                   <div className={`w-14 h-14 ${item.iconBg} rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
                     <item.icon className={`w-7 h-7 ${item.iconColor}`} />
                   </div>
-                  {!item.comingSoon && (
-                    <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-gray-600 group-hover:translate-x-1 transition-all duration-300" />
-                  )}
-                  {item.comingSoon && (
-                    <span className="px-3 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-full">
-                      Bientôt
-                    </span>
-                  )}
+                  <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-gray-600 group-hover:translate-x-1 transition-all duration-300" />
                 </div>
 
                 <h3 className="text-xl font-bold text-gray-800 mb-2">

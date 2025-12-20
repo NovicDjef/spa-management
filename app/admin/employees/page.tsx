@@ -21,6 +21,7 @@ import {
   Star,
   MessageSquare,
   FileText,
+  ArrowLeft,
 } from 'lucide-react';
 import {
   useGetUsersQuery,
@@ -248,23 +249,22 @@ const handleToggleStatus = async (user: any) => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-spa-beige-50 via-white to-spa-menthe-50">
       <Header user={currentUser ?? undefined} />
-        {/* Retour à l'accueil */}
-        <div className="container-spa py-8">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.8 }}
-              className="mt-8"
-              >
-              <Link
-                href="/admin"
-                className="text-spa-rose-600 hover:text-spa-rose-700 font-medium transition-colors"
-              >
-                ← Retour au dashboard
-              </Link>
-              </motion.div>
-        </div>
+
       <div className="container-spa py-8">
+        {/* Bouton de retour */}
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="mb-6"
+        >
+          <Link
+            href="/admin"
+            className="inline-flex items-center gap-2 text-spa-turquoise-600 hover:text-spa-turquoise-700 transition-colors group"
+          >
+            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+            <span className="font-medium">Retour au tableau de bord</span>
+          </Link>
+        </motion.div>
         {/* En-tête */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -408,63 +408,71 @@ const handleToggleStatus = async (user: any) => {
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => openEditModal(user)}
-                    className="flex-1 px-3 py-2 bg-spa-lavande-50 text-spa-lavande-700 rounded-lg hover:bg-spa-lavande-100 transition-colors flex items-center justify-center gap-2 text-sm"
-                  >
-                    <Edit className="w-4 h-4" />
-                    Modifier
-                  </button>
-                  <button
-                    onClick={() => openPasswordModal(user)}
-                    className="px-3 py-2 bg-spa-menthe-50 text-spa-menthe-700 rounded-lg hover:bg-spa-menthe-100 transition-colors"
-                    title="Réinitialiser le mot de passe"
-                  >
-                    <Key className="w-4 h-4" />
-                  </button>
-
-                  {/* Bouton voir avis (seulement pour professionnels) */}
-                  {(user.role === 'MASSOTHERAPEUTE' || user.role === 'ESTHETICIENNE') && (
+                {user.role === 'ADMIN' ? (
+                  <div className="flex items-center justify-center p-4 bg-gradient-to-r from-spa-turquoise-50 to-spa-menthe-50 rounded-lg border border-spa-turquoise-200">
+                    <div className="flex items-center gap-2 text-sm text-spa-turquoise-700">
+                      <AlertCircle className="w-4 h-4" />
+                      <span className="font-medium">Compte administrateur protégé</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
                     <button
-                      onClick={() => openReviewsModal(user)}
-                      className="px-3 py-2 bg-yellow-50 text-yellow-700 rounded-lg hover:bg-yellow-100 transition-colors"
-                      title="Voir les avis"
+                      onClick={() => openEditModal(user)}
+                      className="flex-1 px-3 py-2 bg-spa-lavande-50 text-spa-lavande-700 rounded-lg hover:bg-spa-lavande-100 transition-colors flex items-center justify-center gap-2 text-sm"
                     >
-                      <Star className="w-4 h-4" />
+                      <Edit className="w-4 h-4" />
+                      Modifier
                     </button>
-                  )}
-
-                  <button
-  onClick={() => handleToggleStatus(user)}
-  disabled={isTogglingStatus}
-  className={`
-    px-3 py-2 rounded-lg hover:bg-opacity-80 transition-colors
-    ${user.isActive ? 'bg-green-50 text-green-700' : 'bg-yellow-50 text-yellow-700'}
-    ${isTogglingStatus ? 'opacity-50 cursor-not-allowed' : ''}
-  `}
-  title={user.isActive ? "Désactiver l'employé" : "Activer l'employé"}
->
-  {isTogglingStatus
-    ? <Loader2 className="w-4 h-4 animate-spin" />
-    : (user.isActive ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />)
-  }
-</button>
-
-
-                  {user.id !== currentUser?.id && (
                     <button
-                      onClick={() => {
-                        setSelectedUser(user);
-                        setShowDeleteModal(true);
-                      }}
-                      className="px-3 py-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-colors"
-                      title="Supprimer"
+                      onClick={() => openPasswordModal(user)}
+                      className="px-3 py-2 bg-spa-menthe-50 text-spa-menthe-700 rounded-lg hover:bg-spa-menthe-100 transition-colors"
+                      title="Réinitialiser le mot de passe"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Key className="w-4 h-4" />
                     </button>
-                  )}
-                </div>
+
+                    {/* Bouton voir avis (seulement pour professionnels) */}
+                    {(user.role === 'MASSOTHERAPEUTE' || user.role === 'ESTHETICIENNE') && (
+                      <button
+                        onClick={() => openReviewsModal(user)}
+                        className="px-3 py-2 bg-yellow-50 text-yellow-700 rounded-lg hover:bg-yellow-100 transition-colors"
+                        title="Voir les avis"
+                      >
+                        <Star className="w-4 h-4" />
+                      </button>
+                    )}
+
+                    <button
+                      onClick={() => handleToggleStatus(user)}
+                      disabled={isTogglingStatus}
+                      className={`
+                        px-3 py-2 rounded-lg hover:bg-opacity-80 transition-colors
+                        ${user.isActive ? 'bg-green-50 text-green-700' : 'bg-yellow-50 text-yellow-700'}
+                        ${isTogglingStatus ? 'opacity-50 cursor-not-allowed' : ''}
+                      `}
+                      title={user.isActive ? "Désactiver l'employé" : "Activer l'employé"}
+                    >
+                      {isTogglingStatus
+                        ? <Loader2 className="w-4 h-4 animate-spin" />
+                        : (user.isActive ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />)
+                      }
+                    </button>
+
+                    {user.id !== currentUser?.id && (
+                      <button
+                        onClick={() => {
+                          setSelectedUser(user);
+                          setShowDeleteModal(true);
+                        }}
+                        className="px-3 py-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-colors"
+                        title="Supprimer"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                )}
               </motion.div>
             ))}
           </motion.div>

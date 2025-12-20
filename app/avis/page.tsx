@@ -24,8 +24,12 @@ export default function AvisPage() {
           className="text-center mb-8"
         >
           {/* Logo */}
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-spa-turquoise-500 to-spa-menthe-500 rounded-full mb-4 shadow-soft overflow-hidden">
-            <span className="text-2xl font-bold text-white">SR</span>
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-full mb-4 shadow-soft overflow-hidden">
+              <img
+                src="/logo_spa.svg"
+                alt="Spa Renaissance Logo"
+                className="w-full h-full object-contain p-2"
+              />
           </div>
 
           <h1 className="text-4xl font-bold gradient-text mb-3">

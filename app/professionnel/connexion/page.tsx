@@ -81,8 +81,12 @@ export default function ConnexionPage() {
           transition={{ duration: 0.6 }}
           className="text-center mb-8"
         >
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-spa-lavande-400 to-spa-lavande-600 rounded-full mb-4 shadow-soft-lg">
-            <Lock className="w-10 h-10 text-white" />
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full mb-4 shadow-soft-lg">
+            <img
+              src="/icons/icon-192x192.png"
+              alt="Spa Renaissance Logo"
+              className="w-full h-full object-cover"
+            />
           </div>
           <h1 className="text-3xl md:text-4xl font-bold gradient-text mb-3">
             Espace Professionnel

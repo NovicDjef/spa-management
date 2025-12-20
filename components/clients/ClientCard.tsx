@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { User, Phone, Mail, Calendar, Hand, Wand2, Bell } from 'lucide-react';
+import { User, Phone, Mail, Calendar, Hand, Wand2, Bell, CheckCircle2, UserCheck } from 'lucide-react';
 import Link from 'next/link';
 
 interface ClientCardProps {
@@ -14,6 +14,19 @@ interface ClientCardProps {
     dateNaissance: string;
     serviceType: 'MASSOTHERAPIE' | 'ESTHETIQUE';
     createdAt: string;
+    assignedAt?: string;
+    assignedBy?: {
+      id: string;
+      nom: string;
+      prenom: string;
+      role: 'ADMIN' | 'SECRETAIRE';
+    } | null;
+    assignedTo?: {
+      id: string;
+      nom: string;
+      prenom: string;
+      role: 'MASSOTHERAPEUTE' | 'ESTHETICIENNE';
+    } | null;
   };
   showActions?: boolean;
   onAssign?: (clientId: string) => void;
@@ -33,6 +46,7 @@ export function ClientCard({ client, showActions = false, onAssign, isNewAssignm
   };
 
   const age = client.dateNaissance ? calculateAge(client.dateNaissance) : null;
+  const isAssigned = !!(client.assignedAt && client.assignedTo);
 
   return (
     <motion.div
@@ -104,17 +118,69 @@ export function ClientCard({ client, showActions = false, onAssign, isNewAssignm
           </div>
         </div>
 
+        {/* Statut d'assignation */}
+        {isAssigned && (
+          <div className="mt-4 p-3 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg">
+            <div className="flex items-start gap-2">
+              <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+              <div className="flex-1 text-xs">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <span className="font-semibold text-green-700">Déjà assigné</span>
+                </div>
+                <div className="space-y-1 text-gray-700">
+                  <div className="flex items-center gap-1.5">
+                    <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>
+                      À: <span className="font-medium">{client.assignedTo?.prenom} {client.assignedTo?.nom}</span>
+                    </span>
+                  </div>
+                  {client.assignedBy && (
+                    <div className="flex items-center gap-1.5">
+                      <User className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>
+                        Par: <span className="font-medium">{client.assignedBy.prenom} {client.assignedBy.nom}</span>
+                        <span className="text-gray-500 ml-1">
+                          ({client.assignedBy.role === 'ADMIN' ? 'Admin' : 'Secrétaire'})
+                        </span>
+                      </span>
+                    </div>
+                  )}
+                  {client.assignedAt && (
+                    <div className="text-gray-600 mt-1">
+                      Le {new Date(client.assignedAt).toLocaleDateString('fr-CA')} à{' '}
+                      {new Date(client.assignedAt).toLocaleTimeString('fr-CA', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {showActions && (
           <div className="mt-4 pt-4 border-t border-gray-200">
             <button
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                onAssign?.(client.id);
+                if (isAssigned) {
+                  // Afficher quand même le modal pour voir le message d'erreur détaillé
+                  onAssign?.(client.id);
+                } else {
+                  onAssign?.(client.id);
+                }
               }}
-              className="text-sm text-spa-turquoise-600 hover:text-spa-turquoise-700 font-medium transition-colors"
+              className={`text-sm font-medium transition-colors ${
+                isAssigned
+                  ? 'text-gray-400 hover:text-gray-500 cursor-not-allowed'
+                  : 'text-spa-turquoise-600 hover:text-spa-turquoise-700'
+              }`}
+              disabled={isAssigned}
             >
-              Assigner à un professionnel →
+              {isAssigned ? 'Client déjà assigné' : 'Assigner à un professionnel →'}
             </button>
           </div>
         )}

@@ -22,6 +22,20 @@ export interface AuthResponse {
   };
 }
 
+export interface AssignedByInfo {
+  id: string;
+  nom: string;
+  prenom: string;
+  role: 'ADMIN' | 'SECRETAIRE';
+}
+
+export interface AssignedToInfo {
+  id: string;
+  nom: string;
+  prenom: string;
+  role: 'MASSOTHERAPEUTE' | 'ESTHETICIENNE';
+}
+
 export interface Client {
   id: string;
   nom: string;
@@ -32,6 +46,8 @@ export interface Client {
   serviceType: 'MASSOTHERAPIE' | 'ESTHETIQUE';
   createdAt: string;
   assignedAt?: string; // Date d'assignation
+  assignedBy?: AssignedByInfo | null; // Qui a assigné le client
+  assignedTo?: AssignedToInfo | null; // À qui le client est assigné
   hasNoteAfterAssignment?: boolean; // Indique si une note a été ajoutée après l'assignation
   lastVisit?: string; // Date de dernière visite
   notes?: Note[]; // Notes incluses dans la réponse de /clients/:id
@@ -55,6 +71,29 @@ export interface Note {
 export interface Assignment {
   clientId: string;
   professionalId: string;
+}
+
+export interface AssignmentFull {
+  id: string;
+  clientId: string;
+  professionalId: string;
+  assignedById: string;
+  assignedAt: string;
+  assignedBy: AssignedByInfo;
+  professional: AssignedToInfo;
+}
+
+export interface AssignmentHistoryItem {
+  id: string;
+  assignedAt: string;
+  client: {
+    id: string;
+    nom: string;
+    prenom: string;
+    serviceType: 'MASSOTHERAPIE' | 'ESTHETIQUE';
+  };
+  professional: AssignedToInfo;
+  assignedBy: AssignedByInfo;
 }
 
 export interface User {
@@ -176,6 +215,36 @@ export interface ProfessionalPublic {
   nom: string;
   role: 'MASSOTHERAPEUTE' | 'ESTHETICIENNE';
   isActive: boolean;
+}
+
+export interface ReviewWithProfessional extends Review {
+  professional: {
+    id: string;
+    nom: string;
+    prenom: string;
+    role: 'MASSOTHERAPEUTE' | 'ESTHETICIENNE';
+  };
+}
+
+export interface AllReviewsParams {
+  page?: number;            // Numéro de page (défaut: 1)
+  limit?: number;           // Avis par page (défaut: 20)
+  professionalId?: string;  // Filtrer par professionnel
+  rating?: number;          // Filtrer par note (1-5)
+}
+
+export interface PaginationInfo {
+  currentPage: number;
+  totalPages: number;
+  totalCount: number;
+  limit: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+}
+
+export interface AllReviewsResponse {
+  reviews: ReviewWithProfessional[];
+  pagination: PaginationInfo;
 }
 
 // API Service avec RTK Query
@@ -459,7 +528,11 @@ export const api = createApi({
         }
         return `/professionals/public?${queryParams.toString()}`;
       },
-      transformResponse: (response: any) => response.data || response,
+      transformResponse: (response: any) => {
+        // Le backend retourne { success: true, data: [...] }
+        // On transforme en { professionals: [...] }
+        return { professionals: response.data || [] };
+      },
     }),
 
     // Créer un avis (PUBLIC - pas de token requis)
@@ -469,6 +542,14 @@ export const api = createApi({
         method: 'POST',
         body: reviewData,
       }),
+      transformResponse: (response: any) => {
+        // Le backend peut retourner { success: true, data: {...} } ou directement les données
+        if (response.data) {
+          return response.data;
+        }
+        return response;
+      },
+      invalidatesTags: ['User'], // Invalide le cache pour mettre à jour les stats
     }),
 
     // Récupérer les avis d'un professionnel (PUBLIC)
@@ -492,6 +573,38 @@ export const api = createApi({
       query: (userId) => `/users/${userId}/reviews`,
       transformResponse: (response: any) => response.data || response,
       providesTags: (result, error, userId) => [{ type: 'User', id: userId }],
+    }),
+
+    // ASSIGNMENT HISTORY - Historique complet des assignations (ADMIN/SECRETAIRE)
+    getAssignmentHistory: builder.query<
+      {
+        assignments: AssignmentHistoryItem[];
+        total: number;
+      },
+      { limit?: number } | void
+    >({
+      query: (params) => {
+        const limit = params && 'limit' in params ? params.limit : 50;
+        return `/assignments/history?limit=${limit}`;
+      },
+      transformResponse: (response: any) => response.data || response,
+      providesTags: ['Assignment'],
+    }),
+
+    // ALL REVIEWS - Tous les avis avec filtres et pagination (ADMIN)
+    getAllReviews: builder.query<AllReviewsResponse, AllReviewsParams | void>({
+      query: (params) => {
+        const queryParams = new URLSearchParams();
+        if (params) {
+          if (params.page) queryParams.append('page', params.page.toString());
+          if (params.limit) queryParams.append('limit', params.limit.toString());
+          if (params.professionalId) queryParams.append('professionalId', params.professionalId);
+          if (params.rating) queryParams.append('rating', params.rating.toString());
+        }
+        return `/reviews?${queryParams.toString()}`;
+      },
+      transformResponse: (response: any) => response.data || response,
+      providesTags: ['User'], // Invalide cache User car stats globales peuvent changer
     }),
   }),
 });
@@ -526,4 +639,7 @@ export const {
   useCreateReviewMutation,
   useGetReviewsByProfessionalQuery,
   useGetEmployeeReviewsQuery,
+  useGetAllReviewsQuery,
+  // Assignment history hooks
+  useGetAssignmentHistoryQuery,
 } = api;

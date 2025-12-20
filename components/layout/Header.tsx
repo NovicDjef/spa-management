@@ -66,11 +66,11 @@ export function Header({ user: userProp }: HeaderProps) {
               whileHover={{ scale: 1.05 }}
               className="flex items-center gap-3 cursor-pointer"
             >
-              <div className="w-10 h-10 rounded-full overflow-hidden shadow-soft">
+              <div className="w-10 h-10 rounded-full overflow-hidden shadow-soft bg-white">
                 <img
-                  src="/icons/apple-touch-icon.png"
+                  src="/logo_spa.svg"
                   alt="Spa Renaissance Logo"
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain p-1"
                 />
               </div>
               <div className="hidden sm:block">

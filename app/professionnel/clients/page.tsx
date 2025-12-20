@@ -18,9 +18,16 @@ export default function ClientsPage() {
   const { data: clientsData, isLoading, error, refetch } = useGetAssignedClientsQuery();
   
   const clients = clientsData?.clients || [];
-  
+
+  // Trier les clients par date d'assignation (les plus récents en premier)
+  const sortedClients = [...clients].sort((a, b) => {
+    const dateA = a.assignedAt ? new Date(a.assignedAt).getTime() : 0;
+    const dateB = b.assignedAt ? new Date(b.assignedAt).getTime() : 0;
+    return dateB - dateA; // Ordre décroissant (plus récent en premier)
+  });
+
   // Filtrer les clients par nom, prénom ou courriel
-  const filteredClients = clients.filter(client =>
+  const filteredClients = sortedClients.filter(client =>
     client.nom.toLowerCase().includes(searchQuery.toLowerCase()) ||
     client.prenom.toLowerCase().includes(searchQuery.toLowerCase()) ||
     client.courriel.toLowerCase().includes(searchQuery.toLowerCase())
@@ -122,9 +129,17 @@ export default function ClientsPage() {
                     <User className="w-8 h-8 text-spa-turquoise-600" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-lg text-gray-800 truncate">
-                      {client.prenom} {client.nom}
-                    </h3>
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="font-semibold text-lg text-gray-800 truncate">
+                        {client.prenom} {client.nom}
+                      </h3>
+                      {/* Badge NEW pour les clients sans notes */}
+                      {(!client._count?.notes || client._count.notes === 0) && (
+                        <span className="px-2 py-1 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs font-bold rounded-full shadow-md animate-pulse">
+                          NEW
+                        </span>
+                      )}
+                    </div>
                     <div className="flex items-center gap-2 mt-1">
                       {client.isActive !== false && (
                         <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
@@ -132,11 +147,18 @@ export default function ClientsPage() {
                         </span>
                       )}
                       <span className="text-xs text-gray-500">
-                        {new Date(client.createdAt).toLocaleDateString('fr-FR', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric'
-                        })}
+                        {client.assignedAt
+                          ? `Assigné le ${new Date(client.assignedAt).toLocaleDateString('fr-FR', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric'
+                            })}`
+                          : new Date(client.createdAt).toLocaleDateString('fr-FR', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric'
+                            })
+                        }
                       </span>
                     </div>
                   </div>
