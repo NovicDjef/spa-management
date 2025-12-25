@@ -9,6 +9,7 @@ import { Users, UserPlus, Loader2, X, Target, AlertCircle, Clock, UserCheck, Use
 import { useGetClientsQuery, useGetUsersQuery, useAssignClientMutation, useGetAssignmentHistoryQuery } from '@/lib/redux/services/api';
 import { useAppSelector } from '@/lib/redux/hooks';
 import { hasPermission, isAdminOrSecretary } from '@/lib/permissions';
+import { extractErrorMessage } from '@/lib/utils/errorHandler';
 
 interface Client {
   id: string;
@@ -101,6 +102,11 @@ export default function DashboardPage() {
   const filterClients = () => {
     let filtered = [...clients];
 
+    // Filter by assigned clients for therapists
+    if (currentUser.role === 'MASSOTHERAPEUTE' || currentUser.role === 'ESTHETICIENNE') {
+      filtered = filtered.filter((client) => client.assignedTo?.id === currentUser.id);
+    }
+
     // Filter by search query
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
@@ -157,7 +163,8 @@ export default function DashboardPage() {
       setSelectedProfessional('');
     } catch (error: any) {
       console.error('Erreur lors de l\'assignation:', error);
-      alert(`Une erreur est survenue lors de l'assignation: ${error?.data?.message || error.message || 'Erreur inconnue'}`);
+      const errorMsg = extractErrorMessage(error, 'Erreur lors de l\'assignation du client');
+      alert(`Une erreur est survenue lors de l'assignation: ${errorMsg}`);
     }
   };
 
@@ -203,9 +210,19 @@ export default function DashboardPage() {
                 <Users className="w-6 h-6 text-spa-turquoise-600" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-gray-800">Gestion des Clients</h1>
+                <h1 className="text-3xl font-bold text-gray-800">
+                  {currentUser.role === 'MASSOTHERAPEUTE' || currentUser.role === 'ESTHETICIENNE'
+                    ? 'Mes Clients'
+                    : 'Gestion des Clients'}
+                </h1>
                 <p className="text-gray-600">
                   {filteredClients.length} client{filteredClients.length !== 1 ? 's' : ''}
+                  {currentUser.role === 'MASSOTHERAPEUTE' || currentUser.role === 'ESTHETICIENNE'
+                    ? ' assigné'
+                    : ''}
+                  {filteredClients.length !== 1 && (currentUser.role === 'MASSOTHERAPEUTE' || currentUser.role === 'ESTHETICIENNE')
+                    ? 's'
+                    : ''}
                   {searchQuery || selectedFilter !== 'ALL' ? ' trouvé' : ''}
                   {filteredClients.length !== 1 && (searchQuery || selectedFilter !== 'ALL') ? 's' : ''}
                 </p>
@@ -268,8 +285,10 @@ export default function DashboardPage() {
               >
                 <ClientCard
                   client={client}
-                  showActions={true}
+                  showActions={currentUser.role === 'ADMIN' || currentUser.role === 'SECRETAIRE'}
                   onAssign={hasPermission(currentUser.role, 'ASSIGN_CLIENTS') ? handleAssignClient : undefined}
+                  currentUser={currentUser}
+                  showTherapistActions={currentUser.role === 'MASSOTHERAPEUTE' || currentUser.role === 'ESTHETICIENNE'}
                 />
               </motion.div>
             ))}

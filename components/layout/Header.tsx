@@ -1,8 +1,8 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Sparkles, LogOut, User, Menu, X } from 'lucide-react';
-import { useState } from 'react';
+import { Sparkles, LogOut, User, Menu, X, FileText } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAppDispatch, useAppSelector } from '@/lib/redux/hooks';
@@ -23,10 +23,16 @@ export function Header({ user: userProp }: HeaderProps) {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const [showMenu, setShowMenu] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
   // Utiliser l'utilisateur de Redux si disponible, sinon utiliser le prop
   const reduxUser = useAppSelector((state) => state.auth.user);
   const user = reduxUser || userProp;
+
+  // Éviter l'erreur d'hydration
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const handleLogout = () => {
     dispatch(logout());
@@ -49,6 +55,9 @@ export function Header({ user: userProp }: HeaderProps) {
   };
 
   const getHomeLink = () => {
+    // Pendant l'hydration, toujours retourner le même lien pour éviter le mismatch
+    if (!isMounted) return '/professionnel/dashboard';
+
     if (!user) return '/professionnel/dashboard';
     if (user.role === 'SECRETAIRE' || user.role === 'ADMIN') {
       return '/professionnel/dashboard';
@@ -87,9 +96,25 @@ export function Header({ user: userProp }: HeaderProps) {
                 <p className="font-medium text-gray-800">{user.nom} {user.prenom}</p>
                 <p className="text-sm text-gray-600">{getRoleLabel(user.role)}</p>
               </div>
-              <div className="w-10 h-10 bg-gradient-to-br from-spa-rose-100 to-spa-lavande-100 rounded-full flex items-center justify-center">
-                <User className="w-5 h-5 text-spa-rose-600" />
-              </div>
+              {(user.role === 'MASSOTHERAPEUTE' || user.role === 'ADMIN') && (
+                <Link href="/professionnel/recus">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    className="btn-outline flex items-center gap-2 !py-2"
+                  >
+                    <FileText className="w-4 h-4" />
+                    <span>{user.role === 'ADMIN' ? 'Tous les Reçus' : 'Mes Reçus'}</span>
+                  </motion.button>
+                </Link>
+              )}
+              <Link href="/professionnel/profil">
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  className="w-10 h-10 bg-gradient-to-br from-spa-rose-100 to-spa-lavande-100 rounded-full flex items-center justify-center cursor-pointer"
+                >
+                  <User className="w-5 h-5 text-spa-rose-600" />
+                </motion.div>
+              </Link>
               <button
                 onClick={handleLogout}
                 className="btn-outline flex items-center gap-2 !py-2"
@@ -133,13 +158,33 @@ export function Header({ user: userProp }: HeaderProps) {
                 <p className="text-xs text-gray-500">{user.email}</p>
               </div>
             </div>
-            <button
-              onClick={handleLogout}
-              className="w-full btn-outline flex items-center justify-center gap-2"
-            >
-              <LogOut className="w-4 h-4" />
-              <span>Déconnexion</span>
-            </button>
+            <div className="space-y-2">
+              {(user.role === 'MASSOTHERAPEUTE' || user.role === 'ADMIN') && (
+                <Link
+                  href="/professionnel/recus"
+                  onClick={() => setShowMenu(false)}
+                  className="w-full btn-primary flex items-center justify-center gap-2"
+                >
+                  <FileText className="w-4 h-4" />
+                  <span>{user.role === 'ADMIN' ? 'Tous les Reçus' : 'Mes Reçus'}</span>
+                </Link>
+              )}
+              <Link
+                href="/professionnel/profil"
+                onClick={() => setShowMenu(false)}
+                className="w-full btn-outline flex items-center justify-center gap-2"
+              >
+                <User className="w-4 h-4" />
+                <span>Mon Profil</span>
+              </Link>
+              <button
+                onClick={handleLogout}
+                className="w-full btn-outline flex items-center justify-center gap-2"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Déconnexion</span>
+              </button>
+            </div>
           </motion.div>
         )}
       </div>

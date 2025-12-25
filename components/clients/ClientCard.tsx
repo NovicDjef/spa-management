@@ -1,8 +1,10 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { User, Phone, Mail, Calendar, Hand, Wand2, Bell, CheckCircle2, UserCheck } from 'lucide-react';
+import { User, Phone, Mail, Calendar, Hand, Wand2, Bell, CheckCircle2, UserCheck, Eye, FileText } from 'lucide-react';
 import Link from 'next/link';
+import { useState } from 'react';
+import { ReceiptModal } from '@/components/receipts/ReceiptModal';
 
 interface ClientCardProps {
   client: {
@@ -31,9 +33,26 @@ interface ClientCardProps {
   showActions?: boolean;
   onAssign?: (clientId: string) => void;
   isNewAssignment?: boolean;
+  currentUser?: {
+    id: string;
+    nom: string;
+    prenom: string;
+    role: string;
+    numeroOrdre?: string;
+  };
+  showTherapistActions?: boolean; // Afficher les actions pour les massothérapeutes
 }
 
-export function ClientCard({ client, showActions = false, onAssign, isNewAssignment = false }: ClientCardProps) {
+export function ClientCard({
+  client,
+  showActions = false,
+  onAssign,
+  isNewAssignment = false,
+  currentUser,
+  showTherapistActions = false
+}: ClientCardProps) {
+  const [showReceiptModal, setShowReceiptModal] = useState(false);
+
   const calculateAge = (birthDate: string) => {
     const today = new Date();
     const birth = new Date(birthDate);
@@ -47,6 +66,8 @@ export function ClientCard({ client, showActions = false, onAssign, isNewAssignm
 
   const age = client.dateNaissance ? calculateAge(client.dateNaissance) : null;
   const isAssigned = !!(client.assignedAt && client.assignedTo);
+
+  const canSendReceipt = currentUser?.role === 'MASSOTHERAPEUTE' && client.serviceType === 'MASSOTHERAPIE';
 
   return (
     <motion.div
@@ -160,6 +181,7 @@ export function ClientCard({ client, showActions = false, onAssign, isNewAssignm
           </div>
         )}
 
+        {/* Actions pour Admin/Secrétaire */}
         {showActions && (
           <div className="mt-4 pt-4 border-t border-gray-200">
             <button
@@ -167,7 +189,6 @@ export function ClientCard({ client, showActions = false, onAssign, isNewAssignm
                 e.preventDefault();
                 e.stopPropagation();
                 if (isAssigned) {
-                  // Afficher quand même le modal pour voir le message d'erreur détaillé
                   onAssign?.(client.id);
                 } else {
                   onAssign?.(client.id);
@@ -184,7 +205,57 @@ export function ClientCard({ client, showActions = false, onAssign, isNewAssignm
             </button>
           </div>
         )}
+
+        {/* Actions pour Massothérapeutes */}
+        {showTherapistActions && (
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              <Link
+                href={`/professionnel/clients/${client.id}`}
+                onClick={(e) => e.stopPropagation()}
+                className="btn-outline text-xs sm:text-sm py-2 flex items-center justify-center gap-1.5"
+              >
+                <Eye className="w-4 h-4" />
+                <span>Voir</span>
+              </Link>
+              <Link
+                href={`/professionnel/clients/${client.id}?tab=notes`}
+                onClick={(e) => e.stopPropagation()}
+                className="btn-outline text-xs sm:text-sm py-2 flex items-center justify-center gap-1.5"
+              >
+                <FileText className="w-4 h-4" />
+                <span>Note</span>
+              </Link>
+              {canSendReceipt && (
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setShowReceiptModal(true);
+                  }}
+                  className="btn-primary text-xs sm:text-sm py-2 flex items-center justify-center gap-1.5 col-span-2 sm:col-span-1 bg-gradient-to-r from-spa-turquoise-500 to-spa-menthe-500"
+                >
+                  <FileText className="w-4 h-4" />
+                  <span>Reçu</span>
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </Link>
+
+      {/* Modal de reçu */}
+      {currentUser && canSendReceipt && (
+        <ReceiptModal
+          isOpen={showReceiptModal}
+          onClose={() => setShowReceiptModal(false)}
+          clientId={client.id}
+          clientName={`${client.prenom} ${client.nom}`}
+          therapistName={`${currentUser.prenom} ${currentUser.nom}`}
+          therapistOrderNumber={currentUser.numeroOrdre}
+          skipConfirmation={true}
+        />
+      )}
     </motion.div>
   );
 }

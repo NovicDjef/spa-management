@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { InputField } from '@/components/forms/FormFields';
 import { Lock, Mail, Loader2, AlertCircle } from 'lucide-react';
 import { useLoginMutation } from '@/lib/redux/services/api';
+import { extractErrorMessage } from '@/lib/utils/errorHandler';
 
 export default function ConnexionPage() {
   const router = useRouter();
@@ -66,8 +67,8 @@ export default function ConnexionPage() {
       }
     } catch (error: any) {
       console.error('Erreur de connexion:', error);
-       const backendMessage = error?.data?.error || 'Identifiants invalides. Veuillez vérifier vos informations.';
-        setGeneralError(backendMessage);
+      const errorMsg = extractErrorMessage(error, 'Identifiants invalides. Veuillez vérifier vos informations.');
+      setGeneralError(errorMsg);
     }
   };
 

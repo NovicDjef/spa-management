@@ -104,7 +104,11 @@ export interface User {
   prenom: string;
   role: 'ADMIN' | 'SECRETAIRE' | 'MASSOTHERAPEUTE' | 'ESTHETICIENNE';
   isActive: boolean;
+  numeroOrdre?: string; // Numéro d'ordre professionnel pour les thérapeutes
+  adresse?: string; // Adresse de l'employé
+  photoUrl?: string; // URL de la photo de profil
   createdAt: string;
+  updatedAt?: string; // Date de dernière mise à jour
   _count?: {
     assignedClients: number;
     notesCreated: number;
@@ -181,6 +185,134 @@ export interface MarketingStats {
     HOMME: number;
     AUTRE: number;
   };
+}
+
+// Types pour la génération AI
+export interface GenerateMarketingMessageData {
+  prompt: string;
+  clientIds: string[];
+  additionalContext?: string;
+  serviceType?: 'MASSOTHERAPIE' | 'ESTHETIQUE' | 'MIXTE';
+  spaName?: string;
+  clients?: Array<{
+    id: string;
+    nom: string;
+    prenom: string;
+    courriel: string;
+    telCellulaire: string;
+    serviceType: 'MASSOTHERAPIE' | 'ESTHETIQUE';
+  }>;
+}
+
+export interface GeneratedMessageResponse {
+  subject: string;
+  message: string;
+  prompt: string;
+  clientsCount: number;
+}
+
+export interface SendAiCampaignData {
+  clientIds: string[];
+  subject: string;
+  message: string;
+  prompt: string;
+}
+
+// Types pour les reçus d'assurance
+export interface SendReceiptData {
+  clientId: string; // ✅ ID du client (requis)
+  serviceName: string; // ✅ Nom du service (requis)
+  duration: number; // ✅ Durée en minutes (requis)
+  treatmentDate: string; // ✅ Format: "YYYY-MM-DD" (requis)
+  treatmentTime: string; // ✅ Format: "HH:mm" (requis)
+  noteId?: string; // ⚠️ ID de la note (optionnel)
+  serviceId?: string; // ⚠️ ID du service (optionnel)
+}
+
+export interface PreviewReceiptResponse {
+  success: boolean;
+  message?: string;
+  data: {
+    pdf: string; // PDF encodé en base64
+    receiptNumber: number; // Numéro du reçu
+    subtotal: number; // Montant avant taxes
+    taxTPS: number; // Taxe TPS (5%)
+    taxTVQ: number; // Taxe TVQ (9.975%)
+    total: number; // Montant total avec taxes
+  };
+}
+
+// Types pour l'historique des reçus
+export interface Receipt {
+  id: string;
+  receiptNumber: number;
+  clientName: string;
+  clientEmail?: string;
+  therapistName: string;
+  therapistOrderNumber?: string;
+  serviceName: string;
+  duration: number;
+  treatmentDate: string; // Format: "YYYY-MM-DD"
+  treatmentTime: string; // Format: "HH:mm"
+  subtotal: number;
+  taxTPS: number;
+  taxTVQ: number;
+  total: number;
+  sentAt: string; // Date d'envoi du reçu
+  createdAt: string;
+}
+
+export interface ReceiptsListResponse {
+  success: boolean;
+  data: Receipt[];
+}
+
+export interface ReceiptDetailResponse {
+  success: boolean;
+  data: {
+    receipt: Receipt;
+    pdf?: string; // PDF encodé en base64 (optionnel)
+  };
+}
+
+// Types pour les services de massage (format backend)
+export interface MassageServiceBackend {
+  id: string;
+  name: string;
+  pricing: {
+    [duration: string]: number; // ex: { "50": 103, "80": 133 }
+  };
+}
+
+export interface MassageServicesBackendResponse {
+  success: boolean;
+  data: MassageServiceBackend[];
+}
+
+// Types transformés pour le frontend
+export interface MassageServiceDuration {
+  duration: number;
+  price: number;
+}
+
+export interface MassageService {
+  id: string;
+  name: string;
+  durations: MassageServiceDuration[];
+}
+
+// Types pour la gestion du profil utilisateur
+export interface ChangePasswordData {
+  currentPassword: string;
+  newPassword: string;
+}
+
+export interface UpdateProfileData {
+  adresse?: string;
+  numeroOrdre?: string;
+  telephone?: string;
+  nom?: string;
+  prenom?: string;
 }
 
 // Review Types
@@ -265,7 +397,7 @@ export const api = createApi({
       return headers;
     },
   }),
-  tagTypes: ['Client', 'Note', 'Assignment', 'User'],
+  tagTypes: ['Client', 'Note', 'Assignment', 'User', 'Receipts'],
   endpoints: (builder) => ({
     // AUTH - Connexion employé
     login: builder.mutation<AuthResponse, LoginCredentials>({
@@ -514,6 +646,29 @@ export const api = createApi({
       providesTags: ['Client'],
     }),
 
+    // Générer un message marketing avec ChatGPT
+    generateMarketingMessage: builder.mutation<GeneratedMessageResponse, GenerateMarketingMessageData>({
+      query: (data) => ({
+        url: '/marketing/generate-message',
+        method: 'POST',
+        body: data,
+      }),
+      transformResponse: (response: any) => response.data || response,
+    }),
+
+    // Envoyer une campagne générée par IA
+    sendAiCampaign: builder.mutation<
+      { message: string; totalSent: number; totalFailed: number; totalClients: number; results: any[] },
+      SendAiCampaignData
+    >({
+      query: (campaignData) => ({
+        url: '/marketing/send-ai-campaign',
+        method: 'POST',
+        body: campaignData,
+      }),
+      transformResponse: (response: any) => response.data || response,
+    }),
+
     // REVIEWS - Système d'avis clients
 
     // Liste publique des professionnels (PUBLIC - pas de token requis)
@@ -606,6 +761,113 @@ export const api = createApi({
       transformResponse: (response: any) => response.data || response,
       providesTags: ['User'], // Invalide cache User car stats globales peuvent changer
     }),
+
+    // RECEIPTS - Récupérer la liste des services de massage
+    getMassageServices: builder.query<MassageService[], void>({
+      query: () => '/receipts/massage-services',
+      transformResponse: (response: MassageServicesBackendResponse) => {
+        // Transformer le format backend en format frontend
+        return response.data.map((service) => ({
+          id: service.id,
+          name: service.name,
+          durations: Object.entries(service.pricing).map(([duration, price]) => ({
+            duration: parseInt(duration),
+            price: price,
+          })).sort((a, b) => a.duration - b.duration), // Trier par durée croissante
+        }));
+      },
+    }),
+
+    // RECEIPTS - Aperçu du reçu (sans envoyer)
+    previewReceipt: builder.mutation<PreviewReceiptResponse, SendReceiptData>({
+      query: (receiptData) => ({
+        url: '/receipts/preview',
+        method: 'POST',
+        body: receiptData,
+      }),
+      transformResponse: (response: any) => response,
+    }),
+
+    // RECEIPTS - Envoi de reçu pour assurances (crée et envoie par email)
+    sendReceipt: builder.mutation<
+      {
+        id: string;
+        receiptNumber: number;
+        clientName: string;
+        serviceName: string;
+        total: number;
+        emailSent: boolean;
+        emailSentAt: string;
+      },
+      SendReceiptData
+    >({
+      query: (receiptData) => ({
+        url: '/receipts/send',
+        method: 'POST',
+        body: receiptData,
+      }),
+      transformResponse: (response: any) => response.data || response,
+      invalidatesTags: ['Receipts'],
+    }),
+
+    // RECEIPTS - Liste de tous les reçus du thérapeute connecté
+    getReceipts: builder.query<Receipt[], void>({
+      query: () => '/receipts',
+      transformResponse: (response: ReceiptsListResponse) => response.data,
+      providesTags: ['Receipts'],
+    }),
+
+    // RECEIPTS - Détail d'un reçu spécifique
+    getReceiptById: builder.query<ReceiptDetailResponse['data'], string>({
+      query: (id) => `/receipts/${id}`,
+      transformResponse: (response: ReceiptDetailResponse) => response.data,
+      providesTags: (result, error, id) => [{ type: 'Receipts', id }],
+    }),
+
+    // RECEIPTS - Renvoyer un reçu existant au client
+    resendReceipt: builder.mutation<
+      {
+        message: string;
+        emailSent: boolean;
+        emailSentAt: string;
+      },
+      string
+    >({
+      query: (receiptId) => ({
+        url: `/receipts/${receiptId}/resend`,
+        method: 'POST',
+      }),
+      transformResponse: (response: any) => response.data || response,
+      invalidatesTags: (result, error, receiptId) => [{ type: 'Receipts', id: receiptId }],
+    }),
+
+    // PROFILE - Récupérer son propre profil
+    getMyProfile: builder.query<User, void>({
+      query: () => '/users/me',
+      transformResponse: (response: any) => response.data,
+      providesTags: ['User'],
+    }),
+
+    // PROFILE - Changement de mot de passe
+    changePassword: builder.mutation<{ message: string }, ChangePasswordData>({
+      query: (passwordData) => ({
+        url: '/users/me/change-password',
+        method: 'PUT',
+        body: passwordData,
+      }),
+      transformResponse: (response: any) => response.data || response,
+    }),
+
+    // PROFILE - Mise à jour du profil
+    updateProfile: builder.mutation<{ user: User }, UpdateProfileData>({
+      query: (profileData) => ({
+        url: '/users/me',
+        method: 'PUT',
+        body: profileData,
+      }),
+      transformResponse: (response: any) => response.data || response,
+      invalidatesTags: ['User'],
+    }),
   }),
 });
 
@@ -634,6 +896,8 @@ export const {
   useSendIndividualEmailMutation,
   useSendCampaignEmailMutation,
   useGetMarketingStatsQuery,
+  useGenerateMarketingMessageMutation,
+  useSendAiCampaignMutation,
   // Review hooks
   useGetPublicProfessionalsQuery,
   useCreateReviewMutation,
@@ -642,4 +906,15 @@ export const {
   useGetAllReviewsQuery,
   // Assignment history hooks
   useGetAssignmentHistoryQuery,
+  // Receipt hooks
+  useGetMassageServicesQuery,
+  usePreviewReceiptMutation,
+  useSendReceiptMutation,
+  useGetReceiptsQuery,
+  useGetReceiptByIdQuery,
+  useResendReceiptMutation,
+  // Profile hooks
+  useGetMyProfileQuery,
+  useChangePasswordMutation,
+  useUpdateProfileMutation,
 } = api;

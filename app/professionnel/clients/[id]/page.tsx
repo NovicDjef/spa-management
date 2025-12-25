@@ -6,6 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Header } from '@/components/layout/Header';
 import { NotesList } from '@/components/notes/NotesList';
 import { AddNoteForm } from '@/components/notes/AddNoteForm';
+import { ReceiptModal } from '@/components/receipts/ReceiptModal';
 import {
   ArrowLeft,
   User,
@@ -37,6 +38,23 @@ export default function ClientDetailPage() {
   const notes = client?.notes || [];
 
   const [activeTab, setActiveTab] = useState<'info' | 'notes'>('info');
+  const [showReceiptModal, setShowReceiptModal] = useState(false);
+
+  const [openReceiptDirectly, setOpenReceiptDirectly] = useState(false);
+
+  const handleNoteAdded = () => {
+    // Ouvrir le modal de reçu avec confirmation pour les massothérapeutes
+    if (currentUser?.role === 'MASSOTHERAPEUTE' && client?.serviceType === 'MASSOTHERAPIE') {
+      setOpenReceiptDirectly(false); // Montrer la confirmation
+      setShowReceiptModal(true);
+    }
+  };
+
+  const handleOpenReceiptDirect = () => {
+    // Ouvrir directement le formulaire de reçu (sans confirmation)
+    setOpenReceiptDirectly(true);
+    setShowReceiptModal(true);
+  };
 
   const calculateAge = (birthDate: string) => {
     const today = new Date();
@@ -161,29 +179,68 @@ if (!client) {
 
           {/* Informations de contact */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex items-center gap-3 text-gray-700">
-              <Phone className="w-5 h-5 text-spa-rose-500" />
-              <div>
-                <p className="text-sm text-gray-500">Téléphone cellulaire</p>
-                <p className="font-medium">{client.telCellulaire}</p>
+            {/* Téléphone - Masqué pour massothérapeutes et esthéticiennes */}
+            {currentUser?.role !== 'MASSOTHERAPEUTE' && currentUser?.role !== 'ESTHETICIENNE' ? (
+              <div className="flex items-center gap-3 text-gray-700">
+                <Phone className="w-5 h-5 text-spa-rose-500" />
+                <div>
+                  <p className="text-sm text-gray-500">Téléphone cellulaire</p>
+                  <p className="font-medium">{client.telCellulaire}</p>
+                </div>
               </div>
-            </div>
-            <div className="flex items-center gap-3 text-gray-700">
-              <Mail className="w-5 h-5 text-spa-rose-500" />
-              <div>
-                <p className="text-sm text-gray-500">Courriel</p>
-                <p className="font-medium">{client.courriel}</p>
+            ) : (
+              <div className="flex items-center gap-3 text-gray-400 pointer-events-none select-none cursor-not-allowed">
+                <Phone className="w-5 h-5 text-gray-400" />
+                <div>
+                  <p className="text-sm text-gray-400">Téléphone cellulaire</p>
+                  <p className="font-medium text-gray-400">*** *** ****</p>
+                  <p className="text-xs text-gray-500 italic">Information confidentielle</p>
+                </div>
               </div>
-            </div>
-            <div className="flex items-center gap-3 text-gray-700">
-              <MapPin className="w-5 h-5 text-spa-rose-500" />
-              <div>
-                <p className="text-sm text-gray-500">Adresse</p>
-                <p className="font-medium">
-                  {client.adresse}, {client.ville} {client.codePostal}
-                </p>
+            )}
+
+            {/* Email - Masqué pour massothérapeutes et esthéticiennes */}
+            {currentUser?.role !== 'MASSOTHERAPEUTE' && currentUser?.role !== 'ESTHETICIENNE' ? (
+              <div className="flex items-center gap-3 text-gray-700">
+                <Mail className="w-5 h-5 text-spa-rose-500" />
+                <div>
+                  <p className="text-sm text-gray-500">Courriel</p>
+                  <p className="font-medium">{client.courriel}</p>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="flex items-center gap-3 text-gray-400 pointer-events-none select-none cursor-not-allowed">
+                <Mail className="w-5 h-5 text-gray-400" />
+                <div>
+                  <p className="text-sm text-gray-400">Courriel</p>
+                  <p className="font-medium text-gray-400">*****@*****.***</p>
+                  <p className="text-xs text-gray-500 italic">Information confidentielle</p>
+                </div>
+              </div>
+            )}
+
+            {/* Adresse - Masquée pour massothérapeutes et esthéticiennes */}
+            {currentUser?.role !== 'MASSOTHERAPEUTE' && currentUser?.role !== 'ESTHETICIENNE' ? (
+              <div className="flex items-center gap-3 text-gray-700">
+                <MapPin className="w-5 h-5 text-spa-rose-500" />
+                <div>
+                  <p className="text-sm text-gray-500">Adresse</p>
+                  <p className="font-medium">
+                    {client.adresse}, {client.ville} {client.codePostal}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3 text-gray-400 pointer-events-none select-none cursor-not-allowed">
+                <MapPin className="w-5 h-5 text-gray-400" />
+                <div>
+                  <p className="text-sm text-gray-400">Adresse</p>
+                  <p className="font-medium text-gray-400">*** *** ***, ***** ***</p>
+                  <p className="text-xs text-gray-500 italic">Information confidentielle</p>
+                </div>
+              </div>
+            )}
+
             <div className="flex items-center gap-3 text-gray-700">
               <Calendar className="w-5 h-5 text-spa-rose-500" />
               <div>
@@ -196,39 +253,55 @@ if (!client) {
           </div>
         </motion.div>
 
-        {/* Tabs */}
-        <div className="flex gap-2 mb-6">
-          <button
-            onClick={() => setActiveTab('info')}
-            className={`px-6 py-3 rounded-xl font-medium transition-all ${
-              activeTab === 'info'
-                ? 'bg-spa-rose-500 text-white shadow-soft'
-                : 'bg-white text-gray-700 hover:bg-gray-50'
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <FileText className="w-5 h-5" />
-              <span>Informations médicales</span>
-            </div>
-          </button>
-          <button
-            onClick={() => setActiveTab('notes')}
-            className={`px-6 py-3 rounded-xl font-medium transition-all ${
-              activeTab === 'notes'
-                ? 'bg-spa-rose-500 text-white shadow-soft'
-                : 'bg-white text-gray-700 hover:bg-gray-50'
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <FileText className="w-5 h-5" />
-              <span>Notes de traitement</span>
-              {notes.length > 0 && (
-                <span className="px-2 py-0.5 bg-spa-rose-100 text-spa-rose-700 rounded-full text-xs">
-                  {notes.length}
-                </span>
-              )}
-            </div>
-          </button>
+        {/* Tabs - Responsive */}
+        <div className="mb-6">
+          {/* Onglets principaux */}
+          <div className="flex gap-2 mb-3 flex-wrap">
+            <button
+              onClick={() => setActiveTab('info')}
+              className={`flex-1 min-w-[140px] px-4 sm:px-6 py-3 rounded-xl font-medium transition-all ${
+                activeTab === 'info'
+                  ? 'bg-spa-rose-500 text-white shadow-soft'
+                  : 'bg-white text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              <div className="flex items-center justify-center gap-2">
+                <FileText className="w-5 h-5" />
+                <span className="text-sm sm:text-base">Informations</span>
+              </div>
+            </button>
+            <button
+              onClick={() => setActiveTab('notes')}
+              className={`flex-1 min-w-[140px] px-4 sm:px-6 py-3 rounded-xl font-medium transition-all ${
+                activeTab === 'notes'
+                  ? 'bg-spa-rose-500 text-white shadow-soft'
+                  : 'bg-white text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              <div className="flex items-center justify-center gap-2">
+                <FileText className="w-5 h-5" />
+                <span className="text-sm sm:text-base">Notes</span>
+                {notes.length > 0 && (
+                  <span className="px-2 py-0.5 bg-spa-rose-100 text-spa-rose-700 rounded-full text-xs">
+                    {notes.length}
+                  </span>
+                )}
+              </div>
+            </button>
+          </div>
+
+          {/* Bouton Reçu assurance - Pleine largeur sur mobile */}
+          {currentUser?.role === 'MASSOTHERAPEUTE' && client?.serviceType === 'MASSOTHERAPIE' && (
+            <button
+              onClick={handleOpenReceiptDirect}
+              className="w-full px-4 sm:px-6 py-3 rounded-xl font-medium transition-all bg-gradient-to-r from-spa-turquoise-500 to-spa-menthe-500 text-white hover:shadow-lg active:scale-95 sm:hover:scale-105"
+            >
+              <div className="flex items-center justify-center gap-2">
+                <FileText className="w-5 h-5" />
+                <span className="text-sm sm:text-base">Reçu assurance</span>
+              </div>
+            </button>
+          )}
         </div>
 
         {/* Contenu */}
@@ -656,19 +729,35 @@ if (!client) {
           ) : (
             <div className="space-y-8">
               {/* Formulaire d'ajout de note */}
-              <AddNoteForm clientId={clientId} />
+              <AddNoteForm clientId={clientId} onNoteAdded={handleNoteAdded} />
 
               {/* Liste des notes */}
-              <NotesList 
-                notes={notes} 
-                isLoading={isLoading} 
-                currentUserId={currentUser?.id} 
+              <NotesList
+                notes={notes}
+                isLoading={isLoading}
+                currentUserId={currentUser?.id}
                 currentUserRole={currentUser?.role}
               />
             </div>
           )}
         </motion.div>
       </div>
+
+      {/* Modal de reçu d'assurance */}
+      {currentUser && client && (
+        <ReceiptModal
+          isOpen={showReceiptModal}
+          onClose={() => {
+            setShowReceiptModal(false);
+            setOpenReceiptDirectly(false);
+          }}
+          clientId={clientId as string}
+          clientName={`${client.prenom} ${client.nom}`}
+          therapistName={`${currentUser.prenom} ${currentUser.nom}`}
+          therapistOrderNumber={currentUser.numeroOrdre}
+          skipConfirmation={openReceiptDirectly}
+        />
+      )}
     </div>
   );
 }
