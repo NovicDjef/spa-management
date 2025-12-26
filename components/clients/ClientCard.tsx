@@ -188,20 +188,11 @@ export function ClientCard({
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                if (isAssigned) {
-                  onAssign?.(client.id);
-                } else {
-                  onAssign?.(client.id);
-                }
+                onAssign?.(client.id);
               }}
-              className={`text-sm font-medium transition-colors ${
-                isAssigned
-                  ? 'text-gray-400 hover:text-gray-500 cursor-not-allowed'
-                  : 'text-spa-turquoise-600 hover:text-spa-turquoise-700'
-              }`}
-              disabled={isAssigned}
+              className="text-sm font-medium text-spa-turquoise-600 hover:text-spa-turquoise-700 transition-colors"
             >
-              {isAssigned ? 'Client déjà assigné' : 'Assigner à un professionnel →'}
+              {isAssigned ? 'Gérer l\'assignation →' : 'Assigner à un professionnel →'}
             </button>
           </div>
         )}

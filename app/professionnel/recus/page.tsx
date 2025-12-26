@@ -17,6 +17,7 @@ export default function ReceiptsPage() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMonth, setSelectedMonth] = useState('ALL');
+  const [selectedDate, setSelectedDate] = useState('');
   const [isMounted, setIsMounted] = useState(false);
 
   // Modal de visualisation
@@ -87,7 +88,11 @@ export default function ReceiptsPage() {
       ? (receipt.sentAt ? new Date(receipt.sentAt).getMonth() === parseInt(selectedMonth) : false)
       : true;
 
-    return matchesSearch && matchesMonth;
+    const matchesDate = selectedDate
+      ? (receipt.treatmentDate ? formatDate(receipt.treatmentDate) === new Date(selectedDate).toLocaleDateString('fr-CA') : false)
+      : true;
+
+    return matchesSearch && matchesMonth && matchesDate;
   }) || [];
 
   // Statistiques avec gestion des valeurs manquantes
@@ -146,7 +151,7 @@ export default function ReceiptsPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
+            className={`grid grid-cols-1 ${currentUser?.role === 'ADMIN' ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-6 mb-8`}
           >
             <div className="card-spa p-6">
               <div className="flex items-center gap-4">
@@ -160,19 +165,22 @@ export default function ReceiptsPage() {
               </div>
             </div>
 
-            <div className="card-spa p-6">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-green-100 to-emerald-200 rounded-full flex items-center justify-center">
-                  <DollarSign className="w-6 h-6 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Revenu Total</p>
-                  <p className="text-2xl font-bold text-gray-800">
-                    {formatCurrency(totalRevenue)}$ CAD
-                  </p>
+            {/* Revenu Total - Seulement pour ADMIN */}
+            {currentUser?.role === 'ADMIN' && (
+              <div className="card-spa p-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-gradient-to-br from-green-100 to-emerald-200 rounded-full flex items-center justify-center">
+                    <DollarSign className="w-6 h-6 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Revenu Total</p>
+                    <p className="text-2xl font-bold text-gray-800">
+                      {formatCurrency(totalRevenue)}$ CAD
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             <div className="card-spa p-6">
               <div className="flex items-center gap-4">
@@ -205,40 +213,86 @@ export default function ReceiptsPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="mb-6 flex flex-col sm:flex-row gap-4"
+          className="mb-6 space-y-4"
         >
-          {/* Barre de recherche */}
-          <div className="flex-1 relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Rechercher par client, service ou numéro..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="input-spa pl-12 w-full"
-            />
+          <div className="flex flex-col sm:flex-row gap-4">
+            {/* Barre de recherche */}
+            <div className="flex-1 relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Rechercher par client, service ou numéro..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="input-spa pl-12 w-full"
+              />
+            </div>
+
+            {/* Filtre par mois d'envoi */}
+            <select
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(e.target.value)}
+              className="input-spa sm:w-48"
+            >
+              <option value="ALL">Tous les mois</option>
+              <option value="0">Janvier</option>
+              <option value="1">Février</option>
+              <option value="2">Mars</option>
+              <option value="3">Avril</option>
+              <option value="4">Mai</option>
+              <option value="5">Juin</option>
+              <option value="6">Juillet</option>
+              <option value="7">Août</option>
+              <option value="8">Septembre</option>
+              <option value="9">Octobre</option>
+              <option value="10">Novembre</option>
+              <option value="11">Décembre</option>
+            </select>
+
+            {/* Filtre par date de traitement */}
+            <div className="relative sm:w-64">
+              <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="input-spa pl-12 w-full"
+                placeholder="Date du traitement"
+              />
+            </div>
           </div>
 
-          {/* Filtre par mois */}
-          <select
-            value={selectedMonth}
-            onChange={(e) => setSelectedMonth(e.target.value)}
-            className="input-spa sm:w-48"
-          >
-            <option value="ALL">Tous les mois</option>
-            <option value="0">Janvier</option>
-            <option value="1">Février</option>
-            <option value="2">Mars</option>
-            <option value="3">Avril</option>
-            <option value="4">Mai</option>
-            <option value="5">Juin</option>
-            <option value="6">Juillet</option>
-            <option value="7">Août</option>
-            <option value="8">Septembre</option>
-            <option value="9">Octobre</option>
-            <option value="10">Novembre</option>
-            <option value="11">Décembre</option>
-          </select>
+          {/* Indicateur de filtres actifs */}
+          {(searchQuery || selectedMonth !== 'ALL' || selectedDate) && (
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <span className="font-medium">Filtres actifs:</span>
+              {searchQuery && (
+                <span className="px-2 py-1 bg-spa-turquoise-100 text-spa-turquoise-700 rounded-full">
+                  Recherche: {searchQuery}
+                </span>
+              )}
+              {selectedMonth !== 'ALL' && (
+                <span className="px-2 py-1 bg-spa-lavande-100 text-spa-lavande-700 rounded-full">
+                  Mois sélectionné
+                </span>
+              )}
+              {selectedDate && (
+                <span className="px-2 py-1 bg-spa-menthe-100 text-spa-menthe-700 rounded-full">
+                  Date: {new Date(selectedDate).toLocaleDateString('fr-CA')}
+                </span>
+              )}
+              <button
+                onClick={() => {
+                  setSearchQuery('');
+                  setSelectedMonth('ALL');
+                  setSelectedDate('');
+                }}
+                className="text-red-600 hover:text-red-700 font-medium ml-2"
+              >
+                Réinitialiser
+              </button>
+            </div>
+          )}
         </motion.div>
 
         {/* Liste des reçus */}
@@ -436,12 +490,15 @@ export default function ReceiptsPage() {
                 <span className="text-sm text-gray-600">
                   {filteredReceipts.length} reçu{filteredReceipts.length !== 1 ? 's' : ''} affiché{filteredReceipts.length !== 1 ? 's' : ''}
                 </span>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold text-gray-700">Total:</span>
-                  <span className="text-xl font-bold text-green-600">
-                    {formatCurrency(totalRevenue)}$ CAD
-                  </span>
-                </div>
+                {/* Total revenu - Seulement pour ADMIN */}
+                {currentUser?.role === 'ADMIN' && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-gray-700">Total:</span>
+                    <span className="text-xl font-bold text-green-600">
+                      {formatCurrency(totalRevenue)}$ CAD
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           </motion.div>

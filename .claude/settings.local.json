@@ -11,7 +11,8 @@
       "Bash(wait:*)",
       "Bash(cat:*)",
       "Bash(grep:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(pkill:*)"
     ]
   }
 }

@@ -87,6 +87,8 @@ export default function EmployeesPage() {
     role: 'SECRETAIRE' as UserRole,
     nom: '',
     prenom: '',
+    adresse: '',
+    numeroOrdre: '',
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -94,6 +96,15 @@ export default function EmployeesPage() {
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
+
+    // Validation du numéro RMQ pour les massothérapeutes
+    if (formData.role === 'MASSOTHERAPEUTE' && formData.numeroOrdre) {
+      const rmqPattern = /^M-\d{4}$/;
+      if (!rmqPattern.test(formData.numeroOrdre)) {
+        setErrors({ numeroOrdre: 'Le numéro RMQ doit être au format M-XXXX (exemple: M-3444)' });
+        return;
+      }
+    }
 
     try {
       const result = await createUser(formData).unwrap();
@@ -108,6 +119,8 @@ export default function EmployeesPage() {
         role: 'SECRETAIRE',
         nom: '',
         prenom: '',
+        adresse: '',
+        numeroOrdre: '',
       });
     } catch (error: any) {
       setErrors({ general: error.data?.message || 'Erreur lors de la création' });
@@ -120,6 +133,15 @@ export default function EmployeesPage() {
 
     setErrors({});
 
+    // Validation du numéro RMQ pour les massothérapeutes
+    if (formData.role === 'MASSOTHERAPEUTE' && formData.numeroOrdre) {
+      const rmqPattern = /^M-\d{4}$/;
+      if (!rmqPattern.test(formData.numeroOrdre)) {
+        setErrors({ numeroOrdre: 'Le numéro RMQ doit être au format M-XXXX (exemple: M-3444)' });
+        return;
+      }
+    }
+
     try {
       const updateData: any = {
         email: formData.email,
@@ -127,6 +149,8 @@ export default function EmployeesPage() {
         nom: formData.nom,
         prenom: formData.prenom,
         role: formData.role,
+        adresse: formData.adresse,
+        numeroOrdre: formData.numeroOrdre,
       };
 
       // Ajouter le mot de passe seulement s'il est fourni
@@ -204,6 +228,8 @@ export default function EmployeesPage() {
       role: user.role,
       nom: user.nom,
       prenom: user.prenom,
+      adresse: user.adresse || '',
+      numeroOrdre: user.numeroOrdre || '',
     });
     setShowEditModal(true);
   };
@@ -569,6 +595,46 @@ const handleToggleStatus = async (user: any) => {
                   </select>
                 </div>
 
+                {/* Champ adresse - Afficher pour massothérapeutes et esthéticiennes */}
+                {(formData.role === 'MASSOTHERAPEUTE' || formData.role === 'ESTHETICIENNE') && (
+                  <div>
+                    <label className="label-spa">Adresse de résidence *</label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.adresse}
+                      onChange={(e) => setFormData({ ...formData, adresse: e.target.value })}
+                      className="input-spa"
+                      placeholder="123 rue Exemple, Ville, Province, Code postal"
+                    />
+                  </div>
+                )}
+
+                {/* Champ numéro RMQ - Afficher seulement pour massothérapeutes */}
+                {formData.role === 'MASSOTHERAPEUTE' && (
+                  <div>
+                    <label className="label-spa">Numéro RMQ *</label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.numeroOrdre}
+                      onChange={(e) => setFormData({ ...formData, numeroOrdre: e.target.value })}
+                      className={`input-spa ${errors.numeroOrdre ? 'border-red-500' : ''}`}
+                      placeholder="M-3444"
+                      pattern="M-\d{4}"
+                      title="Format requis: M-XXXX (ex: M-3444)"
+                      maxLength={6}
+                    />
+                    {errors.numeroOrdre ? (
+                      <p className="text-xs text-red-600 mt-1">{errors.numeroOrdre}</p>
+                    ) : (
+                      <p className="text-xs text-gray-500 mt-1">
+                        Format: M-XXXX (exemple: M-3444)
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 <div>
                   <label className="label-spa">Mot de passe *</label>
                   <input
@@ -748,6 +814,46 @@ const handleToggleStatus = async (user: any) => {
               <option value="ADMIN">Administrateur</option>
             </select>
           </div>
+
+          {/* Champ adresse - Afficher pour massothérapeutes et esthéticiennes */}
+          {(formData.role === 'MASSOTHERAPEUTE' || formData.role === 'ESTHETICIENNE') && (
+            <div>
+              <label className="label-spa">Adresse de résidence *</label>
+              <input
+                type="text"
+                required
+                value={formData.adresse}
+                onChange={(e) => setFormData({ ...formData, adresse: e.target.value })}
+                className="input-spa"
+                placeholder="123 rue Exemple, Ville, Province, Code postal"
+              />
+            </div>
+          )}
+
+          {/* Champ numéro RMQ - Afficher seulement pour massothérapeutes */}
+          {formData.role === 'MASSOTHERAPEUTE' && (
+            <div>
+              <label className="label-spa">Numéro RMQ *</label>
+              <input
+                type="text"
+                required
+                value={formData.numeroOrdre}
+                onChange={(e) => setFormData({ ...formData, numeroOrdre: e.target.value })}
+                className={`input-spa ${errors.numeroOrdre ? 'border-red-500' : ''}`}
+                placeholder="M-3444"
+                pattern="M-\d{4}"
+                title="Format requis: M-XXXX (ex: M-3444)"
+                maxLength={6}
+              />
+              {errors.numeroOrdre ? (
+                <p className="text-xs text-red-600 mt-1">{errors.numeroOrdre}</p>
+              ) : (
+                <p className="text-xs text-gray-500 mt-1">
+                  Format: M-XXXX (exemple: M-3444)
+                </p>
+              )}
+            </div>
+          )}
 
           <div>
             <label className="label-spa">Mot de passe (laisser vide pour ne pas changer)</label>

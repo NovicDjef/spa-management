@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Header } from '@/components/layout/Header';
 import { useAppSelector } from '@/lib/redux/hooks';
 import { useGetAssignedClientsQuery } from '@/lib/redux/services/api';
-import { Users, Search, Loader2, Eye, Sparkles } from 'lucide-react';
+import { Users, Search, Loader2, ArrowRight, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 
 export default function ClientsPage() {
@@ -62,37 +62,37 @@ export default function ClientsPage() {
     <div className="min-h-screen bg-gray-50">
       <Header user={currentUser} />
 
-      <div className="container mx-auto max-w-7xl py-6 sm:py-8 px-4 sm:px-6">
-        {/* En-tête */}
-        <div className="mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+      <div className="max-w-5xl mx-auto py-6 sm:py-8 px-4 sm:px-6">
+        {/* En-tête épuré */}
+        <div className="mb-8">
+          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
             Mes Clients
           </h1>
-          <div className="flex items-center gap-3 text-sm sm:text-base text-gray-600">
+          <div className="flex items-center gap-4 text-gray-600">
             <span>{filteredClients.length} client{filteredClients.length !== 1 ? 's' : ''}</span>
             {newClientsCount > 0 && (
-              <span className="px-2 py-0.5 bg-orange-100 text-orange-700 text-xs sm:text-sm font-medium rounded-full">
+              <span className="px-2.5 py-1 bg-orange-100 text-orange-700 text-sm font-medium rounded-full">
                 {newClientsCount} nouveau{newClientsCount !== 1 ? 'x' : ''}
               </span>
             )}
           </div>
         </div>
 
-        {/* Barre de recherche */}
-        <div className="mb-6">
-          <div className="relative max-w-md">
+        {/* Barre de recherche élégante */}
+        <div className="mb-8">
+          <div className="relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Rechercher..."
+              placeholder="Rechercher par nom ou email..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-spa-turquoise-500 focus:border-transparent transition-all text-gray-900 placeholder-gray-400"
+              className="w-full pl-12 pr-4 py-3.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-spa-turquoise-500 focus:border-transparent transition-all text-gray-900 placeholder-gray-400"
             />
           </div>
         </div>
 
-        {/* Grille de clients */}
+        {/* Liste des clients */}
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-20">
             <Loader2 className="w-10 h-10 text-spa-turquoise-500 animate-spin mb-4" />
@@ -113,7 +113,7 @@ export default function ClientsPage() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+          <div className="space-y-3">
             {filteredClients.map((client, index) => {
               const notesCount = client.notes?.length || 0;
               const isNew = !client.hasNoteAfterAssignment;
@@ -127,7 +127,7 @@ export default function ClientsPage() {
                   transition={{ delay: index * 0.03 }}
                 >
                   <Link href={`/professionnel/clients/${client.id}`}>
-                    <div className="group relative bg-white rounded-2xl p-5 sm:p-6 shadow-sm hover:shadow-lg border border-gray-100 hover:border-spa-turquoise-300 transition-all duration-300 cursor-pointer h-full flex flex-col">
+                    <div className="group relative bg-white rounded-xl p-5 sm:p-6 shadow-sm hover:shadow-md border border-gray-100 hover:border-spa-turquoise-200 transition-all duration-200 cursor-pointer">
                       {/* Badge Nouveau */}
                       <AnimatePresence>
                         {isNew && (
@@ -135,7 +135,7 @@ export default function ClientsPage() {
                             initial={{ scale: 0 }}
                             animate={{ scale: 1 }}
                             exit={{ scale: 0 }}
-                            className="absolute -top-2 -right-2 z-10"
+                            className="absolute -top-2 -right-2 sm:top-4 sm:right-4"
                           >
                             <div className="px-2.5 py-1 bg-gradient-to-r from-orange-400 to-orange-500 text-white text-xs font-bold rounded-full shadow-lg flex items-center gap-1">
                               <Sparkles className="w-3 h-3" />
@@ -145,74 +145,73 @@ export default function ClientsPage() {
                         )}
                       </AnimatePresence>
 
-                      {/* Avatar et nom */}
-                      <div className="flex flex-col items-center text-center mb-4">
-                        <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-spa-turquoise-400 to-spa-turquoise-600 rounded-full flex items-center justify-center text-white text-xl sm:text-2xl font-bold shadow-md mb-3">
-                          {initials}
-                        </div>
-                        <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-1">
-                          {client.prenom} {client.nom}
-                        </h3>
-                        {client.isActive !== false && (
-                          <div className="flex items-center gap-1.5 px-2.5 py-1 bg-green-50 text-green-700 text-xs font-medium rounded-full">
-                            <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
-                            Actif
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Informations */}
-                      <div className="flex-1 space-y-3 mb-4">
-                        <div className="text-center">
-                          <p className="text-sm text-gray-600 break-all px-2">
-                            {client.courriel}
-                          </p>
-                        </div>
-
-                        {client.telCellulaire && (
-                          <div className="text-center">
-                            <p className="text-sm text-gray-600">
-                              {client.telCellulaire.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3')}
-                            </p>
-                          </div>
-                        )}
-
-                        {/* Compteur de notes */}
-                        <div className="flex justify-center">
-                          <div className={`px-3 py-1.5 rounded-lg text-sm font-semibold ${
-                            notesCount > 0
-                              ? 'bg-spa-turquoise-50 text-spa-turquoise-700'
-                              : 'bg-gray-100 text-gray-600'
-                          }`}>
-                            {notesCount} note{notesCount !== 1 ? 's' : ''}
+                      <div className="flex items-center gap-4">
+                        {/* Avatar */}
+                        <div className="flex-shrink-0">
+                          <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-spa-turquoise-400 to-spa-turquoise-600 rounded-full flex items-center justify-center text-white text-lg sm:text-xl font-bold shadow-sm">
+                            {initials}
                           </div>
                         </div>
 
-                        {/* Date d'assignation */}
-                        <div className="text-center">
-                          <p className="text-xs text-gray-500">
-                            Assigné le{' '}
-                            {client.assignedAt
-                              ? new Date(client.assignedAt).toLocaleDateString('fr-FR', {
-                                  day: '2-digit',
-                                  month: '2-digit',
-                                  year: 'numeric'
-                                })
-                              : new Date(client.createdAt).toLocaleDateString('fr-FR', {
-                                  day: '2-digit',
-                                  month: '2-digit',
-                                  year: 'numeric'
-                                })
-                            }
-                          </p>
-                        </div>
-                      </div>
+                        {/* Informations */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-3 mb-1">
+                            <h3 className="text-lg sm:text-xl font-semibold text-gray-900 truncate">
+                              {client.prenom} {client.nom}
+                            </h3>
+                            {client.isActive !== false && (
+                              <div className="hidden sm:flex items-center gap-1.5 px-2 py-0.5 bg-green-50 text-green-700 text-xs font-medium rounded-full">
+                                <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                                Actif
+                              </div>
+                            )}
+                          </div>
 
-                      {/* Bouton */}
-                      <div className="mt-auto">
-                        <div className="w-full bg-gradient-to-r from-spa-turquoise-500 to-spa-turquoise-600 group-hover:from-spa-turquoise-600 group-hover:to-spa-turquoise-700 text-white rounded-xl py-3 font-semibold transition-all flex items-center justify-center gap-2 shadow-sm group-hover:shadow-md">
-                          <Eye className="w-5 h-5" />
-                          <span>Voir le dossier</span>
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-sm text-gray-600 mb-3">
+                            <span className="truncate">{client.courriel}</span>
+                            {client.telCellulaire && (
+                              <>
+                                <span className="hidden sm:inline text-gray-300">•</span>
+                                <span>{client.telCellulaire.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3')}</span>
+                              </>
+                            )}
+                          </div>
+
+                          {/* Compteur de notes et date */}
+                          <div className="flex items-center gap-3 text-xs text-gray-500">
+                            <div className="flex items-center gap-1.5">
+                              <div className={`px-2 py-1 rounded-md font-medium ${
+                                notesCount > 0
+                                  ? 'bg-spa-turquoise-50 text-spa-turquoise-700'
+                                  : 'bg-gray-100 text-gray-600'
+                              }`}>
+                                {notesCount} note{notesCount !== 1 ? 's' : ''}
+                              </div>
+                            </div>
+                            <span className="text-gray-300">•</span>
+                            <span>
+                              Assigné le{' '}
+                              {client.assignedAt
+                                ? new Date(client.assignedAt).toLocaleDateString('fr-FR', {
+                                    day: 'numeric',
+                                    month: 'long',
+                                    year: 'numeric'
+                                  })
+                                : new Date(client.createdAt).toLocaleDateString('fr-FR', {
+                                    day: 'numeric',
+                                    month: 'long',
+                                    year: 'numeric'
+                                  })
+                              }
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Flèche */}
+                        <div className="flex-shrink-0 hidden sm:block">
+                          <div className="w-10 h-10 rounded-full bg-gray-50 group-hover:bg-spa-turquoise-50 flex items-center justify-center transition-colors">
+                            <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-spa-turquoise-600 transition-colors" />
+                          </div>
                         </div>
                       </div>
                     </div>

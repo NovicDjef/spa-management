@@ -5,8 +5,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { Header } from '@/components/layout/Header';
 import { SearchBar } from '@/components/clients/SearchBar';
 import { ClientCard } from '@/components/clients/ClientCard';
-import { Users, UserPlus, Loader2, X, Target, AlertCircle, Clock, UserCheck, User as UserIcon, ArrowRight } from 'lucide-react';
-import { useGetClientsQuery, useGetUsersQuery, useAssignClientMutation, useGetAssignmentHistoryQuery } from '@/lib/redux/services/api';
+import { Users, UserPlus, Loader2, X, Target, AlertCircle, Clock, UserCheck, User as UserIcon, ArrowRight, UserMinus } from 'lucide-react';
+import { useGetClientsQuery, useGetUsersQuery, useAssignClientMutation, useUnassignClientMutation, useGetAssignmentHistoryQuery } from '@/lib/redux/services/api';
 import { useAppSelector } from '@/lib/redux/hooks';
 import { hasPermission, isAdminOrSecretary } from '@/lib/permissions';
 import { extractErrorMessage } from '@/lib/utils/errorHandler';
@@ -55,6 +55,7 @@ export default function DashboardPage() {
     refetchOnMountOrArgChange: true,
   });
   const [assignClient, { isLoading: isAssigning }] = useAssignClientMutation();
+  const [unassignClient, { isLoading: isUnassigning }] = useUnassignClientMutation();
   const { data: assignmentHistoryData, isLoading: isLoadingHistory } = useGetAssignmentHistoryQuery({ limit: 10 });
 
   const currentUser = useAppSelector((state) => state.auth.user) || {
@@ -168,6 +169,34 @@ export default function DashboardPage() {
     }
   };
 
+  const handleUnassignClient = async () => {
+    if (!selectedClient || !selectedClient.assignedTo) {
+      return;
+    }
+
+    const confirmMsg = `Êtes-vous sûr de vouloir retirer l'assignation de ${selectedClient.prenom} ${selectedClient.nom} à ${selectedClient.assignedTo.prenom} ${selectedClient.assignedTo.nom}?\n\nCela supprimera uniquement l'assignation la plus récente.`;
+
+    if (!confirm(confirmMsg)) {
+      return;
+    }
+
+    try {
+      await unassignClient({
+        clientId: selectedClient.id,
+        professionalId: selectedClient.assignedTo.id,
+      }).unwrap();
+
+      alert('Assignation retirée avec succès!');
+      setShowAssignModal(false);
+      setSelectedClient(null);
+      setSelectedProfessional('');
+    } catch (error: any) {
+      console.error('Erreur lors du retrait de l\'assignation:', error);
+      const errorMsg = extractErrorMessage(error, 'Erreur lors du retrait de l\'assignation');
+      alert(`Une erreur est survenue: ${errorMsg}`);
+    }
+  };
+
   const getProfessionalLabel = (professional: Professional) => {
     const roleLabel =
       professional.role === 'MASSOTHERAPEUTE'
@@ -182,19 +211,19 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-gradient-to-br from-spa-beige-50 via-white to-spa-turquoise-50">
       <Header user={currentUser ?? undefined} />
 
-      <div className="container-spa py-8">
+      <div className="container-spa py-4 sm:py-8">
         {/* En-tête */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
+          className="mb-3 sm:mb-6"
         >
           {/* Boutons Admin */}
           {currentUser.role === 'ADMIN' && (
-            <div className="mb-6 flex gap-4">
+            <div className="mb-3 sm:mb-6 flex gap-2 sm:gap-4">
               <a
                 href="/admin"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-colors"
+                className="inline-flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 text-sm sm:text-base bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-colors"
               >
                 <Users className="w-5 h-5" />
                 Statistiques Globales
@@ -204,18 +233,18 @@ export default function DashboardPage() {
             </div>
           )}
 
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-spa-turquoise-100 to-spa-turquoise-200 rounded-full flex items-center justify-center">
-                <Users className="w-6 h-6 text-spa-turquoise-600" />
+          <div className="flex items-center justify-between mb-1 sm:mb-2">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-spa-turquoise-100 to-spa-turquoise-200 rounded-full flex items-center justify-center">
+                <Users className="w-5 h-5 sm:w-6 sm:h-6 text-spa-turquoise-600" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-gray-800">
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">
                   {currentUser.role === 'MASSOTHERAPEUTE' || currentUser.role === 'ESTHETICIENNE'
                     ? 'Mes Clients'
                     : 'Gestion des Clients'}
                 </h1>
-                <p className="text-gray-600">
+                <p className="text-sm sm:text-base text-gray-600">
                   {filteredClients.length} client{filteredClients.length !== 1 ? 's' : ''}
                   {currentUser.role === 'MASSOTHERAPEUTE' || currentUser.role === 'ESTHETICIENNE'
                     ? ' assigné'
@@ -236,7 +265,7 @@ export default function DashboardPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="mb-4"
+          className="mb-0 sm:mb-4"
         >
           <SearchBar
             onSearch={setSearchQuery}
@@ -246,24 +275,24 @@ export default function DashboardPage() {
 
         {/* Liste des clients */}
         {isLoading ? (
-          <div className="flex items-center justify-center mt-4">
+          <div className="flex items-center justify-center -mt-[120px] sm:mt-4">
             <Loader2 className="w-8 h-8 text-spa-turquoise-500 animate-spin" />
           </div>
         ) : filteredClients.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="text-center py-16"
+            className="text-center py-4 sm:py-16 -mt-[120px] sm:mt-4"
           >
-            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Users className="w-10 h-10 text-gray-400" />
+            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+              <Users className="w-8 h-8 sm:w-10 sm:h-10 text-gray-400" />
             </div>
-            <h3 className="text-xl font-semibold text-gray-800 mb-2">
+            <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-2">
               {searchQuery || selectedFilter !== 'ALL'
                 ? 'Aucun client trouvé'
                 : 'Aucun client enregistré'}
             </h3>
-            <p className="text-gray-600">
+            <p className="text-sm sm:text-base text-gray-600">
               {searchQuery || selectedFilter !== 'ALL'
                 ? 'Essayez de modifier vos critères de recherche'
                 : 'Les nouveaux clients apparaîtront ici'}
@@ -274,7 +303,7 @@ export default function DashboardPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 -mt-[120px] sm:mt-4"
           >
             {filteredClients.map((client, index) => (
               <motion.div
@@ -489,6 +518,28 @@ export default function DashboardPage() {
                         💡 <strong>Important:</strong> Une nouvelle assignation remplacera l'assignation existante.
                         Assurez-vous de coordonner avec {selectedClient.assignedBy?.prenom || 'l\'équipe'}.
                       </p>
+                      <div className="mt-3">
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleUnassignClient();
+                          }}
+                          disabled={isUnassigning}
+                          className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-white hover:bg-red-50 border border-red-300 text-red-700 rounded-lg transition-colors font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {isUnassigning ? (
+                            <>
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                              Retrait en cours...
+                            </>
+                          ) : (
+                            <>
+                              <UserMinus className="w-4 h-4" />
+                              Retirer l'assignation actuelle
+                            </>
+                          )}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -515,10 +566,15 @@ export default function DashboardPage() {
                     <option value="">Choisir un professionnel...</option>
                     {professionals
                       .filter((p) => {
+                        // Les ADMIN peuvent être assignés à n'importe quel service
+                        if (p.role === 'ADMIN') {
+                          return true;
+                        }
+
+                        // Sinon, filtrer selon le type de service
                         const shouldInclude = selectedClient.serviceType === 'MASSOTHERAPIE'
                           ? p.role === 'MASSOTHERAPEUTE'
                           : p.role === 'ESTHETICIENNE';
-                        console.log(`Filtrage ${p.prenom} ${p.nom} (${p.role}):`, shouldInclude);
                         return shouldInclude;
                       })
                       .map((professional) => {
@@ -553,6 +609,10 @@ export default function DashboardPage() {
                 )}
                 {!isLoadingUsers && !usersError && usersData && professionals.length > 0 && selectedClient && (() => {
                   const filteredProfessionals = professionals.filter((p) => {
+                    // Les ADMIN peuvent être assignés à n'importe quel service
+                    if (p.role === 'ADMIN') {
+                      return true;
+                    }
                     return selectedClient.serviceType === 'MASSOTHERAPIE'
                       ? p.role === 'MASSOTHERAPEUTE'
                       : p.role === 'ESTHETICIENNE';

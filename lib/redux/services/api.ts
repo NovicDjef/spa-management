@@ -96,6 +96,42 @@ export interface AssignmentHistoryItem {
   assignedBy: AssignedByInfo;
 }
 
+export interface AssignmentDetails {
+  id: string;
+  clientId: string;
+  professionalId: string;
+  createdById: string;
+  assignedAt: string;
+  client: {
+    id: string;
+    nom: string;
+    prenom: string;
+    courriel: string;
+    telCellulaire: string;
+    serviceType: 'MASSOTHERAPIE' | 'ESTHETIQUE';
+  };
+  professional: {
+    id: string;
+    nom: string;
+    prenom: string;
+    email: string;
+    role: 'MASSOTHERAPEUTE' | 'ESTHETICIENNE' | 'ADMIN';
+  };
+  createdBy?: {
+    id: string;
+    nom: string;
+    prenom: string;
+    email: string;
+    role: 'ADMIN' | 'SECRETAIRE';
+  };
+}
+
+export interface AllAssignmentsResponse {
+  success: true;
+  total: number;
+  data: AssignmentDetails[];
+}
+
 export interface User {
   id: string;
   email: string;
@@ -124,6 +160,8 @@ export interface CreateUserData {
   role: 'ADMIN' | 'SECRETAIRE' | 'MASSOTHERAPEUTE' | 'ESTHETICIENNE';
   nom: string;
   prenom: string;
+  adresse?: string;
+  numeroOrdre?: string;
 }
 
 export interface UpdateUserData {
@@ -133,6 +171,8 @@ export interface UpdateUserData {
   prenom?: string;
   role?: 'ADMIN' | 'SECRETAIRE' | 'MASSOTHERAPEUTE' | 'ESTHETICIENNE';
   password?: string;
+  adresse?: string;
+  numeroOrdre?: string;
 }
 
 // Marketing Types
@@ -518,6 +558,22 @@ export const api = createApi({
       invalidatesTags: ['Assignment', 'Client'],
     }),
 
+    // ASSIGNMENTS - Retirer une assignation (SECRETAIRE/ADMIN)
+    unassignClient: builder.mutation<{ message: string }, { clientId: string; professionalId: string }>({
+      query: ({ clientId, professionalId }) => ({
+        url: `/assignments/${clientId}/${professionalId}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Assignment', 'Client'],
+    }),
+
+    // ASSIGNMENTS - Récupérer toutes les assignations (SECRETAIRE/ADMIN)
+    getAllAssignments: builder.query<AllAssignmentsResponse, void>({
+      query: () => '/assignments',
+      transformResponse: (response: any) => response,
+      providesTags: ['Assignment'],
+    }),
+
     // PROFESSIONALS - Liste des pros (SECRETAIRE/ADMIN)
     getProfessionals: builder.query<{ Users: User[] }, void>({
       query: () => '/users',
@@ -662,7 +718,7 @@ export const api = createApi({
       SendAiCampaignData
     >({
       query: (campaignData) => ({
-        url: '/marketing/send-ai-campaign',
+        url: '/marketing/send-chatgpt-campaign',
         method: 'POST',
         body: campaignData,
       }),
@@ -817,9 +873,9 @@ export const api = createApi({
       providesTags: ['Receipts'],
     }),
 
-    // RECEIPTS - Détail d'un reçu spécifique
+    // RECEIPTS - Détail d'un reçu spécifique avec PDF
     getReceiptById: builder.query<ReceiptDetailResponse['data'], string>({
-      query: (id) => `/receipts/${id}`,
+      query: (id) => `/receipts/${id}/pdf`,
       transformResponse: (response: ReceiptDetailResponse) => response.data,
       providesTags: (result, error, id) => [{ type: 'Receipts', id }],
     }),
@@ -882,6 +938,8 @@ export const {
   useAddNoteMutation,
   useUpdateNoteMutation,
   useAssignClientMutation,
+  useUnassignClientMutation,
+  useGetAllAssignmentsQuery,
   useGetProfessionalsQuery,
   // User management hooks
   useCreateUserMutation,

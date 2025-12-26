@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Sparkles, LogOut, User, Menu, X, FileText } from 'lucide-react';
+import { Sparkles, LogOut, User, Menu, X, FileText, Users } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -96,6 +96,17 @@ export function Header({ user: userProp }: HeaderProps) {
                 <p className="font-medium text-gray-800">{user.nom} {user.prenom}</p>
                 <p className="text-sm text-gray-600">{getRoleLabel(user.role)}</p>
               </div>
+              {(user.role === 'SECRETAIRE' || user.role === 'ADMIN') && (
+                <Link href="/professionnel/assignations">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    className="btn-outline flex items-center gap-2 !py-2"
+                  >
+                    <Users className="w-4 h-4" />
+                    <span>Assignations</span>
+                  </motion.button>
+                </Link>
+              )}
               {(user.role === 'MASSOTHERAPEUTE' || user.role === 'ADMIN') && (
                 <Link href="/professionnel/recus">
                   <motion.button
@@ -159,6 +170,16 @@ export function Header({ user: userProp }: HeaderProps) {
               </div>
             </div>
             <div className="space-y-2">
+              {(user.role === 'SECRETAIRE' || user.role === 'ADMIN') && (
+                <Link
+                  href="/professionnel/assignations"
+                  onClick={() => setShowMenu(false)}
+                  className="w-full btn-primary flex items-center justify-center gap-2"
+                >
+                  <Users className="w-4 h-4" />
+                  <span>Assignations</span>
+                </Link>
+              )}
               {(user.role === 'MASSOTHERAPEUTE' || user.role === 'ADMIN') && (
                 <Link
                   href="/professionnel/recus"

@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
-import { X, FileText, Send, Loader2, CheckCircle, AlertTriangle } from 'lucide-react';
+import { X, FileText, Send, Loader2, CheckCircle, AlertTriangle, Download } from 'lucide-react';
 import { useGetReceiptByIdQuery, useResendReceiptMutation } from '@/lib/redux/services/api';
 import { extractErrorMessage } from '@/lib/utils/errorHandler';
 
@@ -50,6 +50,19 @@ export function ReceiptViewModal({
     setResendSuccess(false);
     setResendError(null);
     onClose();
+  };
+
+  const handleDownload = () => {
+    if (!receiptData?.pdf) return;
+
+    // Créer un lien de téléchargement
+    const linkSource = `data:application/pdf;base64,${receiptData.pdf}`;
+    const downloadLink = document.createElement('a');
+    const fileName = `recu-${receiptNumber.toString().padStart(4, '0')}-${clientName.replace(/\s+/g, '-')}.pdf`;
+
+    downloadLink.href = linkSource;
+    downloadLink.download = fileName;
+    downloadLink.click();
   };
 
   return (
@@ -128,32 +141,13 @@ export function ReceiptViewModal({
               <>
                 {/* Aperçu du PDF */}
                 <div className="mb-6">
-                  <div className="border-2 border-gray-200 rounded-xl overflow-hidden bg-white shadow-inner">
-                    <object
-                      data={`data:application/pdf;base64,${receiptData.pdf}`}
+                  <div className="border-2 border-gray-200 rounded-xl overflow-hidden bg-gray-50 shadow-inner">
+                    <embed
+                      src={`data:application/pdf;base64,${receiptData.pdf}`}
                       type="application/pdf"
-                      className="w-full h-[600px] sm:h-[700px]"
+                      className="w-full h-[500px] sm:h-[600px] md:h-[700px]"
                       aria-label="Aperçu du reçu PDF"
-                    >
-                      {/* Fallback si le navigateur ne peut pas afficher le PDF */}
-                      <div className="flex flex-col items-center justify-center h-[600px] sm:h-[700px] p-8">
-                        <FileText className="w-16 h-16 text-gray-400 mb-4" />
-                        <p className="text-gray-700 font-medium mb-2">
-                          Impossible d'afficher l'aperçu PDF dans ce navigateur
-                        </p>
-                        <p className="text-gray-500 text-sm mb-4 text-center">
-                          Veuillez télécharger le PDF pour le visualiser
-                        </p>
-                        <a
-                          href={`data:application/pdf;base64,${receiptData.pdf}`}
-                          download={`recu-${receiptNumber}-${clientName.replace(/\s+/g, '-')}.pdf`}
-                          className="btn-outline flex items-center gap-2"
-                        >
-                          <FileText className="w-4 h-4" />
-                          Télécharger le PDF
-                        </a>
-                      </div>
-                    </object>
+                    />
                   </div>
                   <p className="text-xs sm:text-sm text-gray-500 mt-2 text-center">
                     Ce reçu a été envoyé au client par email
@@ -161,34 +155,46 @@ export function ReceiptViewModal({
                 </div>
 
                 {/* Boutons d'action */}
-                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {/* Bouton Télécharger */}
                   <button
-                    onClick={handleClose}
-                    className="btn-outline flex-1 py-3 sm:py-2.5 text-base sm:text-sm font-medium"
+                    onClick={handleDownload}
+                    className="btn-outline py-3 sm:py-2.5 text-base sm:text-sm font-medium flex items-center justify-center gap-2"
                   >
-                    Fermer
+                    <Download className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <span>Télécharger</span>
                   </button>
+
+                  {/* Bouton Renvoyer */}
                   <button
                     onClick={handleResend}
                     disabled={isResending}
-                    className="btn-primary flex-1 py-3 sm:py-2.5 text-base sm:text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="btn-primary py-3 sm:py-2.5 text-base sm:text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
                     {isResending ? (
                       <>
-                        <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 mr-2 inline animate-spin" />
-                        <span className="text-base sm:text-sm">Envoi en cours...</span>
+                        <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
+                        <span>Envoi...</span>
                       </>
                     ) : (
                       <>
-                        <Send className="w-4 h-4 sm:w-5 sm:h-5 mr-2 inline" />
-                        <span className="text-base sm:text-sm">Renvoyer au client</span>
+                        <Send className="w-4 h-4 sm:w-5 sm:h-5" />
+                        <span>Renvoyer</span>
                       </>
                     )}
+                  </button>
+
+                  {/* Bouton Fermer */}
+                  <button
+                    onClick={handleClose}
+                    className="btn-outline py-3 sm:py-2.5 text-base sm:text-sm font-medium"
+                  >
+                    Fermer
                   </button>
                 </div>
 
                 <p className="text-xs sm:text-sm text-gray-500 mt-3 sm:mt-4 text-center leading-relaxed">
-                  Vous pouvez renvoyer ce reçu au client si nécessaire
+                  Téléchargez le PDF ou renvoyez-le au client si nécessaire
                 </p>
               </>
             ) : (
