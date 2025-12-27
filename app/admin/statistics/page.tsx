@@ -398,12 +398,12 @@ export default function StatisticsPage() {
                             padding: '12px',
                           }}
                           labelStyle={{ fontWeight: 'bold', color: '#1f2937', marginBottom: '8px' }}
-                          formatter={(value: any, name: string) => {
+                          formatter={(value: any, name?: string) => {
                             if (name === 'revenus') return [`${Number(value).toFixed(2)}$`, 'Revenus'];
                             if (name === 'note') return [`${Number(value).toFixed(1)}/5`, 'Note'];
                             if (name === 'clients') return [value, 'Clients'];
                             if (name === 'avis') return [value, 'Avis'];
-                            return [value, name];
+                            return [value, name || ''];
                           }}
                         />
                         <Legend
@@ -540,10 +540,10 @@ export default function StatisticsPage() {
                             boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
                             padding: '12px',
                           }}
-                          formatter={(value: any, name: string) => {
+                          formatter={(value: any, name?: string) => {
                             if (name === 'revenus') return [`${Number(value).toFixed(2)}$`, 'Revenus'];
                             if (name === 'total') return [`${Number(value).toFixed(2)}$`, 'Total Cumulé'];
-                            return [value, name];
+                            return [value, name || ''];
                           }}
                         />
                         <Area

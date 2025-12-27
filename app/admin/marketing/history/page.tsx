@@ -99,13 +99,13 @@ export default function MarketingHistoryPage() {
     }
     // Format alternatif: directement un tableau
     else if (Array.isArray(campaignsData)) {
-      campaigns = campaignsData;
-      paginationData = { total: campaignsData.length, page: 1, limit: 20, totalPages: 1 };
+      campaigns = campaignsData as any;
+      paginationData = { total: (campaignsData as any).length, page: 1, limit: 20, totalPages: 1 };
     }
     // Format alternatif: { data: { campaigns: [...] } }
-    else if (campaignsData.data) {
-      campaigns = campaignsData.data.campaigns || [];
-      paginationData = campaignsData.data.pagination;
+    else if ('data' in campaignsData && (campaignsData as any).data) {
+      campaigns = (campaignsData as any).data.campaigns || [];
+      paginationData = (campaignsData as any).data.pagination;
     }
   }
 
