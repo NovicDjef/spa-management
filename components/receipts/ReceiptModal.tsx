@@ -291,10 +291,10 @@ export function ReceiptModal({
                 <div className="flex justify-between items-start mb-4 sm:mb-6">
                   <div className="flex-1 pr-2">
                     <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-1 sm:mb-2">
-                      Détails du traitement
+                      Créer un reçu pour les assurances
                     </h2>
                     <p className="text-sm sm:text-base text-gray-600">
-                      Remplissez les informations pour le reçu
+                      Remplissez les informations du traitement
                     </p>
                   </div>
                   <button

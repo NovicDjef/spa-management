@@ -246,6 +246,9 @@ POST /api/assignments
 }
 ```
 
+
+
+
 **Résultat :**
 - ✅ L'assignation à Jean est supprimée
 - ✅ Marie est maintenant assignée à Sophie
