@@ -250,7 +250,7 @@ Le message généré par ChatGPT doit ressembler à ceci:
 
 ## 4. Envoi des emails personnalisés
 
-### Endpoint: `POST /api/marketing/send-ai-campaign`
+### Endpoint: `POST /api/marketing/send-email/campaign`
 
 **Corps de la requête:**
 ```json
@@ -407,8 +407,8 @@ app.post('/api/marketing/generate-message', async (req, res) => {
 ### Envoi de la campagne
 
 ```javascript
-// Route: POST /api/marketing/send-ai-campaign
-app.post('/api/marketing/send-ai-campaign', async (req, res) => {
+// Route: POST /api/marketing/send-email/campaign
+app.post('/api/marketing/send-email/campaign', async (req, res) => {
   try {
     const { clientIds, subject, message, prompt } = req.body;
 

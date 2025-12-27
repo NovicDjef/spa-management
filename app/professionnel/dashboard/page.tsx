@@ -5,11 +5,12 @@ import { useState, useEffect, useMemo } from 'react';
 import { Header } from '@/components/layout/Header';
 import { SearchBar } from '@/components/clients/SearchBar';
 import { ClientCard } from '@/components/clients/ClientCard';
-import { Users, UserPlus, Loader2, X, Target, AlertCircle, Clock, UserCheck, User as UserIcon, ArrowRight, UserMinus } from 'lucide-react';
+import { Users, UserPlus, Loader2, X, Target, AlertCircle, Clock, UserCheck, User as UserIcon, ArrowRight, UserMinus, FileText, BarChart3 } from 'lucide-react';
 import { useGetClientsQuery, useGetUsersQuery, useAssignClientMutation, useUnassignClientMutation, useGetAssignmentHistoryQuery } from '@/lib/redux/services/api';
 import { useAppSelector } from '@/lib/redux/hooks';
 import { hasPermission, isAdminOrSecretary } from '@/lib/permissions';
 import { extractErrorMessage } from '@/lib/utils/errorHandler';
+import Link from 'next/link';
 
 interface Client {
   id: string;
@@ -218,22 +219,7 @@ export default function DashboardPage() {
           animate={{ opacity: 1, y: 0 }}
           className="mb-3 sm:mb-6"
         >
-          {/* Boutons Admin */}
-          {currentUser.role === 'ADMIN' && (
-            <div className="mb-3 sm:mb-6 flex gap-2 sm:gap-4">
-              <a
-                href="/admin"
-                className="inline-flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 text-sm sm:text-base bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-colors"
-              >
-                <Users className="w-5 h-5" />
-                Statistiques Globales
-              </a>
-              
-              
-            </div>
-          )}
-
-          <div className="flex items-center justify-between mb-1 sm:mb-2">
+          <div className="flex items-center justify-between mb-3 sm:mb-5">
             <div className="flex items-center gap-2 sm:gap-3">
               <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-spa-turquoise-100 to-spa-turquoise-200 rounded-full flex items-center justify-center">
                 <Users className="w-5 h-5 sm:w-6 sm:h-6 text-spa-turquoise-600" />
@@ -258,6 +244,87 @@ export default function DashboardPage() {
               </div>
             </div>
           </div>
+
+          {/* Cartes d'accès rapide */}
+          {(currentUser.role === 'ADMIN' || currentUser.role === 'SECRETAIRE' || currentUser.role === 'MASSOTHERAPEUTE') && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6"
+            >
+              {/* Assignations */}
+              {(currentUser.role === 'ADMIN' || currentUser.role === 'SECRETAIRE') && (
+                <Link href="/professionnel/assignations">
+                  <motion.div
+                    whileHover={{ scale: 1.02, y: -4 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="group relative p-4 sm:p-5 bg-gradient-to-br from-spa-turquoise-50 via-white to-spa-turquoise-50/30 rounded-2xl shadow-soft hover:shadow-soft-lg transition-all cursor-pointer border-2 border-transparent hover:border-spa-turquoise-200 overflow-hidden"
+                  >
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-spa-turquoise-100 rounded-full blur-2xl opacity-0 group-hover:opacity-50 transition-opacity"></div>
+                    <div className="relative">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="w-11 h-11 sm:w-12 sm:h-12 bg-gradient-to-br from-spa-turquoise-400 to-spa-turquoise-600 rounded-xl flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
+                          <Users className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                        </div>
+                        <ArrowRight className="w-5 h-5 text-spa-turquoise-400 group-hover:translate-x-1 transition-transform" />
+                      </div>
+                      <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-1">Assignations</h3>
+                      <p className="text-xs sm:text-sm text-gray-600">Gérer les assignations clients</p>
+                    </div>
+                  </motion.div>
+                </Link>
+              )}
+
+              {/* Reçus */}
+              {(currentUser.role === 'ADMIN' || currentUser.role === 'MASSOTHERAPEUTE') && (
+                <Link href="/professionnel/recus">
+                  <motion.div
+                    whileHover={{ scale: 1.02, y: -4 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="group relative p-4 sm:p-5 bg-gradient-to-br from-spa-menthe-50 via-white to-spa-menthe-50/30 rounded-2xl shadow-soft hover:shadow-soft-lg transition-all cursor-pointer border-2 border-transparent hover:border-spa-menthe-200 overflow-hidden"
+                  >
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-spa-menthe-100 rounded-full blur-2xl opacity-0 group-hover:opacity-50 transition-opacity"></div>
+                    <div className="relative">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="w-11 h-11 sm:w-12 sm:h-12 bg-gradient-to-br from-spa-menthe-400 to-spa-menthe-600 rounded-xl flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
+                          <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                        </div>
+                        <ArrowRight className="w-5 h-5 text-spa-menthe-400 group-hover:translate-x-1 transition-transform" />
+                      </div>
+                      <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-1">
+                        {currentUser.role === 'ADMIN' ? 'Tous les Reçus' : 'Mes Reçus'}
+                      </h3>
+                      <p className="text-xs sm:text-sm text-gray-600">Consulter les reçus d'assurance</p>
+                    </div>
+                  </motion.div>
+                </Link>
+              )}
+
+              {/* Statistiques Globales (Admin seulement) */}
+              {currentUser.role === 'ADMIN' && (
+                <Link href="/admin">
+                  <motion.div
+                    whileHover={{ scale: 1.02, y: -4 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="group relative p-4 sm:p-5 bg-gradient-to-br from-spa-rose-50 via-white to-spa-lavande-50/30 rounded-2xl shadow-soft hover:shadow-soft-lg transition-all cursor-pointer border-2 border-transparent hover:border-spa-rose-200 overflow-hidden"
+                  >
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-spa-rose-100 rounded-full blur-2xl opacity-0 group-hover:opacity-50 transition-opacity"></div>
+                    <div className="relative">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="w-11 h-11 sm:w-12 sm:h-12 bg-gradient-to-br from-spa-rose-400 to-spa-lavande-600 rounded-xl flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
+                          <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                        </div>
+                        <ArrowRight className="w-5 h-5 text-spa-rose-400 group-hover:translate-x-1 transition-transform" />
+                      </div>
+                      <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-1">Statistiques</h3>
+                      <p className="text-xs sm:text-sm text-gray-600">Statistiques globales du spa</p>
+                    </div>
+                  </motion.div>
+                </Link>
+              )}
+            </motion.div>
+          )}
         </motion.div>
 
         {/* Barre de recherche */}

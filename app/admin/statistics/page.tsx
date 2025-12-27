@@ -12,12 +12,26 @@ import {
   Loader2,
   Award,
   Calendar,
+  DollarSign,
 } from 'lucide-react';
 import { useAppSelector } from '@/lib/redux/hooks';
 import { useGetUsersQuery, useGetAllReviewsQuery, useGetReceiptsQuery } from '@/lib/redux/services/api';
 import Link from 'next/link';
 import { useMemo } from 'react';
-import { DollarSign } from 'lucide-react';
+import {
+  ComposedChart,
+  Bar,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  Cell,
+  Area,
+  AreaChart,
+} from 'recharts';
 
 export default function StatisticsPage() {
   const currentUser = useAppSelector((state) => state.auth.user);
@@ -160,6 +174,37 @@ export default function StatisticsPage() {
       .sort((a, b) => b.monthlyRevenue - a.monthlyRevenue);
   }, [receiptsData, usersData]);
 
+  // Combined employee performance data (revenue + ratings)
+  const employeePerformance = useMemo(() => {
+    if (!usersData?.users) return [];
+
+    const professionals = usersData.users.filter(
+      (u) => u.role === 'MASSOTHERAPEUTE' || u.role === 'ESTHETICIENNE'
+    );
+
+    return professionals.map((user) => {
+      const fullName = `${user.prenom} ${user.nom}`;
+      const financialData = financialStats.find((f) => f.name === fullName);
+
+      return {
+        id: user.id,
+        name: fullName,
+        role: user.role,
+        rating: user.averageRating || 0,
+        reviewCount: user._count?.reviewsReceived || 0,
+        monthlyRevenue: financialData?.monthlyRevenue || 0,
+        totalRevenue: financialData?.totalRevenue || 0,
+        clientCount: user._count?.assignedClients || 0,
+      };
+    }).sort((a, b) => {
+      // Sort by monthly revenue first, then by rating
+      if (b.monthlyRevenue !== a.monthlyRevenue) {
+        return b.monthlyRevenue - a.monthlyRevenue;
+      }
+      return b.rating - a.rating;
+    });
+  }, [usersData, financialStats]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-spa-beige-50 via-white to-spa-turquoise-50">
       <Header user={currentUser ?? undefined} />
@@ -269,11 +314,259 @@ export default function StatisticsPage() {
               </div>
             </motion.div>
 
+            {/* Performance Charts - Revenus et Notes par Employé */}
+            {employeePerformance.length > 0 && (
+              <>
+                {/* Combined Chart - Revenus & Notes */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="card-spa mb-6 overflow-x-auto"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-6">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg">
+                        <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                      </div>
+                      <div>
+                        <h2 className="text-lg sm:text-xl font-bold text-gray-800">Performance des Employés</h2>
+                        <p className="text-xs sm:text-sm text-gray-600">Revenus mensuels et notes moyennes</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Mobile: Scroll hint */}
+                  <div className="sm:hidden mb-3 flex items-center gap-2 text-xs text-gray-500 bg-blue-50 px-3 py-2 rounded-lg">
+                    <TrendingUp className="w-4 h-4" />
+                    <span>Glissez horizontalement pour voir tout le graphique</span>
+                  </div>
+
+                  <div className="w-full min-w-[600px] sm:min-w-0 h-[400px] sm:h-[500px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <ComposedChart
+                        data={employeePerformance.map(emp => ({
+                          name: emp.name.split(' ')[0],
+                          fullName: emp.name,
+                          revenus: emp.monthlyRevenue,
+                          note: emp.rating,
+                          clients: emp.clientCount,
+                          avis: emp.reviewCount,
+                        }))}
+                        margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
+                      >
+                        <defs>
+                          <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
+                            <stop offset="95%" stopColor="#10b981" stopOpacity={0.3}/>
+                          </linearGradient>
+                          <linearGradient id="colorNote" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.8}/>
+                            <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.3}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                        <XAxis
+                          dataKey="name"
+                          angle={-45}
+                          textAnchor="end"
+                          height={80}
+                          tick={{ fill: '#374151', fontSize: 11, fontWeight: 500 }}
+                          interval={0}
+                        />
+                        <YAxis
+                          yAxisId="left"
+                          orientation="left"
+                          stroke="#10b981"
+                          tick={{ fill: '#10b981', fontSize: 12, fontWeight: 600 }}
+                          label={{ value: 'Revenus ($)', angle: -90, position: 'insideLeft', fill: '#10b981', fontWeight: 700 }}
+                        />
+                        <YAxis
+                          yAxisId="right"
+                          orientation="right"
+                          stroke="#f59e0b"
+                          domain={[0, 5]}
+                          tick={{ fill: '#f59e0b', fontSize: 12, fontWeight: 600 }}
+                          label={{ value: 'Note Moyenne', angle: 90, position: 'insideRight', fill: '#f59e0b', fontWeight: 700 }}
+                        />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                            border: '2px solid #e5e7eb',
+                            borderRadius: '12px',
+                            boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
+                            padding: '12px',
+                          }}
+                          labelStyle={{ fontWeight: 'bold', color: '#1f2937', marginBottom: '8px' }}
+                          formatter={(value: any, name: string) => {
+                            if (name === 'revenus') return [`${Number(value).toFixed(2)}$`, 'Revenus'];
+                            if (name === 'note') return [`${Number(value).toFixed(1)}/5`, 'Note'];
+                            if (name === 'clients') return [value, 'Clients'];
+                            if (name === 'avis') return [value, 'Avis'];
+                            return [value, name];
+                          }}
+                        />
+                        <Legend
+                          wrapperStyle={{ paddingTop: '20px' }}
+                          iconType="circle"
+                          formatter={(value) => {
+                            if (value === 'revenus') return 'Revenus Mensuels ($)';
+                            if (value === 'note') return 'Note Moyenne';
+                            return value;
+                          }}
+                        />
+                        <Bar
+                          yAxisId="left"
+                          dataKey="revenus"
+                          fill="url(#colorRevenue)"
+                          radius={[8, 8, 0, 0]}
+                          animationDuration={1500}
+                          animationBegin={200}
+                        >
+                          {employeePerformance.map((entry, index) => (
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={index < 3 ? '#059669' : '#10b981'}
+                            />
+                          ))}
+                        </Bar>
+                        <Line
+                          yAxisId="right"
+                          type="monotone"
+                          dataKey="note"
+                          stroke="#f59e0b"
+                          strokeWidth={3}
+                          dot={{ fill: '#f59e0b', r: 6, strokeWidth: 2, stroke: '#fff' }}
+                          activeDot={{ r: 8, strokeWidth: 3 }}
+                          animationDuration={2000}
+                          animationBegin={500}
+                        />
+                      </ComposedChart>
+                    </ResponsiveContainer>
+                  </div>
+
+                  {/* Summary Footer */}
+                  <div className="mt-6 pt-6 border-t-2 border-gray-200 bg-gradient-to-r from-spa-beige-50 to-spa-turquoise-50 -mx-6 -mb-6 px-6 py-4 rounded-b-2xl">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+                      <div className="bg-white rounded-xl p-4 shadow-sm">
+                        <div className="flex items-center justify-center gap-2 mb-2">
+                          <DollarSign className="w-5 h-5 text-emerald-600" />
+                          <span className="text-xs font-medium text-gray-600 uppercase">Total Mois</span>
+                        </div>
+                        <div className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-emerald-700 bg-clip-text text-transparent">
+                          {employeePerformance.reduce((sum, e) => sum + e.monthlyRevenue, 0).toFixed(0)}$
+                        </div>
+                      </div>
+                      <div className="bg-white rounded-xl p-4 shadow-sm">
+                        <div className="flex items-center justify-center gap-2 mb-2">
+                          <Star className="w-5 h-5 text-amber-600" />
+                          <span className="text-xs font-medium text-gray-600 uppercase">Moyenne</span>
+                        </div>
+                        <div className="text-2xl font-bold bg-gradient-to-r from-amber-600 to-amber-700 bg-clip-text text-transparent">
+                          {(employeePerformance.reduce((sum, e) => sum + e.rating, 0) / employeePerformance.length).toFixed(1)}/5
+                        </div>
+                      </div>
+                      <div className="bg-white rounded-xl p-4 shadow-sm">
+                        <div className="flex items-center justify-center gap-2 mb-2">
+                          <Users className="w-5 h-5 text-spa-turquoise-600" />
+                          <span className="text-xs font-medium text-gray-600 uppercase">Employés</span>
+                        </div>
+                        <div className="text-2xl font-bold text-gray-800">
+                          {employeePerformance.length}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+
+                {/* Area Chart - Évolution des Performances */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="card-spa mb-8 overflow-x-auto"
+                >
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center shadow-lg">
+                      <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                    </div>
+                    <div>
+                      <h2 className="text-lg sm:text-xl font-bold text-gray-800">Classement par Performance</h2>
+                      <p className="text-xs sm:text-sm text-gray-600">Vue d'ensemble des revenus générés</p>
+                    </div>
+                  </div>
+
+                  {/* Mobile: Scroll hint */}
+                  <div className="sm:hidden mb-3 flex items-center gap-2 text-xs text-gray-500 bg-cyan-50 px-3 py-2 rounded-lg">
+                    <TrendingUp className="w-4 h-4" />
+                    <span>Glissez horizontalement pour voir tout le graphique</span>
+                  </div>
+
+                  <div className="w-full min-w-[600px] sm:min-w-0 h-[350px] sm:h-[400px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart
+                        data={employeePerformance.map((emp, idx) => ({
+                          name: emp.name.split(' ')[0],
+                          fullName: emp.name,
+                          revenus: emp.monthlyRevenue,
+                          total: employeePerformance.slice(0, idx + 1).reduce((sum, e) => sum + e.monthlyRevenue, 0),
+                        }))}
+                        margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+                      >
+                        <defs>
+                          <linearGradient id="colorArea" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.8}/>
+                            <stop offset="95%" stopColor="#06b6d4" stopOpacity={0.1}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                        <XAxis
+                          dataKey="name"
+                          angle={-45}
+                          textAnchor="end"
+                          height={60}
+                          tick={{ fill: '#374151', fontSize: 11, fontWeight: 500 }}
+                          interval={0}
+                        />
+                        <YAxis
+                          tick={{ fill: '#0891b2', fontSize: 12, fontWeight: 600 }}
+                          label={{ value: 'Revenus Cumulés ($)', angle: -90, position: 'insideLeft', fill: '#0891b2', fontWeight: 700 }}
+                        />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                            border: '2px solid #e5e7eb',
+                            borderRadius: '12px',
+                            boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
+                            padding: '12px',
+                          }}
+                          formatter={(value: any, name: string) => {
+                            if (name === 'revenus') return [`${Number(value).toFixed(2)}$`, 'Revenus'];
+                            if (name === 'total') return [`${Number(value).toFixed(2)}$`, 'Total Cumulé'];
+                            return [value, name];
+                          }}
+                        />
+                        <Area
+                          type="monotone"
+                          dataKey="total"
+                          stroke="#0891b2"
+                          strokeWidth={3}
+                          fill="url(#colorArea)"
+                          animationDuration={2000}
+                          animationBegin={300}
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                </motion.div>
+              </>
+            )}
+
             {/* Distribution des Notes */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
+              transition={{ delay: 0.3 }}
               className="card-spa mb-8"
             >
               <div className="flex items-center gap-3 mb-6">

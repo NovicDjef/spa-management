@@ -21,6 +21,7 @@ import {
   Sparkles,
   Eye,
   X,
+  Clock,
 } from 'lucide-react';
 import {
   useGetMarketingContactsQuery,
@@ -90,6 +91,7 @@ export default function MarketingPage() {
   const [emailSubject, setEmailSubject] = useState('');
   const [emailMessage, setEmailMessage] = useState('');
   const [sendResult, setSendResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [isSending, setIsSending] = useState(false); // État local pour loader immédiat
 
   // États pour la génération AI
   const [aiPrompt, setAiPrompt] = useState('');
@@ -256,38 +258,53 @@ export default function MarketingPage() {
       return;
     }
 
+    // Activer le loader IMMÉDIATEMENT pour empêcher les doubles clics
+    setIsSending(true);
+
     try {
       setSendResult(null);
 
-      if (useAiMode && aiPrompt.trim()) {
-        // Envoi avec campagne AI (log dans EmailLog avec le prompt)
-        const result = await sendAiCampaign({
-          clientIds: selectedData.map(c => c.id),
+      // ====================================
+      // CAS 1: UN SEUL CLIENT (individuel)
+      // ====================================
+      if (selectedData.length === 1) {
+        // ✅ Route: /api/marketing/send-email/individual
+        // Utilisé pour TOUS les envois individuels (avec ou sans IA)
+        const result = await sendIndividualEmail({
+          clientId: selectedData[0].id,
           subject: emailSubject,
           message: emailMessage,
-          prompt: aiPrompt,
         }).unwrap();
 
         setSendResult({
           success: true,
-          message: `${result.message}\n${result.totalSent} emails envoyés avec succès${result.totalFailed > 0 ? `, ${result.totalFailed} échecs` : ''}`
+          message: result.message
         });
-      } else {
-        // Envoi classique (sans AI)
-        if (selectedData.length === 1) {
-          // Envoi individuel
-          const result = await sendIndividualEmail({
-            clientId: selectedData[0].id,
+      }
+      // ====================================
+      // CAS 2: PLUSIEURS CLIENTS (campagne)
+      // ====================================
+      else {
+        // Avec IA: utiliser /api/marketing/send-email/campaign
+        if (useAiMode && aiPrompt.trim()) {
+          // ✅ Route: /api/marketing/send-email/campaign
+          // Utilisé pour les campagnes de masse avec IA (avec placeholders {prenom} {nom})
+          const result = await sendAiCampaign({
+            clientIds: selectedData.map(c => c.id),
             subject: emailSubject,
             message: emailMessage,
+            prompt: aiPrompt,
           }).unwrap();
 
           setSendResult({
             success: true,
-            message: result.message
+            message: `${result.message}\n${result.totalSent} emails envoyés avec succès${result.totalFailed > 0 ? `, ${result.totalFailed} échecs` : ''}`
           });
-        } else {
-          // Envoi en campagne
+        }
+        // Sans IA: utiliser /api/marketing/send-email/campaign
+        else {
+          // ✅ Route: /api/marketing/send-email/campaign
+          // Utilisé pour les campagnes de masse manuelles (sans IA)
           const result = await sendCampaignEmail({
             clientIds: selectedData.map(c => c.id),
             subject: emailSubject,
@@ -301,7 +318,7 @@ export default function MarketingPage() {
         }
       }
 
-      // Réinitialiser après succès
+      // Réinitialiser après succès ET désactiver le loader juste avant la fermeture du modal
       setTimeout(() => {
         setShowMessageModal(false);
         setEmailSubject('');
@@ -311,6 +328,7 @@ export default function MarketingPage() {
         setGeneratedMessage(null);
         setSelectedContacts(new Set());
         setSendResult(null);
+        setIsSending(false); // ✅ Désactiver le loader SEULEMENT quand le modal disparaît
       }, 3000);
 
     } catch (error: any) {
@@ -318,6 +336,8 @@ export default function MarketingPage() {
         success: false,
         message: error?.data?.message || 'Erreur lors de l\'envoi des emails'
       });
+      // En cas d'erreur, désactiver le loader immédiatement
+      setIsSending(false);
     }
   };
 
@@ -341,11 +361,11 @@ export default function MarketingPage() {
       <Header user={currentUser ?? undefined} />
 
       <div className="container-spa py-8">
-        {/* Bouton de retour */}
+        {/* Boutons de navigation */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
-          className="mb-6"
+          className="mb-6 flex items-center justify-between"
         >
           <Link
             href="/admin"
@@ -353,6 +373,13 @@ export default function MarketingPage() {
           >
             <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
             <span className="font-medium">Retour au tableau de bord</span>
+          </Link>
+          <Link
+            href="/admin/marketing/history"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-spa-lavande-100 text-spa-lavande-700 rounded-xl hover:bg-spa-lavande-200 transition-colors font-medium"
+          >
+            <Clock className="w-4 h-4" />
+            <span>Historique des campagnes</span>
           </Link>
         </motion.div>
         {/* En-tête */}
@@ -914,7 +941,7 @@ export default function MarketingPage() {
                     onChange={(e) => setEmailSubject(e.target.value)}
                     placeholder="Sujet de l'email"
                     className="input-spa"
-                    disabled={isSendingCampaign || isSendingIndividual || isSendingAiCampaign}
+                    disabled={isSending || isSendingCampaign || isSendingIndividual || isSendingAiCampaign}
                   />
                 </div>
 
@@ -926,7 +953,7 @@ export default function MarketingPage() {
                     placeholder="Écrivez votre message ici..."
                     rows={10}
                     className="input-spa resize-none"
-                    disabled={isSendingCampaign || isSendingIndividual || isSendingAiCampaign}
+                    disabled={isSending || isSendingCampaign || isSendingIndividual || isSendingAiCampaign}
                   />
                 </div>
               </>
@@ -966,17 +993,17 @@ export default function MarketingPage() {
                   setGeneratedMessage(null);
                   setSendResult(null);
                 }}
-                disabled={isSendingCampaign || isSendingIndividual || isSendingAiCampaign}
-                className="btn-outline flex-1 disabled:opacity-50"
+                disabled={isSending || isSendingCampaign || isSendingIndividual || isSendingAiCampaign}
+                className="btn-outline flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Annuler
               </button>
               <button
                 onClick={handleSendEmail}
-                disabled={!emailSubject.trim() || !emailMessage.trim() || isSendingCampaign || isSendingIndividual || isSendingAiCampaign}
+                disabled={!emailSubject.trim() || !emailMessage.trim() || isSending || isSendingCampaign || isSendingIndividual || isSendingAiCampaign}
                 className="btn-primary flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isSendingCampaign || isSendingIndividual || isSendingAiCampaign ? (
+                {isSending || isSendingCampaign || isSendingIndividual || isSendingAiCampaign ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 inline animate-spin" />
                     Envoi en cours...

@@ -91,47 +91,39 @@ export function Header({ user: userProp }: HeaderProps) {
 
           {/* User info & actions - Desktop */}
           {user && (
-            <div className="hidden md:flex items-center gap-4">
-              <div className="text-right">
-                <p className="font-medium text-gray-800">{user.nom} {user.prenom}</p>
-                <p className="text-sm text-gray-600">{getRoleLabel(user.role)}</p>
-              </div>
-              {(user.role === 'SECRETAIRE' || user.role === 'ADMIN') && (
-                <Link href="/professionnel/assignations">
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    className="btn-outline flex items-center gap-2 !py-2"
-                  >
-                    <Users className="w-4 h-4" />
-                    <span>Assignations</span>
-                  </motion.button>
-                </Link>
-              )}
-              {(user.role === 'MASSOTHERAPEUTE' || user.role === 'ADMIN') && (
+            <div className="hidden md:flex items-center gap-3">
+              {/* Bouton "Mes Reçus" uniquement pour les massothérapeutes */}
+              {user.role === 'MASSOTHERAPEUTE' && (
                 <Link href="/professionnel/recus">
                   <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    className="btn-outline flex items-center gap-2 !py-2"
+                    whileHover={{ scale: 1.05, y: -2 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="relative px-4 py-2.5 bg-gradient-to-r from-spa-menthe-500 to-spa-menthe-600 text-white rounded-xl shadow-md hover:shadow-lg transition-all flex items-center gap-2 font-medium"
                   >
                     <FileText className="w-4 h-4" />
-                    <span>{user.role === 'ADMIN' ? 'Tous les Reçus' : 'Mes Reçus'}</span>
+                    <span>Mes Reçus</span>
                   </motion.button>
                 </Link>
               )}
+              <div className="h-8 w-px bg-gray-300 mx-1"></div>
+              <div className="text-right">
+                <p className="font-medium text-gray-800 text-sm">{user.nom} {user.prenom}</p>
+                <p className="text-xs text-gray-600">{getRoleLabel(user.role)}</p>
+              </div>
               <Link href="/professionnel/profil">
                 <motion.div
-                  whileHover={{ scale: 1.05 }}
-                  className="w-10 h-10 bg-gradient-to-br from-spa-rose-100 to-spa-lavande-100 rounded-full flex items-center justify-center cursor-pointer"
+                  whileHover={{ scale: 1.1, rotate: 5 }}
+                  whileTap={{ scale: 0.9 }}
+                  className="w-10 h-10 bg-gradient-to-br from-spa-rose-400 to-spa-lavande-500 rounded-full flex items-center justify-center cursor-pointer shadow-md hover:shadow-lg transition-all"
                 >
-                  <User className="w-5 h-5 text-spa-rose-600" />
+                  <User className="w-5 h-5 text-white" />
                 </motion.div>
               </Link>
               <button
                 onClick={handleLogout}
-                className="btn-outline flex items-center gap-2 !py-2"
+                className="px-3 py-2 text-gray-700 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-2"
               >
                 <LogOut className="w-4 h-4" />
-                <span>Déconnexion</span>
               </button>
             </div>
           )}
@@ -170,24 +162,15 @@ export function Header({ user: userProp }: HeaderProps) {
               </div>
             </div>
             <div className="space-y-2">
-              {(user.role === 'SECRETAIRE' || user.role === 'ADMIN') && (
-                <Link
-                  href="/professionnel/assignations"
-                  onClick={() => setShowMenu(false)}
-                  className="w-full btn-primary flex items-center justify-center gap-2"
-                >
-                  <Users className="w-4 h-4" />
-                  <span>Assignations</span>
-                </Link>
-              )}
-              {(user.role === 'MASSOTHERAPEUTE' || user.role === 'ADMIN') && (
+              {/* Bouton "Mes Reçus" uniquement pour les massothérapeutes */}
+              {user.role === 'MASSOTHERAPEUTE' && (
                 <Link
                   href="/professionnel/recus"
                   onClick={() => setShowMenu(false)}
                   className="w-full btn-primary flex items-center justify-center gap-2"
                 >
                   <FileText className="w-4 h-4" />
-                  <span>{user.role === 'ADMIN' ? 'Tous les Reçus' : 'Mes Reçus'}</span>
+                  <span>Mes Reçus</span>
                 </Link>
               )}
               <Link

@@ -258,6 +258,89 @@ export interface SendAiCampaignData {
   prompt: string;
 }
 
+// Email Logs Types (pour la traçabilité des campagnes)
+export interface EmailLog {
+  id: string;
+  type: string;
+  clientEmail: string;
+  clientName: string;
+  subject: string;
+  sentAt: string;
+  opened?: boolean;
+  clicked?: boolean;
+  htmlContent?: string;
+  prompt?: string;
+  status?: 'sent' | 'failed' | 'bounced';
+  errorMessage?: string;
+  campaignId?: string;
+}
+
+export interface EmailLogsParams {
+  type?: string;
+  clientEmail?: string;
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface EmailLogsResponse {
+  logs: EmailLog[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
+export interface EmailStatsParams {
+  startDate?: string;
+  endDate?: string;
+}
+
+export interface EmailStatsResponse {
+  totalEmails: number;
+  byType: {
+    [key: string]: number;
+  };
+  recentLogs: EmailLog[];
+}
+
+// Campaign Types (nouveau système de campagnes)
+export interface Campaign {
+  id: string;
+  subject: string;
+  prompt?: string;
+  totalClients: number;
+  successCount: number;
+  failureCount: number;
+  createdAt: string;
+  successfulEmails?: EmailLog[];
+  failedEmails?: EmailLog[];
+}
+
+export interface CampaignsParams {
+  page?: number;
+  limit?: number;
+  startDate?: string;
+  endDate?: string;
+}
+
+export interface CampaignsResponse {
+  campaigns: Campaign[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
+export interface CampaignDetailsResponse {
+  campaign: Campaign;
+}
+
 // Types pour les reçus d'assurance
 export interface SendReceiptData {
   clientId: string; // ✅ ID du client (requis)
@@ -437,7 +520,7 @@ export const api = createApi({
       return headers;
     },
   }),
-  tagTypes: ['Client', 'Note', 'Assignment', 'User', 'Receipts'],
+  tagTypes: ['Client', 'Note', 'Assignment', 'User', 'Receipts', 'EmailLog', 'Campaign'],
   endpoints: (builder) => ({
     // AUTH - Connexion employé
     login: builder.mutation<AuthResponse, LoginCredentials>({
@@ -718,11 +801,94 @@ export const api = createApi({
       SendAiCampaignData
     >({
       query: (campaignData) => ({
-        url: '/marketing/send-chatgpt-campaign',
+        url: '/marketing/send-email/campaign',
         method: 'POST',
         body: campaignData,
       }),
       transformResponse: (response: any) => response.data || response,
+    }),
+
+    // EMAIL LOGS - Traçabilité des campagnes marketing
+
+    // Récupérer la liste des emails envoyés avec filtres et pagination
+    getEmailLogs: builder.query<EmailLogsResponse, EmailLogsParams | void>({
+      query: (params) => {
+        const queryParams = new URLSearchParams();
+        if (params) {
+          if (params.type) queryParams.append('type', params.type);
+          if (params.clientEmail) queryParams.append('clientEmail', params.clientEmail);
+          if (params.startDate) queryParams.append('startDate', params.startDate);
+          if (params.endDate) queryParams.append('endDate', params.endDate);
+          if (params.page) queryParams.append('page', params.page.toString());
+          if (params.limit) queryParams.append('limit', params.limit.toString());
+        }
+        const queryString = queryParams.toString();
+        return `/marketing/email-logs${queryString ? `?${queryString}` : ''}`;
+      },
+      transformResponse: (response: any) => response.data || response,
+      providesTags: ['EmailLog'],
+    }),
+
+    // Récupérer les statistiques des emails
+    getEmailStats: builder.query<EmailStatsResponse, EmailStatsParams | void>({
+      query: (params) => {
+        const queryParams = new URLSearchParams();
+        if (params) {
+          if (params.startDate) queryParams.append('startDate', params.startDate);
+          if (params.endDate) queryParams.append('endDate', params.endDate);
+        }
+        const queryString = queryParams.toString();
+        return `/marketing/email-stats${queryString ? `?${queryString}` : ''}`;
+      },
+      transformResponse: (response: any) => response.data || response,
+      providesTags: ['EmailLog'],
+    }),
+
+    // Récupérer les détails d'un email spécifique
+    getEmailLogById: builder.query<EmailLog, string>({
+      query: (id) => `/marketing/email-logs/${id}`,
+      transformResponse: (response: any) => response.data || response,
+      providesTags: (_result, _error, id) => [{ type: 'EmailLog', id }],
+    }),
+
+    // CAMPAIGNS - Système de campagnes marketing
+
+    // Récupérer la liste des campagnes avec filtres et pagination
+    getCampaigns: builder.query<CampaignsResponse, CampaignsParams | void>({
+      query: (params) => {
+        const queryParams = new URLSearchParams();
+        if (params) {
+          if (params.page) queryParams.append('page', params.page.toString());
+          if (params.limit) queryParams.append('limit', params.limit.toString());
+          if (params.startDate) queryParams.append('startDate', params.startDate);
+          if (params.endDate) queryParams.append('endDate', params.endDate);
+        }
+        const queryString = queryParams.toString();
+        return `/marketing/campaigns${queryString ? `?${queryString}` : ''}`;
+      },
+      transformResponse: (response: any) => response.data || response,
+      providesTags: ['Campaign'],
+    }),
+
+    // Récupérer les détails d'une campagne spécifique
+    getCampaignById: builder.query<CampaignDetailsResponse, string>({
+      query: (id) => `/marketing/campaigns/${id}`,
+      transformResponse: (response: any) => response.data || response,
+      providesTags: (_result, _error, id) => [{ type: 'Campaign', id }],
+    }),
+
+    // Renvoyer les emails échoués d'une campagne
+    resendFailedEmails: builder.mutation<{ message: string; resentCount: number }, string>({
+      query: (campaignId) => ({
+        url: `/marketing/campaigns/${campaignId}/resend-failed`,
+        method: 'POST',
+      }),
+      transformResponse: (response: any) => response.data || response,
+      invalidatesTags: (_result, _error, campaignId) => [
+        { type: 'Campaign', id: campaignId },
+        'Campaign',
+        'EmailLog',
+      ],
     }),
 
     // REVIEWS - Système d'avis clients
@@ -956,6 +1122,14 @@ export const {
   useGetMarketingStatsQuery,
   useGenerateMarketingMessageMutation,
   useSendAiCampaignMutation,
+  // Email logs hooks
+  useGetEmailLogsQuery,
+  useGetEmailStatsQuery,
+  useGetEmailLogByIdQuery,
+  // Campaign hooks
+  useGetCampaignsQuery,
+  useGetCampaignByIdQuery,
+  useResendFailedEmailsMutation,
   // Review hooks
   useGetPublicProfessionalsQuery,
   useCreateReviewMutation,
