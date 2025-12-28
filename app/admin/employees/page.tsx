@@ -276,70 +276,74 @@ const handleToggleStatus = async (user: any) => {
     <div className="min-h-screen bg-gradient-to-br from-spa-beige-50 via-white to-spa-menthe-50">
       <Header user={currentUser ?? undefined} />
 
-      <div className="container-spa py-8">
-        {/* Bouton de retour */}
+      {/* Conteneur flex pour ordre strict */}
+      <div className="container-spa py-4 sm:py-8 flex flex-col">
+        {/* 1. Bouton de retour */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
-          className="mb-6"
+          className="mb-3 sm:mb-4 order-1"
         >
           <Link
             href="/admin"
-            className="inline-flex items-center gap-2 text-spa-turquoise-600 hover:text-spa-turquoise-700 transition-colors group"
+            className="inline-flex items-center gap-2 text-spa-turquoise-600 hover:text-spa-turquoise-700 transition-colors group text-sm sm:text-base"
           >
-            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+            <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 group-hover:-translate-x-1 transition-transform" />
             <span className="font-medium">Retour au tableau de bord</span>
           </Link>
         </motion.div>
-        {/* En-tête */}
+
+        {/* 2. En-tête + Bouton */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
+          className="mb-3 sm:mb-4 order-2"
         >
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-gray-700 to-gray-900 rounded-full flex items-center justify-center">
-                <Users className="w-6 h-6 text-white" />
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-gray-700 to-gray-900 rounded-full flex items-center justify-center">
+                <Users className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-gray-800">Gestion des Employés</h1>
-                <p className="text-gray-600">
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800">Gestion des Employés</h1>
+                <p className="text-xs sm:text-sm text-gray-600">
                   {users.length} employé{users.length !== 1 ? 's' : ''} au total
                 </p>
               </div>
             </div>
             <button
               onClick={() => setShowCreateModal(true)}
-              className="btn-primary flex items-center gap-2"
+              className="btn-primary flex items-center justify-center gap-2 w-full sm:w-auto text-sm sm:text-base"
             >
-              <UserPlus className="w-5 h-5" />
-              Nouvel Employé
+              <UserPlus className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span>Nouvel Employé</span>
             </button>
           </div>
+        </motion.div>
 
-          {/* Recherche et filtres */}
-          <div className="card-spa p-4">
-            <div className="flex flex-col md:flex-row gap-4">
+        {/* 3. Recherche et filtres - TOUJOURS en position 3 */}
+        <div className="mb-3 sm:mb-4 order-3">
+          <div className="card-spa p-3 sm:p-4">
+            <div className="flex flex-col md:flex-row gap-3 sm:gap-4">
               {/* Recherche */}
               <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
                 <input
                   type="text"
                   placeholder="Rechercher par nom, prénom ou email..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-spa-turquoise-500 focus:border-transparent"
+                  className="w-full pl-9 sm:pl-10 pr-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-spa-turquoise-500 focus:border-transparent"
                 />
               </div>
 
               {/* Filtre par rôle */}
               <div className="flex items-center gap-2">
-                <Filter className="w-5 h-5 text-gray-500" />
+                <Filter className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500" />
                 <select
                   value={roleFilter}
                   onChange={(e) => setRoleFilter(e.target.value)}
-                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-spa-turquoise-500 focus:border-transparent"
+                  className="px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-spa-turquoise-500 focus:border-transparent"
                 >
                   <option value="ALL">Tous les rôles</option>
                   <option value="ADMIN">Administrateur</option>
@@ -350,9 +354,10 @@ const handleToggleStatus = async (user: any) => {
               </div>
             </div>
           </div>
-        </motion.div>
+        </div>
 
-        {/* Liste des employés */}
+        {/* 4. Liste - TOUJOURS en position 4, APRÈS la recherche */}
+        <div className="order-4">
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
             <Loader2 className="w-8 h-8 text-spa-turquoise-500 animate-spin" />
@@ -503,6 +508,8 @@ const handleToggleStatus = async (user: any) => {
             ))}
           </motion.div>
         )}
+        </div>
+        {/* Fin de l'ordre flex */}
       </div>
 
       {/* Modal Créer Employé */}

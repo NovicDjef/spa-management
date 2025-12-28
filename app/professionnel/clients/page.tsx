@@ -62,37 +62,39 @@ export default function ClientsPage() {
     <div className="min-h-screen bg-gray-50">
       <Header user={currentUser} />
 
-      <div className="max-w-5xl mx-auto py-6 sm:py-8 px-4 sm:px-6">
-        {/* En-tête épuré */}
-        <div className="mb-8">
-          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
+      {/* Conteneur flex pour ordre strict */}
+      <div className="max-w-5xl mx-auto py-4 sm:py-8 px-4 sm:px-6 flex flex-col">
+        {/* 1. En-tête */}
+        <div className="mb-3 sm:mb-4 order-1">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">
             Mes Clients
           </h1>
-          <div className="flex items-center gap-4 text-gray-600">
+          <div className="flex items-center gap-3 text-sm sm:text-base text-gray-600">
             <span>{filteredClients.length} client{filteredClients.length !== 1 ? 's' : ''}</span>
             {newClientsCount > 0 && (
-              <span className="px-2.5 py-1 bg-orange-100 text-orange-700 text-sm font-medium rounded-full">
+              <span className="px-2 py-0.5 bg-orange-100 text-orange-700 text-xs font-medium rounded-full">
                 {newClientsCount} nouveau{newClientsCount !== 1 ? 'x' : ''}
               </span>
             )}
           </div>
         </div>
 
-        {/* Barre de recherche élégante */}
-        <div className="mb-8">
+        {/* 2. Barre de recherche - TOUJOURS en position 2 */}
+        <div className="mb-3 sm:mb-4 order-2">
           <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Search className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
             <input
               type="text"
               placeholder="Rechercher par nom ou email..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-3.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-spa-turquoise-500 focus:border-transparent transition-all text-gray-900 placeholder-gray-400"
+              className="w-full pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-spa-turquoise-500 focus:border-transparent transition-all text-sm sm:text-base text-gray-900 placeholder-gray-400"
             />
           </div>
         </div>
 
-        {/* Liste des clients */}
+        {/* 3. Liste - TOUJOURS en position 3, APRÈS la recherche */}
+        <div className="order-3">
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-20">
             <Loader2 className="w-10 h-10 text-spa-turquoise-500 animate-spin mb-4" />
@@ -221,6 +223,8 @@ export default function ClientsPage() {
             })}
           </div>
         )}
+        </div>
+        {/* Fin de l'ordre flex */}
       </div>
     </div>
   );
