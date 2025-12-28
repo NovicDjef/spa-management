@@ -5,8 +5,9 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { InputField, SelectField, CheckboxField, RadioField } from '@/components/forms/FormFields';
 import { BodyMap } from '@/components/forms/BodyMap';
-import { ChevronLeft, ChevronRight, Check, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Check, Loader2, X, AlertCircle } from 'lucide-react';
 import { useCreateClientMutation } from '@/lib/redux/services/api';
+import { extractErrorMessage } from '@/lib/utils/errorHandler';
 
 interface FormData {
   // Informations personnelles
@@ -171,6 +172,8 @@ export default function MassotherapieFormPage() {
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [age, setAge] = useState<number | null>(null);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const totalSteps = 4;
 
@@ -301,7 +304,9 @@ export default function MassotherapieFormPage() {
       console.error('Message:', error.data?.message || error.message);
       console.log('='.repeat(80));
 
-      alert(error.data?.message || 'Une erreur est survenue lors de l\'enregistrement');
+      const errorMsg = extractErrorMessage(error, 'Une erreur est survenue lors de l\'enregistrement');
+      setErrorMessage(errorMsg);
+      setShowErrorModal(true);
     }
   };
 
@@ -977,6 +982,77 @@ export default function MassotherapieFormPage() {
           </a>
         </motion.div>
       </div>
+
+      {/* Modal d'erreur */}
+      {showErrorModal && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[60] p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6"
+          >
+            <div className="text-center">
+              {/* Icône d'erreur */}
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <X className="w-10 h-10 text-red-600" />
+              </div>
+
+              <h3 className="text-xl font-bold text-gray-800 mb-3">Erreur</h3>
+
+              {/* Message d'erreur */}
+              <div className="mb-6 p-4 bg-red-50 border-2 border-red-200 rounded-xl">
+                <p className="text-red-800 text-sm font-medium">{errorMessage}</p>
+              </div>
+
+              {/* Messages d'aide contextuels */}
+              {(errorMessage.toLowerCase().includes('email') ||
+                errorMessage.toLowerCase().includes('courriel') ||
+                errorMessage.toLowerCase().includes('adresse')) &&
+                errorMessage.toLowerCase().includes('existe') && (
+                <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl text-left">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-blue-800 text-sm font-medium mb-1">Cette adresse email est déjà utilisée</p>
+                      <p className="text-blue-700 text-xs">
+                        Un compte client existe déjà avec cette adresse email. Veuillez utiliser une adresse différente ou contacter l'établissement.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {(errorMessage.toLowerCase().includes('téléphone') ||
+                errorMessage.toLowerCase().includes('telephone') ||
+                errorMessage.toLowerCase().includes('cellulaire')) &&
+                errorMessage.toLowerCase().includes('existe') && (
+                <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl text-left">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-blue-800 text-sm font-medium mb-1">Ce numéro de téléphone est déjà enregistré</p>
+                      <p className="text-blue-700 text-xs">
+                        Un compte client existe déjà avec ce numéro de téléphone. Veuillez utiliser un numéro différent ou contacter l'établissement.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <button
+                onClick={() => {
+                  setShowErrorModal(false);
+                  setErrorMessage('');
+                }}
+                className="btn-primary w-full"
+              >
+                Fermer
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }

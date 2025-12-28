@@ -46,6 +46,7 @@ export function ReceiptModal({
   const [treatmentDate, setTreatmentDate] = useState('');
   const [treatmentTime, setTreatmentTime] = useState('');
   const [error, setError] = useState('');
+  const [showErrorModal, setShowErrorModal] = useState(false);
 
   // Services disponibles (data est déjà un tableau après transformResponse)
   const servicesList = services || [];
@@ -222,6 +223,7 @@ export function ReceiptModal({
       console.error('❌ Erreur lors de l\'envoi du reçu:', err);
       const errorMsg = extractErrorMessage(err, 'Erreur lors de l\'envoi du reçu');
       setError(errorMsg);
+      setShowErrorModal(true);
     }
   };
 
@@ -642,6 +644,59 @@ export function ReceiptModal({
                 </div>
               </>
             )}
+          </motion.div>
+        </div>
+      )}
+
+      {/* Modal d'erreur */}
+      {showErrorModal && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[60] p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6"
+          >
+            <div className="text-center">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <X className="w-10 h-10 text-red-600" />
+              </div>
+
+              <h3 className="text-xl font-bold text-gray-800 mb-3">
+                Erreur
+              </h3>
+
+              <div className="mb-6 p-4 bg-red-50 border-2 border-red-200 rounded-xl">
+                <p className="text-red-800 text-sm font-medium">
+                  {error}
+                </p>
+              </div>
+
+              {/* Message d'aide pour le numéro d'ordre manquant */}
+              {error.toLowerCase().includes('numéro') || error.toLowerCase().includes('ordre') || error.toLowerCase().includes('rmq') ? (
+                <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl text-left">
+                  <p className="text-blue-800 text-sm font-medium mb-2">
+                    💡 Solution :
+                  </p>
+                  <p className="text-blue-700 text-sm">
+                    Veuillez ajouter votre numéro d'ordre RMQ dans votre profil avant de pouvoir émettre des reçus d'assurance.
+                  </p>
+                  <p className="text-blue-600 text-xs mt-2">
+                    Allez dans Menu → Profil → Numéro d'ordre professionnel
+                  </p>
+                </div>
+              ) : null}
+
+              <button
+                onClick={() => {
+                  setShowErrorModal(false);
+                  setError('');
+                }}
+                className="btn-primary w-full"
+              >
+                Fermer
+              </button>
+            </div>
           </motion.div>
         </div>
       )}

@@ -11,9 +11,22 @@ export function extractErrorMessage(error: any, defaultMessage: string = 'Une er
     return defaultMessage;
   }
 
+  // Log pour debug
+  console.log('🔍 Extraction erreur:', error);
+
   // Structure RTK Query FetchBaseQueryError: error.data.message
   if (error.data && typeof error.data.message === 'string') {
     return error.data.message;
+  }
+
+  // Structure: error.data.error (certains backends renvoient ainsi)
+  if (error.data && typeof error.data.error === 'string') {
+    return error.data.error;
+  }
+
+  // Structure: error.data.details (pour erreurs de validation)
+  if (error.data && typeof error.data.details === 'string') {
+    return error.data.details;
   }
 
   // Structure RTK Query SerializedError: error.message
@@ -51,9 +64,26 @@ export function extractErrorMessage(error: any, defaultMessage: string = 'Une er
     return 'Ressource non trouvée.';
   }
 
+  // Erreur 400 - Mauvaise requête (souvent problème de validation)
+  if (error.status === 400) {
+    return error.data?.message || error.data?.error || 'Données invalides. Vérifiez les informations saisies.';
+  }
+
   // Erreur 500 - Erreur serveur
   if (error.status === 500) {
     return 'Erreur serveur. Veuillez réessayer plus tard.';
+  }
+
+  // Si l'objet error contient un status et data, essayer de stringify data
+  if (error.status && error.data) {
+    try {
+      const dataStr = JSON.stringify(error.data);
+      if (dataStr && dataStr !== '{}') {
+        return `Erreur ${error.status}: ${dataStr}`;
+      }
+    } catch (e) {
+      // Ignorer si stringify échoue
+    }
   }
 
   // Si rien n'a fonctionné, retourner le message par défaut
