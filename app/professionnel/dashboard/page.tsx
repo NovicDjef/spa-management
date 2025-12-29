@@ -84,10 +84,21 @@ export default function DashboardPage() {
       return [];
     }
     
-    // Filtrer les professionnels
-    return users.filter(
-      (user) => user && (user.role === 'MASSOTHERAPEUTE' || user.role === 'ESTHETICIENNE')
+    // Filtrer les professionnels ACTIFS uniquement
+    const activeProfessionals = users.filter(
+      (user) => user &&
+      (user.role === 'MASSOTHERAPEUTE' || user.role === 'ESTHETICIENNE') &&
+      user.isActive === true  // ⭐ IMPORTANT: Exclure les professionnels bloqués
     );
+
+    // Log pour débogage en production
+    console.log('📊 Total users:', users.length);
+    console.log('📊 Active professionals:', activeProfessionals.length);
+    console.log('📊 Blocked professionals:', users.filter(u =>
+      (u.role === 'MASSOTHERAPEUTE' || u.role === 'ESTHETICIENNE') && !u.isActive
+    ).length);
+
+    return activeProfessionals;
   }, [usersData]);
 
   const [filteredClients, setFilteredClients] = useState<Client[]>([]);
@@ -633,6 +644,12 @@ export default function DashboardPage() {
                     <option value="">Choisir un professionnel...</option>
                     {professionals
                       .filter((p) => {
+                        // ⭐ IMPORTANT: Exclure les professionnels inactifs (déjà fait dans useMemo)
+                        // Cette vérification est redondante mais garantit la sécurité
+                        if (!p.isActive) {
+                          return false;
+                        }
+
                         // Les ADMIN peuvent être assignés à n'importe quel service
                         if (p.role === 'ADMIN') {
                           return true;

@@ -21,6 +21,7 @@ import {
 import { useAppSelector } from '@/lib/redux/hooks';
 import {
   useGetCampaignsQuery,
+  useGetCampaignByIdQuery,
   useResendFailedEmailsMutation,
   type Campaign
 } from '@/lib/redux/services/api';
@@ -67,15 +68,27 @@ export default function MarketingHistoryPage() {
     console.error('❌ Erreur API Campaigns:', campaignsError);
   }
 
-  // Utiliser directement les données de la campagne depuis la liste
-  // au lieu de faire une nouvelle requête (la liste contient déjà les emails)
-  const campaignDetails = selectedCampaign;
+  // Récupérer les détails de la campagne depuis l'API
+  const { data: campaignDetailsResponse, isLoading: detailsLoading } = useGetCampaignByIdQuery(
+    selectedCampaignId!,
+    { skip: !selectedCampaignId }
+  );
+
+  // Utiliser les données de l'API en priorité, sinon utiliser selectedCampaign comme fallback
+  const campaignFromApi = campaignDetailsResponse?.campaign;
+  const campaignDetails = campaignFromApi || selectedCampaign;
 
   // Debug détails de campagne
-  if (selectedCampaignId && campaignDetails) {
-    console.log('🔍 Selected Campaign:', campaignDetails);
+  if (selectedCampaignId) {
+    console.log('🔍 Selected Campaign ID:', selectedCampaignId);
+    console.log('🔍 API Response:', campaignDetailsResponse);
+    console.log('🔍 Campaign from API:', campaignFromApi);
+    console.log('🔍 Selected Campaign (from list):', selectedCampaign);
+    console.log('🔍 Final Campaign Details:', campaignDetails);
     console.log('🔍 Emails in Campaign:', campaignDetails?.emails);
     console.log('🔍 Number of Emails:', campaignDetails?.emails?.length);
+    console.log('🔍 Type of emails:', typeof campaignDetails?.emails);
+    console.log('🔍 Is Array?:', Array.isArray(campaignDetails?.emails));
   }
 
   // Mutation pour renvoyer les emails échoués
@@ -110,6 +123,7 @@ export default function MarketingHistoryPage() {
   console.log('📊 Campaigns Array:', campaigns);
   console.log('📊 Campaigns Length:', campaigns.length);
   console.log('📊 First Campaign:', campaigns[0]);
+  console.log('📊 First Campaign EMAILS:', campaigns[0]?.emails);
   console.log('📊 Pagination:', paginationData);
   console.log('📊 Is Loading:', isLoading);
 
@@ -598,19 +612,36 @@ export default function MarketingHistoryPage() {
                   </>
                 ) : (
                   // Message si aucun email n'est disponible
-                  <div className="p-6 bg-yellow-50 border-2 border-yellow-200 rounded-xl text-center">
+                  <div className="p-6 bg-yellow-50 border-2 border-yellow-200 rounded-xl">
                     <Users className="w-12 h-12 text-yellow-600 mx-auto mb-3" />
-                    <p className="text-sm text-yellow-800 font-medium mb-2">
+                    <p className="text-sm text-yellow-800 font-medium mb-2 text-center">
                       Liste des clients non disponible
                     </p>
-                    <p className="text-xs text-yellow-700">
+                    <p className="text-xs text-yellow-700 text-center mb-3">
                       Les détails des destinataires ne sont pas retournés par l'API.
-                      Vérifiez que le backend inclut le champ "emails" dans la réponse.
                     </p>
-                    <div className="mt-3 p-3 bg-yellow-100 rounded-lg text-left">
-                      <p className="text-xs font-mono text-yellow-800">
-                        Debug: campaignDetails.emails = {JSON.stringify(campaignDetails.emails)}
-                      </p>
+                    <div className="space-y-2">
+                      <div className="p-3 bg-yellow-100 rounded-lg text-left">
+                        <p className="text-xs font-semibold text-yellow-900 mb-1">Debug - emails:</p>
+                        <p className="text-xs font-mono text-yellow-800 break-all">
+                          {JSON.stringify(campaignDetails?.emails)}
+                        </p>
+                      </div>
+                      <div className="p-3 bg-yellow-100 rounded-lg text-left">
+                        <p className="text-xs font-semibold text-yellow-900 mb-1">Debug - Structure complète:</p>
+                        <pre className="text-xs font-mono text-yellow-800 overflow-auto max-h-40">
+                          {JSON.stringify(campaignDetails, null, 2)}
+                        </pre>
+                      </div>
+                      <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-left">
+                        <p className="text-xs font-semibold text-blue-900 mb-2">📋 Instructions:</p>
+                        <ol className="text-xs text-blue-800 space-y-1 list-decimal list-inside">
+                          <li>Ouvrez la console du navigateur (F12)</li>
+                          <li>Recherchez les logs commençant par 🔍 et 📊</li>
+                          <li>Vérifiez si "emails" existe dans les données</li>
+                          <li>Partagez les logs avec le développeur backend</li>
+                        </ol>
+                      </div>
                     </div>
                   </div>
                 )}

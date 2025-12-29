@@ -60,9 +60,11 @@ export default function EmployeesPage() {
   }, []);
 
   // Redux queries and mutations
+  // ⭐ IMPORTANT: includeInactive=true pour afficher TOUS les employés (actifs et bloqués)
   const { data: usersData, isLoading, refetch } = useGetUsersQuery({
     role: roleFilter !== 'ALL' ? roleFilter : undefined,
-    search: searchQuery
+    search: searchQuery,
+    includeInactive: true  // Afficher tous les employés (actifs et inactifs)
   });
   const [createUser, { isLoading: isCreating }] = useCreateUserMutation();
   const [updateUser, { isLoading: isUpdating }] = useUpdateUserMutation();

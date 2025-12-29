@@ -677,11 +677,12 @@ export const api = createApi({
     }),
 
     // Liste de tous les employés
-    getUsers: builder.query<{ users: User[] }, { role?: string; search?: string }>({
-      query: ({ role, search }) => {
+    getUsers: builder.query<{ users: User[] }, { role?: string; search?: string; includeInactive?: boolean }>({
+      query: ({ role, search, includeInactive }) => {
         const params = new URLSearchParams();
         if (role) params.append('role', role);
         if (search) params.append('search', search);
+        if (includeInactive) params.append('includeInactive', 'true');
         return `/users?${params.toString()}`;
       },
       transformResponse: (response: any) => {
