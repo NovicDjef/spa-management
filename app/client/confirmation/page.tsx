@@ -203,7 +203,7 @@ export default function ConfirmationPage() {
           <p>Des questions ? Contactez-nous</p>
           <p className="mt-1">
             <a href="mailto:contact@sparenaissance.com" className="text-spa-rose-600 hover:text-spa-rose-700 transition-colors">
-              contact@sparenaissance.ca
+              info@sparenaissance.ca
             </a>
             {' • '}
             <a href="tel:+15141234567" className="text-spa-rose-600 hover:text-spa-rose-700 transition-colors">

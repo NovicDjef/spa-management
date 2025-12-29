@@ -21,7 +21,6 @@ import {
 import { useAppSelector } from '@/lib/redux/hooks';
 import {
   useGetCampaignsQuery,
-  useGetCampaignByIdQuery,
   useResendFailedEmailsMutation,
   type Campaign
 } from '@/lib/redux/services/api';
@@ -30,6 +29,7 @@ import Link from 'next/link';
 export default function MarketingHistoryPage() {
   const currentUser = useAppSelector((state) => state.auth.user);
   const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
+  const [selectedCampaign, setSelectedCampaign] = useState<any | null>(null);
   const [dateFilter, setDateFilter] = useState('all');
   const [page, setPage] = useState(1);
 
@@ -67,19 +67,15 @@ export default function MarketingHistoryPage() {
     console.error('❌ Erreur API Campaigns:', campaignsError);
   }
 
-  // Récupérer les détails de la campagne sélectionnée
-  const { data: campaignDetailsResponse, isLoading: detailsLoading } = useGetCampaignByIdQuery(
-    selectedCampaignId!,
-    { skip: !selectedCampaignId }
-  );
-
-  // Extraire la campagne de la réponse (structure: { campaign: Campaign })
-  const campaignDetails = campaignDetailsResponse?.campaign;
+  // Utiliser directement les données de la campagne depuis la liste
+  // au lieu de faire une nouvelle requête (la liste contient déjà les emails)
+  const campaignDetails = selectedCampaign;
 
   // Debug détails de campagne
-  if (selectedCampaignId) {
-    console.log('🔍 Campaign Details Response:', campaignDetailsResponse);
-    console.log('🔍 Campaign Details:', campaignDetails);
+  if (selectedCampaignId && campaignDetails) {
+    console.log('🔍 Selected Campaign:', campaignDetails);
+    console.log('🔍 Emails in Campaign:', campaignDetails?.emails);
+    console.log('🔍 Number of Emails:', campaignDetails?.emails?.length);
   }
 
   // Mutation pour renvoyer les emails échoués
@@ -120,7 +116,7 @@ export default function MarketingHistoryPage() {
   // Statistiques globales avec vérifications
   const totalCampaigns = paginationData?.total || 0;
   const totalEmailsSent = campaigns.length > 0
-    ? campaigns.reduce((acc, c) => acc + (c.totalClients || 0), 0)
+    ? campaigns.reduce((acc, c) => acc + (c.totalRecipients || c.totalClients || 0), 0)
     : 0;
   const totalSuccess = campaigns.length > 0
     ? campaigns.reduce((acc, c) => acc + (c.successCount || 0), 0)
@@ -319,8 +315,9 @@ export default function MarketingHistoryPage() {
           >
             {campaigns.map((campaign, index) => {
               const campaignDate = new Date(campaign.createdAt);
-              const successRate = campaign.totalClients > 0
-                ? Math.round((campaign.successCount / campaign.totalClients) * 100)
+              const totalRecipients = campaign.totalRecipients || campaign.totalClients || 0;
+              const successRate = totalRecipients > 0
+                ? Math.round((campaign.successCount / totalRecipients) * 100)
                 : 0;
 
               return (
@@ -330,7 +327,10 @@ export default function MarketingHistoryPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3 + index * 0.1 }}
                   className="card-spa hover:shadow-lg transition-all cursor-pointer"
-                  onClick={() => setSelectedCampaignId(campaign.id)}
+                  onClick={() => {
+                    setSelectedCampaignId(campaign.id);
+                    setSelectedCampaign(campaign);
+                  }}
                 >
                   <div className="p-4 sm:p-6">
                     {/* Header - Mobile stack */}
@@ -366,7 +366,7 @@ export default function MarketingHistoryPage() {
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-medium text-spa-turquoise-800 mb-1">Destinataires:</p>
                           <p className="text-sm font-medium text-spa-turquoise-900">
-                            {campaign.totalClients} clients ciblés
+                            {totalRecipients} clients ciblés
                           </p>
                           <div className="flex items-center gap-4 mt-2 text-xs">
                             <span className="text-green-600 font-medium">
@@ -480,7 +480,10 @@ export default function MarketingHistoryPage() {
                   </p>
                 </div>
                 <button
-                  onClick={() => setSelectedCampaignId(null)}
+                  onClick={() => {
+                    setSelectedCampaignId(null);
+                    setSelectedCampaign(null);
+                  }}
                   className="text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0"
                 >
                   <X className="w-5 h-5 sm:w-6 sm:h-6" />
@@ -493,7 +496,9 @@ export default function MarketingHistoryPage() {
               <div className="grid grid-cols-3 gap-3 sm:gap-4">
                 <div className="p-3 sm:p-4 bg-blue-50 rounded-xl text-center">
                   <Users className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 mx-auto mb-2" />
-                  <p className="text-base sm:text-xl font-bold text-blue-900">{campaignDetails.totalClients}</p>
+                  <p className="text-base sm:text-xl font-bold text-blue-900">
+                    {campaignDetails.totalRecipients || campaignDetails.totalClients || 0}
+                  </p>
                   <p className="text-xs text-gray-600">Total</p>
                 </div>
                 <div className="p-3 sm:p-4 bg-green-50 rounded-xl text-center">
@@ -521,75 +526,104 @@ export default function MarketingHistoryPage() {
                 </div>
               )}
 
-              {/* Emails réussis */}
-              {campaignDetails.successfulEmails && campaignDetails.successfulEmails.length > 0 && (
-                <div>
-                  <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
-                    Emails réussis ({campaignDetails.successfulEmails.length})
-                  </h3>
-                  <div className="space-y-2 max-h-64 overflow-y-auto">
-                    {campaignDetails.successfulEmails.map((email) => (
-                      <div key={email.id} className="p-3 bg-green-50 rounded-lg border border-green-100">
-                        <p className="text-sm font-medium text-gray-800">{email.clientName}</p>
-                        <p className="text-xs text-gray-600">{email.clientEmail}</p>
-                        <p className="text-xs text-green-700 mt-1">
-                          Envoyé le {new Date(email.sentAt).toLocaleString('fr-FR')}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+              {/* Liste de tous les clients ciblés */}
+              <div>
+                <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                  <Users className="w-4 h-4 sm:w-5 sm:h-5 text-spa-turquoise-600" />
+                  Clients ciblés par cette campagne
+                  {campaignDetails.emails && ` (${campaignDetails.emails.length})`}
+                </h3>
 
-              {/* Emails échoués */}
-              {campaignDetails.failedEmails && campaignDetails.failedEmails.length > 0 && (
-                <div>
-                  <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                    <XCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-600" />
-                    Emails échoués ({campaignDetails.failedEmails.length})
-                  </h3>
-                  <div className="space-y-2 max-h-64 overflow-y-auto">
-                    {campaignDetails.failedEmails.map((email) => (
-                      <div key={email.id} className="p-3 bg-red-50 rounded-lg border border-red-100">
-                        <p className="text-sm font-medium text-gray-800">{email.clientName}</p>
-                        <p className="text-xs text-gray-600">{email.clientEmail}</p>
-                        {email.errorMessage && (
-                          <p className="text-xs text-red-700 mt-1">Erreur: {email.errorMessage}</p>
+                {/* Si les emails existent, les afficher */}
+                {campaignDetails.emails && campaignDetails.emails.length > 0 ? (
+                  <>
+                    <div className="space-y-2 max-h-96 overflow-y-auto border-2 border-spa-turquoise-100 rounded-xl p-3">
+                      {campaignDetails.emails.map((email: any, index: number) => {
+                        const isSuccess = email.status === 'sent';
+                        return (
+                          <div
+                            key={index}
+                            className={`p-3 rounded-lg border ${
+                              isSuccess
+                                ? 'bg-green-50 border-green-100'
+                                : 'bg-red-50 border-red-100'
+                            }`}
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-gray-800">{email.clientName}</p>
+                                <p className="text-xs text-gray-600 truncate">{email.clientEmail}</p>
+                              </div>
+                              <div className="flex-shrink-0">
+                                {isSuccess ? (
+                                  <CheckCircle className="w-5 h-5 text-green-600" />
+                                ) : (
+                                  <XCircle className="w-5 h-5 text-red-600" />
+                                )}
+                              </div>
+                            </div>
+                            <p className={`text-xs mt-1 ${isSuccess ? 'text-green-700' : 'text-red-700'}`}>
+                              {isSuccess ? '✓ Envoyé avec succès' : '✗ Échec d\'envoi'}
+                            </p>
+                            {email.errorMessage && (
+                              <p className="text-xs text-red-600 mt-1">
+                                Erreur: {email.errorMessage}
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Bouton pour renvoyer les emails échoués si nécessaire */}
+                    {campaignDetails.failureCount > 0 && (
+                      <button
+                        onClick={() => handleResendFailed(campaignDetails.id)}
+                        disabled={isResending}
+                        className="mt-4 w-full px-4 py-3 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white rounded-xl font-medium transition-colors flex items-center justify-center gap-2"
+                      >
+                        {isResending ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <span>Envoi en cours...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Mail className="w-4 h-4" />
+                            <span>Renvoyer les {campaignDetails.failureCount} email(s) échoué(s)</span>
+                          </>
                         )}
-                        <p className="text-xs text-gray-500 mt-1">
-                          Tenté le {new Date(email.sentAt).toLocaleString('fr-FR')}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Bouton pour renvoyer les emails échoués */}
-                  <button
-                    onClick={() => handleResendFailed(campaignDetails.id)}
-                    disabled={isResending}
-                    className="mt-4 w-full px-4 py-3 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white rounded-xl font-medium transition-colors flex items-center justify-center gap-2"
-                  >
-                    {isResending ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        <span>Envoi en cours...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Mail className="w-4 h-4" />
-                        <span>Renvoyer les emails échoués</span>
-                      </>
+                      </button>
                     )}
-                  </button>
-                </div>
-              )}
+                  </>
+                ) : (
+                  // Message si aucun email n'est disponible
+                  <div className="p-6 bg-yellow-50 border-2 border-yellow-200 rounded-xl text-center">
+                    <Users className="w-12 h-12 text-yellow-600 mx-auto mb-3" />
+                    <p className="text-sm text-yellow-800 font-medium mb-2">
+                      Liste des clients non disponible
+                    </p>
+                    <p className="text-xs text-yellow-700">
+                      Les détails des destinataires ne sont pas retournés par l'API.
+                      Vérifiez que le backend inclut le champ "emails" dans la réponse.
+                    </p>
+                    <div className="mt-3 p-3 bg-yellow-100 rounded-lg text-left">
+                      <p className="text-xs font-mono text-yellow-800">
+                        Debug: campaignDetails.emails = {JSON.stringify(campaignDetails.emails)}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Footer */}
             <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 p-4 sm:p-6 rounded-b-2xl sm:rounded-b-3xl">
               <button
-                onClick={() => setSelectedCampaignId(null)}
+                onClick={() => {
+                  setSelectedCampaignId(null);
+                  setSelectedCampaign(null);
+                }}
                 className="btn-primary w-full"
               >
                 Fermer

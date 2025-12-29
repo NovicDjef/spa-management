@@ -103,13 +103,36 @@ export default function ProfilPage() {
     setProfileError('');
     setProfileSuccess('');
 
+    // Validation pour les massothérapeutes/esthéticiennes
+    if (currentUser?.role === 'MASSOTHERAPEUTE' || currentUser?.role === 'ESTHETICIENNE') {
+      if (!adresse || adresse.trim() === '') {
+        setProfileError('L\'adresse est requise pour pouvoir émettre des reçus d\'assurance');
+        return;
+      }
+    }
+
+    // Validation spécifique pour les massothérapeutes (numéro RMQ obligatoire)
+    if (currentUser?.role === 'MASSOTHERAPEUTE') {
+      if (!numeroOrdre || numeroOrdre.trim() === '') {
+        setProfileError('Le numéro d\'ordre RMQ est requis pour pouvoir émettre des reçus d\'assurance');
+        return;
+      }
+
+      // Vérifier le format M-XXXX
+      const rmqPattern = /^M-\d{4}$/;
+      if (!rmqPattern.test(numeroOrdre)) {
+        setProfileError('Le numéro RMQ doit être au format M-XXXX (exemple: M-3444)');
+        return;
+      }
+    }
+
     try {
       const result = await updateProfile({
         nom: nom !== currentUser?.nom ? nom : undefined,
         prenom: prenom !== currentUser?.prenom ? prenom : undefined,
         telephone: telephone !== currentUser?.telephone ? telephone : undefined,
-        adresse: adresse || undefined,
-        numeroOrdre: numeroOrdre !== currentUser?.numeroOrdre ? numeroOrdre : undefined,
+        adresse: adresse, // ⭐ Toujours envoyer l'adresse, même si vide
+        numeroOrdre: numeroOrdre, // ⭐ Toujours envoyer le numéro d'ordre, même si vide
       }).unwrap();
 
       // Mettre à jour l'utilisateur dans Redux
@@ -222,6 +245,15 @@ export default function ProfilPage() {
               </motion.div>
             )}
 
+            {/* Indicateur de champs pré-remplis */}
+            {currentUser && (adresse || numeroOrdre || nom || prenom || telephone) && (
+              <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-xl">
+                <p className="text-sm text-green-800">
+                  ✅ Vos informations actuelles sont affichées dans les champs ci-dessous
+                </p>
+              </div>
+            )}
+
             <form onSubmit={handleUpdateProfile} className="space-y-4">
               {/* Nom et Prénom */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -279,14 +311,22 @@ export default function ProfilPage() {
                 <label className="label-spa">
                   <MapPin className="w-4 h-4 inline mr-2" />
                   Adresse
+                  {(currentUser.role === 'MASSOTHERAPEUTE' || currentUser.role === 'ESTHETICIENNE') && (
+                    <span className="text-red-500 ml-1">*</span>
+                  )}
                 </label>
                 <input
                   type="text"
                   value={adresse}
                   onChange={(e) => setAdresse(e.target.value)}
                   className="input-spa"
-                  placeholder="123 Rue Principale, Montréal"
+                  placeholder="123 Rue Principale, Ville, Province, Code postal"
                 />
+                {(currentUser.role === 'MASSOTHERAPEUTE' || currentUser.role === 'ESTHETICIENNE') && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Requis pour les reçus d'assurance
+                  </p>
+                )}
               </div>
 
               {/* Numéro d'ordre (uniquement pour thérapeutes) */}
@@ -295,17 +335,28 @@ export default function ProfilPage() {
                   <label className="label-spa">
                     <IdCard className="w-4 h-4 inline mr-2" />
                     Numéro d'ordre professionnel
+                    {currentUser.role === 'MASSOTHERAPEUTE' && (
+                      <span className="text-red-500 ml-1">*</span>
+                    )}
                   </label>
                   <input
                     type="text"
                     value={numeroOrdre}
                     onChange={(e) => setNumeroOrdre(e.target.value)}
                     className="input-spa"
-                    placeholder="12345"
+                    placeholder={currentUser.role === 'MASSOTHERAPEUTE' ? "M-3444" : "Votre numéro d'ordre"}
+                    maxLength={currentUser.role === 'MASSOTHERAPEUTE' ? 6 : undefined}
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    Requis pour l'envoi de reçus d'assurance
+                    {currentUser.role === 'MASSOTHERAPEUTE'
+                      ? "⚠️ Requis pour l'envoi de reçus d'assurance. Format: M-XXXX (ex: M-3444)"
+                      : "Requis pour l'envoi de reçus d'assurance"}
                   </p>
+                  {!numeroOrdre && currentUser.role === 'MASSOTHERAPEUTE' && (
+                    <p className="text-xs text-amber-600 mt-1 font-medium">
+                      ⚠️ Vous devez ajouter votre numéro RMQ pour pouvoir émettre des reçus
+                    </p>
+                  )}
                 </div>
               )}
 

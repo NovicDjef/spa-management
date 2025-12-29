@@ -192,6 +192,7 @@ export function ReceiptModal({
       console.error('❌ Erreur lors de la génération:', err);
       const errorMsg = extractErrorMessage(err, 'Erreur lors de la génération de l\'aperçu');
       setError(errorMsg);
+      setShowErrorModal(true); // ⭐ Afficher le modal d'erreur avec les instructions
     }
   };
 
