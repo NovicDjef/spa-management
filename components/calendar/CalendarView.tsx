@@ -49,9 +49,15 @@ export default function CalendarView({ userRole, userId }: CalendarViewProps) {
     timeSlot: string;
     position: { x: number; y: number };
   } | null>(null);
+  const [isClientMounted, setIsClientMounted] = useState(false);
 
   const token = useAppSelector((state) => state.auth.token);
   const currentUser = useAppSelector((state) => state.auth.user);
+
+  // Détecter le montage côté client
+  useEffect(() => {
+    setIsClientMounted(true);
+  }, []);
 
   // Fetch bookings pour la date sélectionnée
   const {
@@ -79,6 +85,20 @@ export default function CalendarView({ userRole, userId }: CalendarViewProps) {
   const professionals = allProfessionals.filter(
     (user) => user.role === 'MASSOTHERAPEUTE' || user.role === 'ESTHETICIENNE'
   );
+
+  // DEBUG: Log pour vérifier le rôle et l'utilisateur
+  console.log('🔍 DEBUG CalendarView:', {
+    userRole,
+    userId,
+    currentUser,
+    isClientMounted,
+    isProfessional: userRole === 'MASSOTHERAPEUTE' || userRole === 'ESTHETICIENNE',
+    hasCurrentUser: !!currentUser,
+    bookingsCount: bookings.length,
+  });
+
+  // Vérifier si on est un professionnel
+  const isProfessionalView = userRole === 'MASSOTHERAPEUTE' || userRole === 'ESTHETICIENNE';
 
   // WebSocket pour temps réel
   useEffect(() => {
@@ -128,8 +148,14 @@ export default function CalendarView({ userRole, userId }: CalendarViewProps) {
     setSelectedDate(startOfDay(new Date()));
   };
 
+  // Vérifier si l'utilisateur peut créer des réservations
+  const canCreateBooking = userRole === 'ADMIN' || userRole === 'SECRETAIRE';
+
   // Handlers
   const handleSlotClick = (professionalId: string, date: Date, timeSlot: string) => {
+    // Seuls ADMIN et SECRETAIRE peuvent créer des réservations
+    if (!canCreateBooking) return;
+
     setSelectedSlot({ professionalId, date, timeSlot });
     setSelectedBooking(null);
     setSidebarMode('booking');
@@ -142,6 +168,9 @@ export default function CalendarView({ userRole, userId }: CalendarViewProps) {
     timeSlot: string,
     position: { x: number; y: number }
   ) => {
+    // Seuls ADMIN et SECRETAIRE peuvent créer des réservations
+    if (!canCreateBooking) return;
+
     setEmptySlotContextMenu({ professionalId, date, timeSlot, position });
   };
 
@@ -200,6 +229,9 @@ export default function CalendarView({ userRole, userId }: CalendarViewProps) {
   };
 
   const handleCreateBookingFromContextMenu = () => {
+    // Seuls ADMIN et SECRETAIRE peuvent créer des réservations
+    if (!canCreateBooking) return;
+
     if (emptySlotContextMenu) {
       setSelectedSlot({
         professionalId: emptySlotContextMenu.professionalId,
@@ -214,6 +246,9 @@ export default function CalendarView({ userRole, userId }: CalendarViewProps) {
   };
 
   const handleCreateBreakFromContextMenu = () => {
+    // Seuls ADMIN et SECRETAIRE peuvent créer des pauses
+    if (!canCreateBooking) return;
+
     if (emptySlotContextMenu) {
       setSelectedSlot({
         professionalId: emptySlotContextMenu.professionalId,
@@ -240,6 +275,7 @@ export default function CalendarView({ userRole, userId }: CalendarViewProps) {
     return labels[status];
   };
 
+  // Afficher loading si données en cours de chargement
   if (isLoadingBookings || isLoadingProfessionals) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -248,8 +284,25 @@ export default function CalendarView({ userRole, userId }: CalendarViewProps) {
     );
   }
 
+  // Pour les professionnels : attendre que currentUser soit chargé
+  if (isProfessionalView && !currentUser && isClientMounted) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen p-8">
+        <div className="w-20 h-20 bg-spa-turquoise-100 rounded-full flex items-center justify-center mb-4">
+          <Loader2 className="w-10 h-10 text-spa-turquoise-600 animate-spin" />
+        </div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">
+          Chargement de votre calendrier...
+        </h3>
+        <p className="text-sm text-gray-600 text-center max-w-md">
+          Veuillez patienter pendant que nous chargeons vos informations.
+        </p>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col h-screen bg-gray-50">
+    <div className="flex flex-col h-full bg-gray-50">
       {/* Header */}
       <CalendarHeader
         selectedDate={selectedDate}
@@ -263,6 +316,7 @@ export default function CalendarView({ userRole, userId }: CalendarViewProps) {
           setSidebarMode('booking');
           setShowSidebar(true);
         }}
+        userRole={userRole}
       />
 
       {/* Calendar Grid avec Sidebar */}
@@ -270,45 +324,50 @@ export default function CalendarView({ userRole, userId }: CalendarViewProps) {
         {/* Grid principale */}
         <div className={`flex-1 overflow-auto transition-all ${showSidebar ? 'mr-0' : ''}`}>
           {/* Vue professionnelle : une seule colonne optimisée mobile */}
-          {(userRole === 'MASSOTHERAPEUTE' || userRole === 'ESTHETICIENNE') && currentUser ? (
-            <SingleColumnCalendarGrid
-              date={selectedDate}
-              professional={{
-                id: currentUser.id,
-                nom: currentUser.nom,
-                prenom: currentUser.prenom,
-                photoUrl: (currentUser as any).photoUrl,
-                role: currentUser.role,
-              }}
-              bookings={bookings}
-              onBookingClick={handleBookingEdit}
-              onBookingContextMenu={handleBookingContextMenu}
-              onSlotClick={(timeSlot) => {
-                // Convertir le timeSlot en date
-                const [hours, minutes] = timeSlot.split(':').map(Number);
-                const slotDate = new Date(selectedDate);
-                slotDate.setHours(hours, minutes, 0, 0);
-                handleSlotClick(currentUser.id, slotDate, timeSlot);
-              }}
-              onSlotContextMenu={(timeSlot, position) => {
-                // Convertir le timeSlot en date
-                const [hours, minutes] = timeSlot.split(':').map(Number);
-                const slotDate = new Date(selectedDate);
-                slotDate.setHours(hours, minutes, 0, 0);
-                handleSlotContextMenu(currentUser.id, slotDate, timeSlot, position);
-              }}
-            />
+          {isProfessionalView && currentUser ? (
+            <>
+              {console.log('✅ Affichage SingleColumnCalendarGrid pour:', currentUser.prenom, currentUser.nom)}
+              <SingleColumnCalendarGrid
+                date={selectedDate}
+                professional={{
+                  id: currentUser.id,
+                  nom: currentUser.nom,
+                  prenom: currentUser.prenom,
+                  photoUrl: (currentUser as any).photoUrl,
+                  role: currentUser.role,
+                }}
+                bookings={bookings}
+                onBookingClick={handleBookingEdit}
+                onBookingContextMenu={handleBookingContextMenu}
+                onSlotClick={(timeSlot) => {
+                  // Convertir le timeSlot en date
+                  const [hours, minutes] = timeSlot.split(':').map(Number);
+                  const slotDate = new Date(selectedDate);
+                  slotDate.setHours(hours, minutes, 0, 0);
+                  handleSlotClick(currentUser.id, slotDate, timeSlot);
+                }}
+                onSlotContextMenu={(timeSlot, position) => {
+                  // Convertir le timeSlot en date
+                  const [hours, minutes] = timeSlot.split(':').map(Number);
+                  const slotDate = new Date(selectedDate);
+                  slotDate.setHours(hours, minutes, 0, 0);
+                  handleSlotContextMenu(currentUser.id, slotDate, timeSlot, position);
+                }}
+              />
+            </>
           ) : (
-            /* Vue admin/secrétaire : toutes les colonnes */
-            <CalendarGrid
-              date={selectedDate}
-              professionals={professionals}
-              bookings={bookings}
-              onBookingEdit={handleBookingEdit}
-              onBookingContextMenu={handleBookingContextMenu}
-              onSlotClick={handleSlotClick}
-              onSlotContextMenu={handleSlotContextMenu}
-            />
+            <>
+              {console.log('❌ Affichage CalendarGrid (admin/secrétaire)')}
+              <CalendarGrid
+                date={selectedDate}
+                professionals={professionals}
+                bookings={bookings}
+                onBookingEdit={handleBookingEdit}
+                onBookingContextMenu={handleBookingContextMenu}
+                onSlotClick={handleSlotClick}
+                onSlotContextMenu={handleSlotContextMenu}
+              />
+            </>
           )}
         </div>
 

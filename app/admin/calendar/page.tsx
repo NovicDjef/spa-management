@@ -14,40 +14,24 @@ export default function AdminCalendarPage() {
   const currentUser = useAppSelector((state) => state.auth.user);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       <Header user={currentUser ?? undefined} />
 
-      <div className="container-spa py-4">
-        {/* Bouton de retour */}
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="mb-4"
+      {/* Bouton de retour compact */}
+      <div className="bg-white border-b border-gray-200 px-4 py-2">
+        <Link
+          href="/admin"
+          className="inline-flex items-center gap-2 text-gray-600 hover:text-spa-turquoise-600 transition-colors text-sm"
         >
-          <Link
-            href="/admin"
-            className="inline-flex items-center gap-2 text-gray-600 hover:text-spa-turquoise-600 transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            <span>Retour au dashboard</span>
-          </Link>
-        </motion.div>
-
-        {/* Titre */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-6"
-        >
-          <h1 className="text-3xl font-bold text-gray-900">Calendrier des Réservations</h1>
-          <p className="text-gray-600 mt-2">
-            Gérez les réservations de tous les professionnels en temps réel
-          </p>
-        </motion.div>
+          <ArrowLeft className="w-4 h-4" />
+          <span>Retour</span>
+        </Link>
       </div>
 
-      {/* Calendrier */}
-      <CalendarView userRole={currentUser?.role as any || 'ADMIN'} userId={currentUser?.id} />
+      {/* Calendrier pleine hauteur */}
+      <div className="flex-1 overflow-hidden">
+        <CalendarView userRole={currentUser?.role as any || 'ADMIN'} userId={currentUser?.id} />
+      </div>
     </div>
   );
 }
