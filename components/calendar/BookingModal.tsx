@@ -172,7 +172,7 @@ export default function BookingModal({
                 className="input-spa"
                 required
               >
-                <option value="">Sélectionner un client</option>
+                <option key="empty-client" value="">Sélectionner un client</option>
                 {clients.map((client) => (
                   <option key={client.id} value={client.id}>
                     {client.prenom} {client.nom} - {client.telCellulaire}
@@ -190,7 +190,7 @@ export default function BookingModal({
                 className="input-spa"
                 required
               >
-                <option value="">Sélectionner un professionnel</option>
+                <option key="empty-professional" value="">Sélectionner un professionnel</option>
                 {professionals.map((prof) => (
                   <option key={prof.id} value={prof.id}>
                     {prof.prenom} {prof.nom}

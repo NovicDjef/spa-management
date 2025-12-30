@@ -247,7 +247,7 @@ export default function BookingSidebar({
                     className="input-spa text-sm"
                     required
                   >
-                    <option value="">Sélectionner un client</option>
+                    <option key="empty-client" value="">Sélectionner un client</option>
                     {clients.map((client) => (
                       <option key={client.id} value={client.id}>
                         {client.prenom} {client.nom} - {client.telCellulaire}
@@ -266,7 +266,7 @@ export default function BookingSidebar({
                   className="input-spa text-sm"
                   required
                 >
-                  <option value="">Sélectionner un professionnel</option>
+                  <option key="empty-professional" value="">Sélectionner un professionnel</option>
                   {professionals.map((prof) => (
                     <option key={prof.id} value={prof.id}>
                       {prof.prenom} {prof.nom}
@@ -349,7 +349,7 @@ export default function BookingSidebar({
                   className="input-spa text-sm"
                   required
                 >
-                  <option value="">Sélectionner un professionnel</option>
+                  <option key="empty-professional-break" value="">Sélectionner un professionnel</option>
                   {professionals.map((prof) => (
                     <option key={prof.id} value={prof.id}>
                       {prof.prenom} {prof.nom}

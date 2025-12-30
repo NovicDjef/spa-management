@@ -22,23 +22,34 @@ export function initializeSocket(token: string): Socket {
     transports: ['websocket', 'polling'],
     reconnection: true,
     reconnectionDelay: 1000,
-    reconnectionAttempts: 5,
+    reconnectionAttempts: 3, // Réduit de 5 à 3 tentatives
+    timeout: 5000, // Timeout de 5 secondes
   });
+
+  let isConnected = false;
 
   // Événements de connexion
   socket.on('connect', () => {
+    isConnected = true;
     console.log('✅ WebSocket connecté:', socket?.id);
   });
 
   socket.on('disconnect', (reason) => {
+    isConnected = false;
     console.log('❌ WebSocket déconnecté:', reason);
   });
 
   socket.on('connect_error', (error) => {
-    console.error('🔴 Erreur de connexion WebSocket:', error.message);
+    // Ne logger qu'une seule fois au lieu de toutes les tentatives
+    if (!isConnected) {
+      console.warn('⚠️ WebSocket non disponible (mode hors ligne). Les mises à jour en temps réel sont désactivées.');
+      // Désactiver les tentatives de reconnexion après la première erreur
+      socket.io.opts.reconnection = false;
+    }
   });
 
   socket.on('reconnect', (attemptNumber) => {
+    isConnected = true;
     console.log('🔄 WebSocket reconnecté après', attemptNumber, 'tentatives');
   });
 

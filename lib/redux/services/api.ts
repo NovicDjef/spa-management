@@ -577,6 +577,76 @@ export interface UpdateBookingData {
 
 // ==== END BOOKING TYPES ====
 
+// ==== SERVICE TYPES ====
+
+// Service Category
+export interface ServiceCategory {
+  id: string;
+  name: string;
+  description?: string;
+  services: Service[];
+}
+
+// Service
+export interface Service {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  duration: number; // en minutes
+  price: number;
+  imageUrl?: string;
+  requiresProfessional?: boolean;
+  category?: {
+    id: string;
+    name: string;
+    description?: string;
+  };
+}
+
+// Package Service
+export interface PackageService {
+  serviceName: string;
+  serviceId?: string;
+  serviceDuration?: number;
+  serviceDescription?: string;
+  quantity: number;
+  isOptional: boolean;
+  extraCost?: number;
+}
+
+// Package
+export interface Package {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  variant?: string;
+  price: number;
+  imageUrl?: string;
+  services: PackageService[];
+}
+
+// Gym Membership
+export interface GymMembership {
+  id: string;
+  type: string;
+  name: string;
+  price: number;
+  duration: number; // en jours
+  description?: string;
+}
+
+// Available Professional (simplifié pour affichage public)
+export interface AvailableProfessional {
+  id: string;
+  name: string;
+  photoUrl?: string;
+  speciality: string;
+}
+
+// ==== END SERVICE TYPES ====
+
 // API Service avec RTK Query
 export const api = createApi({
   reducerPath: 'api',
@@ -595,7 +665,7 @@ export const api = createApi({
       return headers;
     },
   }),
-  tagTypes: ['Client', 'Note', 'Assignment', 'User', 'Receipts', 'EmailLog', 'Campaign', 'Booking'],
+  tagTypes: ['Client', 'Note', 'Assignment', 'User', 'Receipts', 'EmailLog', 'Campaign', 'Booking', 'Service', 'Package'],
   endpoints: (builder) => ({
     // AUTH - Connexion employé
     login: builder.mutation<AuthResponse, LoginCredentials>({
@@ -1231,6 +1301,70 @@ export const api = createApi({
     }),
 
     // ==== END BOOKING ENDPOINTS ====
+
+    // ==== SERVICE ENDPOINTS ====
+
+    // GET all services with categories
+    getAllServices: builder.query<
+      { success: boolean; data: ServiceCategory[] },
+      { categoryName?: string } | void
+    >({
+      query: (params) => {
+        const query = params?.categoryName ? `?categoryName=${params.categoryName}` : '';
+        return `/public/services${query}`;
+      },
+      providesTags: ['Service'],
+    }),
+
+    // GET service by slug
+    getServiceBySlug: builder.query<
+      { success: boolean; data: Service },
+      string
+    >({
+      query: (slug) => `/public/services/${slug}`,
+      providesTags: ['Service'],
+    }),
+
+    // GET all packages
+    getAllPackages: builder.query<
+      { success: boolean; data: Package[] },
+      void
+    >({
+      query: () => '/public/packages',
+      providesTags: ['Package'],
+    }),
+
+    // GET package by slug
+    getPackageBySlug: builder.query<
+      { success: boolean; data: Package },
+      string
+    >({
+      query: (slug) => `/public/packages/${slug}`,
+      providesTags: ['Package'],
+    }),
+
+    // GET gym memberships
+    getGymMemberships: builder.query<
+      { success: boolean; data: GymMembership[] },
+      void
+    >({
+      query: () => '/public/gym-memberships',
+      providesTags: ['Service'],
+    }),
+
+    // GET available professionals
+    getAvailableProfessionals: builder.query<
+      { success: boolean; data: AvailableProfessional[] },
+      { serviceType?: 'MASSOTHERAPIE' | 'ESTHETIQUE' } | void
+    >({
+      query: (params) => {
+        const query = params?.serviceType ? `?serviceType=${params.serviceType}` : '';
+        return `/public/professionals${query}`;
+      },
+      providesTags: ['User'],
+    }),
+
+    // ==== END SERVICE ENDPOINTS ====
   }),
 });
 
@@ -1296,4 +1430,11 @@ export const {
   useUpdateBookingMutation,
   useChangeBookingStatusMutation,
   useDeleteBookingMutation,
+  // Service hooks
+  useGetAllServicesQuery,
+  useGetServiceBySlugQuery,
+  useGetAllPackagesQuery,
+  useGetPackageBySlugQuery,
+  useGetGymMembershipsQuery,
+  useGetAvailableProfessionalsQuery,
 } = api;
