@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Header } from '@/components/layout/Header';
 import { SearchBar } from '@/components/clients/SearchBar';
 import { ClientCard } from '@/components/clients/ClientCard';
-import { Users, UserPlus, Loader2, X, Target, AlertCircle, Clock, UserCheck, User as UserIcon, ArrowRight, UserMinus, FileText, BarChart3 } from 'lucide-react';
+import { Users, UserPlus, Loader2, X, Target, AlertCircle, Clock, UserCheck, User as UserIcon, ArrowRight, UserMinus, FileText, BarChart3, Calendar } from 'lucide-react';
 import { useGetClientsQuery, useGetUsersQuery, useAssignClientMutation, useUnassignClientMutation, useGetAssignmentHistoryQuery } from '@/lib/redux/services/api';
 import { useAppSelector } from '@/lib/redux/hooks';
 import { hasPermission, isAdminOrSecretary } from '@/lib/permissions';
@@ -246,7 +246,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Cartes d'accès rapide */}
-          {(currentUser.role === 'ADMIN' || currentUser.role === 'SECRETAIRE' || currentUser.role === 'MASSOTHERAPEUTE') && (
+          {(currentUser.role === 'ADMIN' || currentUser.role === 'SECRETAIRE' || currentUser.role === 'MASSOTHERAPEUTE' || currentUser.role === 'ESTHETICIENNE') && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -271,6 +271,29 @@ export default function DashboardPage() {
                       </div>
                       <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-1">Assignations</h3>
                       <p className="text-xs sm:text-sm text-gray-600">Gérer les assignations clients</p>
+                    </div>
+                  </motion.div>
+                </Link>
+              )}
+
+              {/* Calendrier */}
+              {(currentUser.role === 'MASSOTHERAPEUTE' || currentUser.role === 'ESTHETICIENNE') && (
+                <Link href="/professionnel/calendar">
+                  <motion.div
+                    whileHover={{ scale: 1.02, y: -4 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="group relative p-4 sm:p-5 bg-gradient-to-br from-blue-50 via-white to-blue-50/30 rounded-2xl shadow-soft hover:shadow-soft-lg transition-all cursor-pointer border-2 border-transparent hover:border-blue-200 overflow-hidden"
+                  >
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-blue-100 rounded-full blur-2xl opacity-0 group-hover:opacity-50 transition-opacity"></div>
+                    <div className="relative">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="w-11 h-11 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
+                          <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                        </div>
+                        <ArrowRight className="w-5 h-5 text-blue-400 group-hover:translate-x-1 transition-transform" />
+                      </div>
+                      <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-1">Mon Calendrier</h3>
+                      <p className="text-xs sm:text-sm text-gray-600">Voir mes réservations</p>
                     </div>
                   </motion.div>
                 </Link>

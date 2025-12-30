@@ -116,6 +116,23 @@ module.exports = {
         'soft': '0 2px 15px -3px rgba(123, 172, 175, 0.1), 0 10px 20px -2px rgba(123, 172, 175, 0.04)',
         'soft-lg': '0 10px 40px -10px rgba(123, 172, 175, 0.15)',
       },
+      // Calendar booking colors
+      booking: {
+        pending: '#fef3c7',
+        confirmed: '#dbeafe',
+        arrived: '#d1fae5',
+        inProgress: '#a7f3d0',
+        completed: '#f3f4f6',
+        noShow: '#fed7aa',
+        cancelled: '#fee2e2',
+      },
+      // Calendar grid configuration
+      gridTemplateColumns: {
+        'calendar': '80px repeat(auto-fit, minmax(200px, 1fr))',
+      },
+      height: {
+        'slot': '60px',
+      },
     },
   },
   plugins: [],

@@ -502,6 +502,81 @@ export interface AllReviewsResponse {
   pagination: PaginationInfo;
 }
 
+// ==== BOOKING TYPES ====
+
+// Booking Status
+export type BookingStatus =
+  | 'PENDING'
+  | 'CONFIRMED'
+  | 'ARRIVED'
+  | 'IN_PROGRESS'
+  | 'COMPLETED'
+  | 'NO_SHOW'
+  | 'CANCELLED';
+
+// Main Booking Interface
+export interface Booking {
+  id: string;
+  clientId: string;
+  professionalId: string;
+  serviceId?: string;
+  startTime: string; // ISO datetime
+  endTime: string;
+  status: BookingStatus;
+  notes?: string;
+  serviceType: 'MASSOTHERAPIE' | 'ESTHETIQUE';
+  createdAt: string;
+  updatedAt: string;
+
+  // Populated relations
+  client: {
+    id: string;
+    nom: string;
+    prenom: string;
+    telCellulaire: string;
+    courriel: string;
+  };
+
+  professional: {
+    id: string;
+    nom: string;
+    prenom: string;
+    role: 'MASSOTHERAPEUTE' | 'ESTHETICIENNE';
+    photoUrl?: string;
+    color?: string; // For calendar display
+  };
+
+  service?: {
+    id: string;
+    name: string;
+    duration: number;
+    price: number;
+  };
+}
+
+// Create Booking Data
+export interface CreateBookingData {
+  clientId: string;
+  professionalId: string;
+  serviceId?: string;
+  startTime: string; // ISO datetime
+  endTime: string; // ISO datetime
+  status?: BookingStatus;
+  notes?: string;
+  serviceType: 'MASSOTHERAPIE' | 'ESTHETIQUE';
+}
+
+// Update Booking Data
+export interface UpdateBookingData {
+  startTime?: string;
+  endTime?: string;
+  status?: BookingStatus;
+  professionalId?: string;
+  notes?: string;
+}
+
+// ==== END BOOKING TYPES ====
+
 // API Service avec RTK Query
 export const api = createApi({
   reducerPath: 'api',
@@ -520,7 +595,7 @@ export const api = createApi({
       return headers;
     },
   }),
-  tagTypes: ['Client', 'Note', 'Assignment', 'User', 'Receipts', 'EmailLog', 'Campaign'],
+  tagTypes: ['Client', 'Note', 'Assignment', 'User', 'Receipts', 'EmailLog', 'Campaign', 'Booking'],
   endpoints: (builder) => ({
     // AUTH - Connexion employé
     login: builder.mutation<AuthResponse, LoginCredentials>({
@@ -1090,6 +1165,72 @@ export const api = createApi({
       transformResponse: (response: any) => response.data || response,
       invalidatesTags: ['User'],
     }),
+
+    // ==== BOOKING ENDPOINTS ====
+
+    // GET bookings by date range
+    getBookingsByDateRange: builder.query<
+      { bookings: Booking[] },
+      { startDate: string; endDate: string; professionalId?: string }
+    >({
+      query: ({ startDate, endDate, professionalId }) => {
+        const params = new URLSearchParams({ startDate, endDate });
+        if (professionalId) params.append('professionalId', professionalId);
+        return `/bookings/range?${params.toString()}`;
+      },
+      transformResponse: (response: any) => response.data || response,
+      providesTags: ['Booking'],
+    }),
+
+    // CREATE booking
+    createBooking: builder.mutation<
+      { booking: Booking; message: string },
+      CreateBookingData
+    >({
+      query: (data) => ({
+        url: '/bookings',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['Booking', 'Client'],
+    }),
+
+    // UPDATE booking
+    updateBooking: builder.mutation<
+      { booking: Booking; message: string },
+      { id: string; data: UpdateBookingData }
+    >({
+      query: ({ id, data }) => ({
+        url: `/bookings/${id}`,
+        method: 'PUT',
+        body: data,
+      }),
+      invalidatesTags: ['Booking'],
+    }),
+
+    // CHANGE status
+    changeBookingStatus: builder.mutation<
+      { booking: Booking; message: string },
+      { id: string; status: BookingStatus }
+    >({
+      query: ({ id, status }) => ({
+        url: `/bookings/${id}/status`,
+        method: 'PATCH',
+        body: { status },
+      }),
+      invalidatesTags: ['Booking'],
+    }),
+
+    // DELETE booking
+    deleteBooking: builder.mutation<{ message: string }, string>({
+      query: (id) => ({
+        url: `/bookings/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Booking'],
+    }),
+
+    // ==== END BOOKING ENDPOINTS ====
   }),
 });
 
@@ -1149,4 +1290,10 @@ export const {
   useGetMyProfileQuery,
   useChangePasswordMutation,
   useUpdateProfileMutation,
+  // Booking hooks
+  useGetBookingsByDateRangeQuery,
+  useCreateBookingMutation,
+  useUpdateBookingMutation,
+  useChangeBookingStatusMutation,
+  useDeleteBookingMutation,
 } = api;
