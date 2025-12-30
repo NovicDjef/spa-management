@@ -50,6 +50,7 @@ export default function CalendarView({ userRole, userId }: CalendarViewProps) {
     position: { x: number; y: number };
   } | null>(null);
   const [isClientMounted, setIsClientMounted] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const token = useAppSelector((state) => state.auth.token);
   const currentUser = useAppSelector((state) => state.auth.user);
@@ -85,6 +86,15 @@ export default function CalendarView({ userRole, userId }: CalendarViewProps) {
   const professionals = allProfessionals.filter(
     (user) => user.role === 'MASSOTHERAPEUTE' || user.role === 'ESTHETICIENNE'
   );
+
+  // Filtrer les réservations en fonction de la recherche
+  const filteredBookings = searchQuery
+    ? bookings.filter((booking) => {
+        const searchLower = searchQuery.toLowerCase();
+        const clientName = `${booking.client.prenom} ${booking.client.nom}`.toLowerCase();
+        return clientName.includes(searchLower);
+      })
+    : bookings;
 
   // DEBUG: Log pour vérifier le rôle et l'utilisateur
   console.log('🔍 DEBUG CalendarView:', {
@@ -317,6 +327,8 @@ export default function CalendarView({ userRole, userId }: CalendarViewProps) {
           setShowSidebar(true);
         }}
         userRole={userRole}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
       />
 
       {/* Calendar Grid avec Sidebar */}
@@ -336,7 +348,7 @@ export default function CalendarView({ userRole, userId }: CalendarViewProps) {
                   photoUrl: (currentUser as any).photoUrl,
                   role: currentUser.role,
                 }}
-                bookings={bookings}
+                bookings={filteredBookings}
                 onBookingClick={handleBookingEdit}
                 onBookingContextMenu={handleBookingContextMenu}
                 onSlotClick={(timeSlot) => {
@@ -361,7 +373,7 @@ export default function CalendarView({ userRole, userId }: CalendarViewProps) {
               <CalendarGrid
                 date={selectedDate}
                 professionals={professionals}
-                bookings={bookings}
+                bookings={filteredBookings}
                 onBookingEdit={handleBookingEdit}
                 onBookingContextMenu={handleBookingContextMenu}
                 onSlotClick={handleSlotClick}
