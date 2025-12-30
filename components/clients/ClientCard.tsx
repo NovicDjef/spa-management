@@ -41,6 +41,7 @@ interface ClientCardProps {
     numeroOrdre?: string;
   };
   showTherapistActions?: boolean; // Afficher les actions pour les massothérapeutes
+  disableLink?: boolean; // Désactiver le lien vers le dossier du client (pour les secrétaires)
 }
 
 export function ClientCard({
@@ -49,9 +50,14 @@ export function ClientCard({
   onAssign,
   isNewAssignment = false,
   currentUser,
-  showTherapistActions = false
+  showTherapistActions = false,
+  disableLink = false
 }: ClientCardProps) {
   const [showReceiptModal, setShowReceiptModal] = useState(false);
+
+  // Wrapper conditionnel pour le lien
+  const Wrapper: any = disableLink ? 'div' : Link;
+  const wrapperProps: any = disableLink ? {} : { href: `/professionnel/clients/${client.id}` };
 
   const calculateAge = (birthDate: string) => {
     const today = new Date();
@@ -87,7 +93,7 @@ export function ClientCard({
         </div>
       )}
 
-      <Link href={`/professionnel/clients/${client.id}`}>
+      <Wrapper {...wrapperProps}>
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-4">
             <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
@@ -233,7 +239,7 @@ export function ClientCard({
             </div>
           </div>
         )}
-      </Link>
+      </Wrapper>
 
       {/* Modal de reçu */}
       {currentUser && canSendReceipt && (
