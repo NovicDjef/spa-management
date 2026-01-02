@@ -2,7 +2,7 @@
 
 import React, { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Plus, Search, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Plus, Search, X, Sparkles } from 'lucide-react';
 import { format, parse } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -13,6 +13,7 @@ interface CalendarHeaderProps {
   onNext: () => void;
   onToday: () => void;
   onNewBooking: () => void;
+  onGenerateSchedule?: () => void; // Nouveau callback pour générer les horaires
   userRole?: 'ADMIN' | 'SECRETAIRE' | 'MASSOTHERAPEUTE' | 'ESTHETICIENNE';
   searchQuery?: string;
   onSearchChange?: (query: string) => void;
@@ -28,6 +29,7 @@ export default function CalendarHeader({
   onNext,
   onToday,
   onNewBooking,
+  onGenerateSchedule,
   userRole,
   searchQuery = '',
   onSearchChange,
@@ -154,6 +156,20 @@ export default function CalendarHeader({
             >
               Aujourd'hui
             </motion.button>
+
+            {/* Bouton Générer Horaires - Seulement pour ADMIN et SECRETAIRE */}
+            {canCreateBooking && onGenerateSchedule && (
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={onGenerateSchedule}
+                className="hidden sm:flex btn-secondary items-center gap-2 text-xs sm:text-sm px-3 sm:px-4 py-2"
+                title="Générer automatiquement les horaires sur 3 mois"
+              >
+                <Sparkles className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span>Générer Horaires</span>
+              </motion.button>
+            )}
 
             {/* Bouton Nouvelle réservation - Seulement pour ADMIN et SECRETAIRE */}
             {canCreateBooking && (

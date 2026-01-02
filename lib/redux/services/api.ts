@@ -554,28 +554,147 @@ export interface Booking {
   };
 }
 
-// Create Booking Data
+// Create Booking Data (format backend)
 export interface CreateBookingData {
-  clientId: string;
+  // Client existant
+  clientId?: string;
+
+  // Ou nouveau client (sans dossier complet)
+  clientName?: string;
+  clientPhone?: string;
+  clientEmail?: string;
+
+  // Informations de réservation
   professionalId: string;
   serviceId?: string;
-  startTime: string; // ISO datetime
-  endTime: string; // ISO datetime
-  status?: BookingStatus;
-  notes?: string;
-  serviceType: 'MASSOTHERAPIE' | 'ESTHETIQUE';
+  serviceVariationId?: string; // Pour les services avec variations
+  bookingDate: string; // Format YYYY-MM-DD
+  startTime: string; // Format HH:mm
+  endTime: string; // Format HH:mm
+  specialNotes?: string;
+
+  // Options de rappel
+  sendSmsReminder?: boolean;
+  sendEmailReminder?: boolean;
 }
 
-// Update Booking Data
+// Update Booking Data (format backend)
 export interface UpdateBookingData {
-  startTime?: string;
-  endTime?: string;
-  status?: BookingStatus;
   professionalId?: string;
-  notes?: string;
+  serviceId?: string;
+  serviceVariationId?: string;
+  bookingDate?: string; // Format YYYY-MM-DD
+  startTime?: string; // Format HH:mm
+  endTime?: string; // Format HH:mm
+  specialNotes?: string;
+  status?: BookingStatus;
 }
 
 // ==== END BOOKING TYPES ====
+
+// ==== AVAILABILITY TYPES ====
+
+// Availability Block (bloquer une journée ou période)
+export interface AvailabilityBlock {
+  id: string;
+  professionalId: string;
+  date: string; // Format YYYY-MM-DD
+  startTime?: string; // Format HH:mm (optionnel, si null = toute la journée)
+  endTime?: string; // Format HH:mm
+  reason?: string;
+  createdAt: string;
+  professional?: {
+    id: string;
+    nom: string;
+    prenom: string;
+  };
+}
+
+// Create Availability Block Data
+export interface CreateAvailabilityBlockData {
+  professionalId: string;
+  date: string; // Format YYYY-MM-DD
+  startTime?: string; // Format HH:mm (optionnel pour bloquer toute la journée)
+  endTime?: string; // Format HH:mm
+  reason?: string;
+}
+
+// Break (pause récurrente ou ponctuelle)
+export interface Break {
+  id: string;
+  professionalId: string;
+  dayOfWeek?: number | null; // 0-6 (0=Dimanche, 1=Lundi, etc.) ou null pour tous les jours
+  startTime: string; // Format HH:mm
+  endTime: string; // Format HH:mm
+  label?: string;
+  createdAt: string;
+  professional?: {
+    id: string;
+    nom: string;
+    prenom: string;
+  };
+}
+
+// Create Break Data
+export interface CreateBreakData {
+  professionalId: string;
+  dayOfWeek?: number | null; // null = tous les jours
+  startTime: string; // Format HH:mm
+  endTime: string; // Format HH:mm
+  label?: string;
+}
+
+// Update Break Data
+export interface UpdateBreakData {
+  dayOfWeek?: number | null;
+  startTime?: string;
+  endTime?: string;
+  label?: string;
+  isActive?: boolean;
+}
+
+// Generate Period Data
+export interface GeneratePeriodData {
+  professionalId: string;
+  startDate: string; // Format YYYY-MM-DD
+  endDate: string; // Format YYYY-MM-DD
+}
+
+// Generate Period Response
+export interface GeneratePeriodResponse {
+  success: boolean;
+  message: string;
+  data: {
+    professionalId: string;
+    startDate: string;
+    endDate: string;
+    generated: number;
+    period: string;
+  };
+}
+
+// Update Day Availability Data
+export interface UpdateDayAvailabilityData {
+  startTime?: string; // Format HH:mm
+  endTime?: string; // Format HH:mm
+  isAvailable?: boolean;
+  reason?: string;
+}
+
+// Unblock Day Data
+export interface UnblockDayData {
+  professionalId: string;
+  date: string; // Format YYYY-MM-DD
+}
+
+// Unblock Day Response
+export interface UnblockDayResponse {
+  success: boolean;
+  message: string;
+  data: AvailabilityBlock;
+}
+
+// ==== END AVAILABILITY TYPES ====
 
 // ==== SERVICE TYPES ====
 
@@ -585,6 +704,15 @@ export interface ServiceCategory {
   name: string;
   description?: string;
   services: Service[];
+}
+
+// Service Variation
+export interface ServiceVariation {
+  id: string;
+  name: string;
+  duration: number; // en minutes
+  price: number;
+  description?: string;
 }
 
 // Service
@@ -597,6 +725,7 @@ export interface Service {
   price: number;
   imageUrl?: string;
   requiresProfessional?: boolean;
+  variations?: ServiceVariation[]; // Variations de durée/prix
   category?: {
     id: string;
     name: string;
@@ -665,7 +794,7 @@ export const api = createApi({
       return headers;
     },
   }),
-  tagTypes: ['Client', 'Note', 'Assignment', 'User', 'Receipts', 'EmailLog', 'Campaign', 'Booking', 'Service', 'Package'],
+  tagTypes: ['Client', 'Note', 'Assignment', 'User', 'Receipts', 'EmailLog', 'Campaign', 'Booking', 'Service', 'Package', 'Availability', 'Break'],
   endpoints: (builder) => ({
     // AUTH - Connexion employé
     login: builder.mutation<AuthResponse, LoginCredentials>({
@@ -1262,7 +1391,7 @@ export const api = createApi({
         method: 'POST',
         body: data,
       }),
-      invalidatesTags: ['Booking', 'Client'],
+      invalidatesTags: ['Booking', 'Client', 'Availability', 'Break'],
     }),
 
     // UPDATE booking
@@ -1275,7 +1404,7 @@ export const api = createApi({
         method: 'PUT',
         body: data,
       }),
-      invalidatesTags: ['Booking'],
+      invalidatesTags: ['Booking', 'Availability', 'Break'],
     }),
 
     // CHANGE status
@@ -1288,7 +1417,7 @@ export const api = createApi({
         method: 'PATCH',
         body: { status },
       }),
-      invalidatesTags: ['Booking'],
+      invalidatesTags: ['Booking', 'Availability', 'Break'],
     }),
 
     // DELETE booking
@@ -1297,10 +1426,142 @@ export const api = createApi({
         url: `/bookings/${id}`,
         method: 'DELETE',
       }),
-      invalidatesTags: ['Booking'],
+      invalidatesTags: ['Booking', 'Availability', 'Break'],
     }),
 
     // ==== END BOOKING ENDPOINTS ====
+
+    // ==== AVAILABILITY ENDPOINTS ====
+
+    // POST /api/availability/block - Bloquer une journée ou période
+    createAvailabilityBlock: builder.mutation<
+      { success: boolean; message: string; data: AvailabilityBlock },
+      CreateAvailabilityBlockData
+    >({
+      query: (data) => ({
+        url: '/availability/block',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['Availability', 'Booking'],
+    }),
+
+    // GET /api/availability/blocks/:professionalId - Liste des blocages
+    getAvailabilityBlocks: builder.query<
+      { success: boolean; data: AvailabilityBlock[] },
+      { professionalId: string; startDate?: string; endDate?: string }
+    >({
+      query: ({ professionalId, startDate, endDate }) => {
+        let url = `/availability/blocks/${professionalId}`;
+        const params = new URLSearchParams();
+        if (startDate) params.append('startDate', startDate);
+        if (endDate) params.append('endDate', endDate);
+        const queryString = params.toString();
+        if (queryString) url += `?${queryString}`;
+        return url;
+      },
+      providesTags: ['Availability'],
+    }),
+
+    // DELETE /api/availability/:id - Débloquer une journée/période
+    deleteAvailabilityBlock: builder.mutation<
+      { success: boolean; message: string },
+      string
+    >({
+      query: (id) => ({
+        url: `/availability/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Availability', 'Booking'],
+    }),
+
+    // POST /api/availability/breaks - Ajouter une pause
+    createBreak: builder.mutation<
+      { success: boolean; message: string; data: Break },
+      CreateBreakData
+    >({
+      query: (data) => ({
+        url: '/availability/breaks',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['Break', 'Booking'],
+    }),
+
+    // GET /api/availability/breaks/:professionalId - Liste des pauses
+    getBreaks: builder.query<
+      { success: boolean; data: Break[] },
+      string
+    >({
+      query: (professionalId) => `/availability/breaks/${professionalId}`,
+      providesTags: ['Break'],
+    }),
+
+    // DELETE /api/availability/breaks/:id - Supprimer une pause
+    deleteBreak: builder.mutation<
+      { success: boolean; message: string },
+      string
+    >({
+      query: (id) => ({
+        url: `/availability/breaks/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Break', 'Booking'],
+    }),
+
+    // PATCH /api/availability/breaks/:id - Modifier une pause
+    updateBreak: builder.mutation<
+      { success: boolean; message: string; data: Break },
+      { id: string; data: UpdateBreakData }
+    >({
+      query: ({ id, data }) => ({
+        url: `/availability/breaks/${id}`,
+        method: 'PATCH',
+        body: data,
+      }),
+      invalidatesTags: ['Break', 'Booking'],
+    }),
+
+    // POST /api/availability/generate-period - Générer horaires sur période
+    generatePeriodSchedule: builder.mutation<
+      GeneratePeriodResponse,
+      GeneratePeriodData
+    >({
+      query: (data) => ({
+        url: '/availability/generate-period',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['Availability', 'Break', 'Booking'],
+    }),
+
+    // PATCH /api/availability/day/:id - Modifier un horaire d'un jour
+    updateDayAvailability: builder.mutation<
+      { success: boolean; message: string; data: AvailabilityBlock },
+      { id: string; data: UpdateDayAvailabilityData }
+    >({
+      query: ({ id, data }) => ({
+        url: `/availability/day/${id}`,
+        method: 'PATCH',
+        body: data,
+      }),
+      invalidatesTags: ['Availability', 'Booking'],
+    }),
+
+    // POST /api/availability/unblock-day - Débloquer une journée
+    unblockDay: builder.mutation<
+      UnblockDayResponse,
+      UnblockDayData
+    >({
+      query: (data) => ({
+        url: '/availability/unblock-day',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['Availability', 'Booking'],
+    }),
+
+    // ==== END AVAILABILITY ENDPOINTS ====
 
     // ==== SERVICE ENDPOINTS ====
 
@@ -1430,6 +1691,17 @@ export const {
   useUpdateBookingMutation,
   useChangeBookingStatusMutation,
   useDeleteBookingMutation,
+  // Availability hooks
+  useCreateAvailabilityBlockMutation,
+  useGetAvailabilityBlocksQuery,
+  useDeleteAvailabilityBlockMutation,
+  useCreateBreakMutation,
+  useGetBreaksQuery,
+  useDeleteBreakMutation,
+  useUpdateBreakMutation,
+  useGeneratePeriodScheduleMutation,
+  useUpdateDayAvailabilityMutation,
+  useUnblockDayMutation,
   // Service hooks
   useGetAllServicesQuery,
   useGetServiceBySlugQuery,

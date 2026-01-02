@@ -2,7 +2,7 @@
 
 import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar as CalendarIcon, Clock, User } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, User, Ban, Coffee } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { generateTimeSlots, calculateBookingPosition, getStatusColor, getStatusLabel } from '@/lib/utils/calendar';
@@ -19,6 +19,8 @@ interface SingleColumnCalendarGridProps {
     role: string;
   };
   bookings: Booking[];
+  blocks?: any[]; // Blocages de disponibilité
+  breaks?: any[]; // Pauses
   onBookingClick: (booking: Booking) => void;
   onBookingContextMenu: (booking: Booking, position: { x: number; y: number }) => void;
   onSlotClick: (timeSlot: string) => void;
@@ -36,6 +38,8 @@ export default function SingleColumnCalendarGrid({
   date,
   professional,
   bookings,
+  blocks = [],
+  breaks = [],
   onBookingClick,
   onBookingContextMenu,
   onSlotClick,
@@ -50,6 +54,16 @@ export default function SingleColumnCalendarGrid({
     return generateTimeSlots(startHour, endHour, intervalMinutes);
   }, [startHour, endHour, intervalMinutes]);
 
+  // Vérifier si la journée est bloquée
+  const fullDayBlock = useMemo(() => {
+    const currentDate = format(date, 'yyyy-MM-dd');
+    return blocks.find(
+      block => block.professionalId === professional.id &&
+      block.date === currentDate &&
+      !block.startTime && !block.endTime
+    );
+  }, [blocks, date, professional.id]);
+
   // Calculer les positions des réservations
   const positionedBookings = useMemo(() => {
     return bookings.map((booking) => ({
@@ -60,8 +74,28 @@ export default function SingleColumnCalendarGrid({
 
   return (
     <div className="flex flex-col h-full bg-white">
+      {/* BANDEAU DE BLOCAGE JOURNÉE - TRÈS VISIBLE */}
+      {fullDayBlock && (
+        <div className="sticky top-0 z-30 bg-red-600 text-white text-center px-4 py-4 shadow-lg">
+          <div className="flex items-center justify-center gap-2 mb-1">
+            <Ban className="w-6 h-6" />
+            <span className="font-bold text-lg uppercase">JOURNÉE BLOQUÉE</span>
+          </div>
+          <div className="text-sm font-medium">
+            {fullDayBlock.reason || 'Congé'}
+          </div>
+          <div className="text-xs mt-1 opacity-90">
+            Aucune réservation possible ce jour
+          </div>
+        </div>
+      )}
+
       {/* En-tête professionnel */}
-      <div className="sticky top-0 z-20 bg-gradient-to-br from-spa-turquoise-50 to-white border-b-2 border-spa-turquoise-200 shadow-sm">
+      <div className={`sticky ${fullDayBlock ? 'top-[88px]' : 'top-0'} z-20 border-b-2 shadow-sm ${
+        fullDayBlock
+          ? 'bg-gradient-to-br from-red-100 to-red-50 border-red-300'
+          : 'bg-gradient-to-br from-spa-turquoise-50 to-white border-spa-turquoise-200'
+      }`}>
         {/* Badge Personnel */}
         <div className="bg-gradient-to-r from-spa-turquoise-500 to-spa-turquoise-600 px-4 py-2">
           <div className="flex items-center justify-between">
@@ -179,9 +213,8 @@ export default function SingleColumnCalendarGrid({
             );
           })}
 
-          {/* Réservations positionnées absolument */}
+          {/* Réservations positionnées absolument - TOUTES EN VERT */}
           {positionedBookings.map((booking) => {
-            const statusColors = getStatusColor(booking.status);
             const statusLabel = getStatusLabel(booking.status);
 
             return (
@@ -189,12 +222,7 @@ export default function SingleColumnCalendarGrid({
                 key={booking.id}
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className={clsx(
-                  'absolute left-16 right-3 rounded-xl shadow-md border-l-4 p-3 cursor-pointer',
-                  statusColors.bg,
-                  statusColors.border,
-                  'hover:shadow-lg transition-all'
-                )}
+                className="absolute left-16 right-3 bg-green-500 border-l-4 border-green-700 rounded-xl shadow-lg p-3 cursor-pointer hover:bg-green-600 hover:shadow-xl transition-all"
                 style={{
                   top: `${booking.position.top}px`,
                   height: `${Math.max(booking.position.height, slotHeight)}px`,
@@ -208,17 +236,14 @@ export default function SingleColumnCalendarGrid({
                 {/* Infos client */}
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <div className={clsx(
-                      'w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0',
-                      statusColors.bg === 'bg-green-100' ? 'bg-green-200' : 'bg-gray-200'
-                    )}>
-                      <User className={clsx('w-4 h-4', statusColors.text)} />
+                    <div className="w-8 h-8 rounded-full bg-green-700 flex items-center justify-center flex-shrink-0">
+                      <User className="w-4 h-4 text-white" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className={clsx('font-semibold text-sm truncate', statusColors.text)}>
+                      <p className="font-bold text-sm truncate text-white">
                         {booking.client.prenom} {booking.client.nom}
                       </p>
-                      <p className="text-xs text-gray-600 truncate">
+                      <p className="text-xs text-white/90 truncate">
                         {booking.client.telCellulaire}
                       </p>
                     </div>
@@ -226,38 +251,28 @@ export default function SingleColumnCalendarGrid({
                 </div>
 
                 {/* Horaire */}
-                <div className="flex items-center gap-2 text-xs text-gray-700 mb-1">
-                  <Clock className="w-3 h-3" />
-                  <span className="font-medium">
+                <div className="flex items-center gap-2 text-xs text-white font-bold mb-2">
+                  <Clock className="w-4 h-4" />
+                  <span className="text-sm">
                     {format(parseISO(booking.startTime), 'HH:mm')} - {format(parseISO(booking.endTime), 'HH:mm')}
                   </span>
                 </div>
 
-                {/* Type de service */}
+                {/* Service et Statut */}
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className={clsx(
-                    'inline-flex px-2 py-0.5 rounded-full text-xs font-medium',
-                    booking.serviceType === 'MASSOTHERAPIE'
-                      ? 'bg-spa-menthe-100 text-spa-menthe-700'
-                      : 'bg-spa-lavande-100 text-spa-lavande-700'
-                  )}>
-                    {booking.serviceType === 'MASSOTHERAPIE' ? 'Massothérapie' : 'Esthétique'}
+                  <span className="inline-flex px-2 py-1 rounded-full text-xs font-medium bg-white/90 text-green-700">
+                    {booking.service?.name || (booking.serviceType === 'MASSOTHERAPIE' ? 'Massothérapie' : 'Esthétique')}
                   </span>
 
-                  {/* Statut */}
-                  <span className={clsx(
-                    'inline-flex px-2 py-0.5 rounded-full text-xs font-medium',
-                    statusColors.bg,
-                    statusColors.text
-                  )}>
+                  <span className="inline-flex px-2 py-1 rounded-full text-xs font-medium bg-green-700 text-white">
                     {statusLabel}
                   </span>
                 </div>
 
                 {/* Notes */}
                 {booking.notes && (
-                  <p className="text-xs text-gray-600 mt-2 line-clamp-2">
-                    {booking.notes}
+                  <p className="text-xs text-white/90 mt-2 line-clamp-2">
+                    💬 {booking.notes}
                   </p>
                 )}
               </motion.div>

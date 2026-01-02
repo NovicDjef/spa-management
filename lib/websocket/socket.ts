@@ -41,7 +41,7 @@ export function initializeSocket(token: string): Socket {
 
   socket.on('connect_error', (error) => {
     // Ne logger qu'une seule fois au lieu de toutes les tentatives
-    if (!isConnected) {
+    if (!isConnected && socket) {
       console.warn('⚠️ WebSocket non disponible (mode hors ligne). Les mises à jour en temps réel sont désactivées.');
       // Désactiver les tentatives de reconnexion après la première erreur
       socket.io.opts.reconnection = false;

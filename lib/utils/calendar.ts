@@ -53,13 +53,13 @@ export function calculateBookingPosition(
 // Couleurs de statut
 export function getStatusColor(status: BookingStatus) {
   const colors = {
-    PENDING: { bg: 'bg-yellow-100', border: 'border-yellow-400', text: 'text-yellow-800' },
-    CONFIRMED: { bg: 'bg-blue-100', border: 'border-blue-400', text: 'text-blue-800' },
-    ARRIVED: { bg: 'bg-green-100', border: 'border-green-400', text: 'text-green-800' },
-    IN_PROGRESS: { bg: 'bg-emerald-100', border: 'border-emerald-500', text: 'text-emerald-900' },
-    COMPLETED: { bg: 'bg-gray-100', border: 'border-gray-400', text: 'text-gray-700' },
-    NO_SHOW: { bg: 'bg-orange-100', border: 'border-orange-400', text: 'text-orange-800' },
-    CANCELLED: { bg: 'bg-red-100', border: 'border-red-400', text: 'text-red-800' },
+    PENDING: { bg: 'bg-yellow-100', border: 'border-yellow-300', text: 'text-yellow-800' },
+    CONFIRMED: { bg: 'bg-blue-100', border: 'border-blue-300', text: 'text-blue-800' },
+    ARRIVED: { bg: 'bg-purple-100', border: 'border-purple-300', text: 'text-purple-800' },
+    IN_PROGRESS: { bg: 'bg-indigo-100', border: 'border-indigo-300', text: 'text-indigo-800' },
+    COMPLETED: { bg: 'bg-green-100', border: 'border-green-300', text: 'text-green-800' },
+    NO_SHOW: { bg: 'bg-gray-100', border: 'border-gray-300', text: 'text-gray-800' },
+    CANCELLED: { bg: 'bg-red-100', border: 'border-red-300', text: 'text-red-800' },
   };
   return colors[status];
 }

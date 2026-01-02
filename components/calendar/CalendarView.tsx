@@ -1,23 +1,32 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { format, addDays, subDays, startOfDay } from 'date-fns';
 import CalendarHeader from './CalendarHeader';
 import CalendarGrid from './CalendarGrid';
+import HorizontalCalendarGrid from './HorizontalCalendarGrid';
 import SingleColumnCalendarGrid from './SingleColumnCalendarGrid';
 import BookingSidebar from './BookingSidebar';
 import BookingContextMenu from './BookingContextMenu';
 import EmptySlotContextMenu from './EmptySlotContextMenu';
+import AvailabilityBlockModal from './AvailabilityBlockModal';
+import GeneratePeriodModal from './GeneratePeriodModal';
 import {
   useGetBookingsByDateRangeQuery,
   useGetUsersQuery,
   useChangeBookingStatusMutation,
   useDeleteBookingMutation,
+  useGetAvailabilityBlocksQuery,
+  useGetBreaksQuery,
+  useDeleteBreakMutation,
+  useDeleteAvailabilityBlockMutation,
+  useUnblockDayMutation,
   type Booking,
   type BookingStatus,
 } from '@/lib/redux/services/api';
 import { initializeSocket, onBookingEvent, offBookingEvent, emitEvent } from '@/lib/websocket/socket';
 import { useAppSelector } from '@/lib/redux/hooks';
+import { useAvailabilityData } from '@/hooks/useAvailabilityData';
 import { Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -48,9 +57,22 @@ export default function CalendarView({ userRole, userId }: CalendarViewProps) {
     date: Date;
     timeSlot: string;
     position: { x: number; y: number };
+    hasExistingBlock?: boolean;
+    blockId?: string;
+    blockReason?: string;
+    hasExistingBreak?: boolean;
+    breakId?: string;
+  } | null>(null);
+  const [availabilityBlockModal, setAvailabilityBlockModal] = useState<{
+    professionalId: string;
+    professionalName: string;
+    date: Date;
+    timeSlot?: string;
+    mode: 'full-day' | 'time-period';
   } | null>(null);
   const [isClientMounted, setIsClientMounted] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showGeneratePeriodModal, setShowGeneratePeriodModal] = useState(false);
 
   const token = useAppSelector((state) => state.auth.token);
   const currentUser = useAppSelector((state) => state.auth.user);
@@ -76,9 +98,6 @@ export default function CalendarView({ userRole, userId }: CalendarViewProps) {
     role: undefined, // Get all professionals
   });
 
-  const [changeStatus] = useChangeBookingStatusMutation();
-  const [deleteBooking] = useDeleteBookingMutation();
-
   const bookings = bookingsData?.bookings || [];
   const allProfessionals = professionalsData?.users || [];
 
@@ -86,6 +105,33 @@ export default function CalendarView({ userRole, userId }: CalendarViewProps) {
   const professionals = allProfessionals.filter(
     (user) => user.role === 'MASSOTHERAPEUTE' || user.role === 'ESTHETICIENNE'
   );
+
+  // DEBUG: Log des réservations récupérées
+  console.log('📊 Réservations récupérées:', {
+    date: format(selectedDate, 'yyyy-MM-dd'),
+    count: bookings.length,
+    bookings: bookings.map(b => ({
+      id: b.id,
+      client: `${b.client.prenom} ${b.client.nom}`,
+      professional: b.professionalId,
+      start: b.startTime,
+      end: b.endTime,
+      status: b.status
+    }))
+  });
+
+  // Récupérer les blocages et pauses pour tous les professionnels
+  const professionalIds = professionals.map(p => p.id);
+  const { blocks: allBlocks, breaks: allBreaks } = useAvailabilityData(
+    professionalIds,
+    format(selectedDate, 'yyyy-MM-dd')
+  );
+
+  const [changeStatus] = useChangeBookingStatusMutation();
+  const [deleteBooking] = useDeleteBookingMutation();
+  const [deleteBreak] = useDeleteBreakMutation();
+  const [deleteAvailabilityBlock] = useDeleteAvailabilityBlockMutation();
+  const [unblockDay] = useUnblockDayMutation();
 
   // Filtrer les réservations en fonction de la recherche
   const filteredBookings = searchQuery
@@ -181,7 +227,50 @@ export default function CalendarView({ userRole, userId }: CalendarViewProps) {
     // Seuls ADMIN et SECRETAIRE peuvent créer des réservations
     if (!canCreateBooking) return;
 
-    setEmptySlotContextMenu({ professionalId, date, timeSlot, position });
+    // Détecter si ce créneau a un blocage existant
+    const currentDate = format(date, 'yyyy-MM-dd');
+
+    // Vérifier blocage de journée complète
+    let existingBlock = allBlocks.find(
+      block => block.professionalId === professionalId &&
+      block.date === currentDate &&
+      !block.startTime && !block.endTime
+    );
+
+    // Si pas de blocage journée complète, vérifier blocage de période
+    if (!existingBlock) {
+      existingBlock = allBlocks.find(block => {
+        if (block.professionalId !== professionalId || block.date !== currentDate) return false;
+        if (!block.startTime || !block.endTime) return false;
+        return timeSlot >= block.startTime && timeSlot < block.endTime;
+      });
+    }
+
+    // Vérifier pause existante
+    const currentDayOfWeek = date.getDay(); // 0=Dimanche, 1=Lundi, etc.
+
+    const existingBreak = allBreaks.find(br => {
+      if (br.professionalId !== professionalId) return false;
+
+      // Vérifier si la pause s'applique à ce jour de la semaine
+      if (br.dayOfWeek !== null && br.dayOfWeek !== currentDayOfWeek) {
+        return false;
+      }
+
+      return timeSlot >= br.startTime && timeSlot < br.endTime;
+    });
+
+    setEmptySlotContextMenu({
+      professionalId,
+      date,
+      timeSlot,
+      position,
+      hasExistingBlock: !!existingBlock,
+      blockId: existingBlock?.id,
+      blockReason: existingBlock?.reason,
+      hasExistingBreak: !!existingBreak,
+      breakId: existingBreak?.id,
+    });
   };
 
   const handleBookingEdit = (booking: Booking) => {
@@ -272,6 +361,102 @@ export default function CalendarView({ userRole, userId }: CalendarViewProps) {
     }
   };
 
+  const handleBlockFullDay = () => {
+    // Seuls ADMIN et SECRETAIRE peuvent bloquer des disponibilités
+    if (!canCreateBooking) return;
+
+    if (emptySlotContextMenu) {
+      const professional = professionals.find(p => p.id === emptySlotContextMenu.professionalId);
+      const professionalName = professional ? `${professional.prenom} ${professional.nom}` : 'Professionnel';
+
+      setAvailabilityBlockModal({
+        professionalId: emptySlotContextMenu.professionalId,
+        professionalName,
+        date: emptySlotContextMenu.date,
+        mode: 'full-day',
+      });
+      setEmptySlotContextMenu(null);
+    }
+  };
+
+  const handleBlockTimePeriod = () => {
+    // Seuls ADMIN et SECRETAIRE peuvent bloquer des disponibilités
+    if (!canCreateBooking) return;
+
+    if (emptySlotContextMenu) {
+      const professional = professionals.find(p => p.id === emptySlotContextMenu.professionalId);
+      const professionalName = professional ? `${professional.prenom} ${professional.nom}` : 'Professionnel';
+
+      setAvailabilityBlockModal({
+        professionalId: emptySlotContextMenu.professionalId,
+        professionalName,
+        date: emptySlotContextMenu.date,
+        timeSlot: emptySlotContextMenu.timeSlot,
+        mode: 'time-period',
+      });
+      setEmptySlotContextMenu(null);
+    }
+  };
+
+  const handleDeleteBreak = async (breakId: string) => {
+    try {
+      await deleteBreak(breakId).unwrap();
+      toast.success('Pause supprimée avec succès');
+      refetchBookings(); // Rafraîchir pour mettre à jour l'affichage
+    } catch (error: any) {
+      console.error('Erreur suppression pause:', error);
+      toast.error(error.data?.message || 'Erreur lors de la suppression de la pause');
+    }
+  };
+
+  const handleUnblock = async () => {
+    if (!emptySlotContextMenu) return;
+
+    // Vérifier si c'est un blocage de journée complète
+    const currentDate = format(emptySlotContextMenu.date, 'yyyy-MM-dd');
+    const fullDayBlock = allBlocks.find(
+      block => block.professionalId === emptySlotContextMenu.professionalId &&
+      block.date === currentDate &&
+      !block.startTime && !block.endTime
+    );
+
+    try {
+      if (fullDayBlock) {
+        // Débloquer une journée complète avec la nouvelle API
+        await unblockDay({
+          professionalId: emptySlotContextMenu.professionalId,
+          date: currentDate,
+        }).unwrap();
+        toast.success('Journée débloquée avec succès ! 🎉');
+      } else if (emptySlotContextMenu.blockId) {
+        // Supprimer un blocage de période (ancien comportement)
+        await deleteAvailabilityBlock(emptySlotContextMenu.blockId).unwrap();
+        toast.success('Blocage de période supprimé avec succès');
+      }
+
+      setEmptySlotContextMenu(null);
+      refetchBookings();
+    } catch (error: any) {
+      console.error('Erreur déblocage:', error);
+      toast.error(error.data?.message || 'Erreur lors du déblocage');
+    }
+  };
+
+  const handleDeleteBreakFromContextMenu = async () => {
+    if (!emptySlotContextMenu?.breakId) return;
+
+    try {
+      await deleteBreak(emptySlotContextMenu.breakId).unwrap();
+      toast.success('Pause supprimée avec succès');
+      setEmptySlotContextMenu(null);
+      // Rafraîchir les données
+      refetchBookings();
+    } catch (error: any) {
+      console.error('Erreur suppression pause:', error);
+      toast.error(error.data?.message || 'Erreur lors de la suppression de la pause');
+    }
+  };
+
   const getStatusLabel = (status: BookingStatus): string => {
     const labels: Record<BookingStatus, string> = {
       PENDING: 'En attente',
@@ -326,6 +511,7 @@ export default function CalendarView({ userRole, userId }: CalendarViewProps) {
           setSidebarMode('booking');
           setShowSidebar(true);
         }}
+        onGenerateSchedule={() => setShowGeneratePeriodModal(true)}
         userRole={userRole}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
@@ -349,6 +535,8 @@ export default function CalendarView({ userRole, userId }: CalendarViewProps) {
                   role: currentUser.role,
                 }}
                 bookings={filteredBookings}
+                blocks={allBlocks}
+                breaks={allBreaks}
                 onBookingClick={handleBookingEdit}
                 onBookingContextMenu={handleBookingContextMenu}
                 onSlotClick={(timeSlot) => {
@@ -369,11 +557,13 @@ export default function CalendarView({ userRole, userId }: CalendarViewProps) {
             </>
           ) : (
             <>
-              {console.log('❌ Affichage CalendarGrid (admin/secrétaire)')}
-              <CalendarGrid
+              {console.log('✅ Affichage HorizontalCalendarGrid (admin/secrétaire)')}
+              <HorizontalCalendarGrid
                 date={selectedDate}
                 professionals={professionals}
                 bookings={filteredBookings}
+                blocks={allBlocks}
+                breaks={allBreaks}
                 onBookingEdit={handleBookingEdit}
                 onBookingContextMenu={handleBookingContextMenu}
                 onSlotClick={handleSlotClick}
@@ -420,8 +610,42 @@ export default function CalendarView({ userRole, userId }: CalendarViewProps) {
           onClose={() => setEmptySlotContextMenu(null)}
           onCreateBooking={handleCreateBookingFromContextMenu}
           onCreateBreak={handleCreateBreakFromContextMenu}
+          onBlockFullDay={handleBlockFullDay}
+          onBlockTimePeriod={handleBlockTimePeriod}
+          onDeleteBreak={handleDeleteBreakFromContextMenu}
+          onUnblock={handleUnblock}
+          hasExistingBreak={emptySlotContextMenu.hasExistingBreak}
+          hasExistingBlock={emptySlotContextMenu.hasExistingBlock}
+          blockReason={emptySlotContextMenu.blockReason}
         />
       )}
+
+      {/* Availability Block Modal */}
+      {availabilityBlockModal && (
+        <AvailabilityBlockModal
+          isOpen={true}
+          onClose={() => setAvailabilityBlockModal(null)}
+          professionalId={availabilityBlockModal.professionalId}
+          professionalName={availabilityBlockModal.professionalName}
+          date={availabilityBlockModal.date}
+          timeSlot={availabilityBlockModal.timeSlot}
+          mode={availabilityBlockModal.mode}
+          onSuccess={() => {
+            refetchBookings();
+            setAvailabilityBlockModal(null);
+          }}
+        />
+      )}
+
+      {/* Generate Period Modal */}
+      <GeneratePeriodModal
+        isOpen={showGeneratePeriodModal}
+        onClose={() => setShowGeneratePeriodModal(false)}
+        professionals={professionals}
+        onSuccess={() => {
+          refetchBookings();
+        }}
+      />
     </div>
   );
 }
