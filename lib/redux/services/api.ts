@@ -694,6 +694,59 @@ export interface UnblockDayResponse {
   data: AvailabilityBlock;
 }
 
+// Working Schedule (template hebdomadaire)
+export interface WorkingSchedule {
+  id: string;
+  professionalId: string;
+  dayOfWeek: number; // 0-6 (0=Dimanche, 1=Lundi, etc.)
+  startTime: string; // Format HH:mm
+  endTime: string; // Format HH:mm
+  isActive: boolean;
+  createdAt: string;
+}
+
+// Set Working Schedule Data
+export interface SetWorkingScheduleData {
+  professionalId: string;
+  schedules: {
+    dayOfWeek: number; // 0-6
+    startTime: string; // Format HH:mm
+    endTime: string; // Format HH:mm
+    isActive?: boolean;
+  }[];
+}
+
+// Client Profile (pour autocomplete et historique)
+export interface ClientProfile {
+  id: string;
+  nom: string;
+  prenom: string;
+  telCellulaire: string;
+  courriel: string;
+  dateNaissance?: string;
+  serviceType: 'MASSOTHERAPIE' | 'ESTHETIQUE';
+  lastVisit?: string;
+}
+
+// Client Bookings Stats
+export interface ClientBookingsStats {
+  total: number;
+  completed: number;
+  cancelled: number;
+  noShow: number;
+  upcoming: number;
+}
+
+// Client Bookings History Response
+export interface ClientBookingsHistoryResponse {
+  success: boolean;
+  data: {
+    client: ClientProfile;
+    bookings: Booking[];
+    stats: ClientBookingsStats;
+  };
+}
+
 // ==== END AVAILABILITY TYPES ====
 
 // ==== SERVICE TYPES ====
@@ -865,6 +918,25 @@ export const api = createApi({
         return { client: response.data || response };
       },
       providesTags: (result, error, id) => [{ type: 'Client', id }],
+    }),
+
+    // CLIENTS - Autocomplete pour recherche rapide (min 2 caractères)
+    autocompleteClients: builder.query<
+      { success: boolean; data: ClientProfile[] },
+      string
+    >({
+      query: (q) => `/clients/autocomplete?q=${q}`,
+      providesTags: ['Client'],
+    }),
+
+    // CLIENTS - Historique complet des réservations d'un client
+    getClientBookings: builder.query<
+      ClientBookingsHistoryResponse,
+      { clientId: string; includeHistory?: boolean }
+    >({
+      query: ({ clientId, includeHistory = true }) =>
+        `/clients/${clientId}/bookings?includeHistory=${includeHistory}`,
+      providesTags: ['Client', 'Booking'],
     }),
 
     // NOTES - Récupérer les notes d'un client
@@ -1561,6 +1633,28 @@ export const api = createApi({
       invalidatesTags: ['Availability', 'Booking'],
     }),
 
+    // POST /api/availability/working-schedule - Définir les horaires hebdomadaires
+    setWorkingSchedule: builder.mutation<
+      { success: boolean; message: string },
+      SetWorkingScheduleData
+    >({
+      query: (data) => ({
+        url: '/availability/working-schedule',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['Availability'],
+    }),
+
+    // GET /api/availability/working-schedule/:professionalId - Récupérer le template hebdomadaire
+    getWorkingSchedule: builder.query<
+      { success: boolean; data: WorkingSchedule[] },
+      string
+    >({
+      query: (professionalId) => `/availability/working-schedule/${professionalId}`,
+      providesTags: ['Availability'],
+    }),
+
     // ==== END AVAILABILITY ENDPOINTS ====
 
     // ==== SERVICE ENDPOINTS ====
@@ -1636,6 +1730,8 @@ export const {
   useGetClientsQuery,
   useGetAssignedClientsQuery,
   useGetClientByIdQuery,
+  useAutocompleteClientsQuery,
+  useGetClientBookingsQuery,
   useGetNotesQuery,
   useAddNoteMutation,
   useUpdateNoteMutation,
@@ -1702,6 +1798,8 @@ export const {
   useGeneratePeriodScheduleMutation,
   useUpdateDayAvailabilityMutation,
   useUnblockDayMutation,
+  useSetWorkingScheduleMutation,
+  useGetWorkingScheduleQuery,
   // Service hooks
   useGetAllServicesQuery,
   useGetServiceBySlugQuery,

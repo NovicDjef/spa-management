@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Coffee, Ban, Clock, Trash2, Unlock } from 'lucide-react';
+import { Plus, Coffee, Ban, Clock, Trash2, Unlock, Edit } from 'lucide-react';
 
 interface EmptySlotContextMenuProps {
   position: { x: number; y: number };
@@ -13,8 +13,11 @@ interface EmptySlotContextMenuProps {
   onBlockTimePeriod?: () => void;
   onDeleteBreak?: () => void;
   onUnblock?: () => void; // Débloquer une journée/période
+  onEditDaySchedule?: () => void; // Modifier l'horaire du jour
+  onEditBreak?: () => void; // Modifier une pause
   hasExistingBreak?: boolean; // Pour afficher l'option de suppression seulement si une pause existe
   hasExistingBlock?: boolean; // Pour afficher l'option de déblocage seulement si un blocage existe
+  hasAvailability?: boolean; // Pour afficher l'option de modification d'horaire du jour
   blockReason?: string; // Raison du blocage pour l'afficher
 }
 
@@ -30,8 +33,11 @@ export default function EmptySlotContextMenu({
   onBlockTimePeriod,
   onDeleteBreak,
   onUnblock,
+  onEditDaySchedule,
+  onEditBreak,
   hasExistingBreak = false,
   hasExistingBlock = false,
+  hasAvailability = false,
   blockReason,
 }: EmptySlotContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
@@ -110,6 +116,44 @@ export default function EmptySlotContextMenu({
               <div className="text-xs text-gray-500">Bloquer ce créneau</div>
             </div>
           </button>
+
+          {/* Modifier l'horaire du jour (seulement si availability existe) */}
+          {hasAvailability && onEditDaySchedule && (
+            <button
+              onClick={() => {
+                onEditDaySchedule();
+                onClose();
+              }}
+              className="w-full px-4 py-2.5 text-left hover:bg-blue-50 flex items-center gap-3 text-sm text-gray-700 transition-colors"
+            >
+              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                <Edit className="w-4 h-4 text-blue-600" />
+              </div>
+              <div>
+                <div className="font-medium text-gray-900">Modifier l'horaire du jour</div>
+                <div className="text-xs text-gray-500">Ajuster les heures d'ouverture</div>
+              </div>
+            </button>
+          )}
+
+          {/* Modifier la pause (seulement si pause existe) */}
+          {hasExistingBreak && onEditBreak && (
+            <button
+              onClick={() => {
+                onEditBreak();
+                onClose();
+              }}
+              className="w-full px-4 py-2.5 text-left hover:bg-amber-50 flex items-center gap-3 text-sm text-gray-700 transition-colors"
+            >
+              <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
+                <Edit className="w-4 h-4 text-amber-600" />
+              </div>
+              <div>
+                <div className="font-medium text-gray-900">Modifier la pause</div>
+                <div className="text-xs text-gray-500">Changer les détails de la pause</div>
+              </div>
+            </button>
+          )}
 
           {/* Divider */}
           <div className="border-t border-gray-100 my-1"></div>

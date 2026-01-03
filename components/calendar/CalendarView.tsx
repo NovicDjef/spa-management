@@ -11,6 +11,8 @@ import BookingContextMenu from './BookingContextMenu';
 import EmptySlotContextMenu from './EmptySlotContextMenu';
 import AvailabilityBlockModal from './AvailabilityBlockModal';
 import GeneratePeriodModal from './GeneratePeriodModal';
+import EditDayModal from './EditDayModal';
+import EditBreakModal from './EditBreakModal';
 import {
   useGetBookingsByDateRangeQuery,
   useGetUsersQuery,
@@ -62,6 +64,7 @@ export default function CalendarView({ userRole, userId }: CalendarViewProps) {
     blockReason?: string;
     hasExistingBreak?: boolean;
     breakId?: string;
+    hasAvailability?: boolean;
   } | null>(null);
   const [availabilityBlockModal, setAvailabilityBlockModal] = useState<{
     professionalId: string;
@@ -73,6 +76,22 @@ export default function CalendarView({ userRole, userId }: CalendarViewProps) {
   const [isClientMounted, setIsClientMounted] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showGeneratePeriodModal, setShowGeneratePeriodModal] = useState(false);
+  const [editDayModal, setEditDayModal] = useState<{
+    availabilityId: string;
+    professionalName: string;
+    date: Date;
+    startTime: string;
+    endTime: string;
+  } | null>(null);
+  const [editBreakModal, setEditBreakModal] = useState<{
+    breakId: string;
+    professionalName: string;
+    dayOfWeek: number | null;
+    startTime: string;
+    endTime: string;
+    label: string;
+    isActive: boolean;
+  } | null>(null);
 
   const token = useAppSelector((state) => state.auth.token);
   const currentUser = useAppSelector((state) => state.auth.user);
@@ -246,6 +265,13 @@ export default function CalendarView({ userRole, userId }: CalendarViewProps) {
       });
     }
 
+    // Vérifier s'il y a une availability pour ce jour (pour l'option de modification)
+    const dayAvailability = allBlocks.find(
+      block => block.professionalId === professionalId &&
+      block.date === currentDate &&
+      block.startTime && block.endTime // Pas un blocage complet
+    );
+
     // Vérifier pause existante
     const currentDayOfWeek = date.getDay(); // 0=Dimanche, 1=Lundi, etc.
 
@@ -270,6 +296,7 @@ export default function CalendarView({ userRole, userId }: CalendarViewProps) {
       blockReason: existingBlock?.reason,
       hasExistingBreak: !!existingBreak,
       breakId: existingBreak?.id,
+      hasAvailability: !!dayAvailability,
     });
   };
 
@@ -457,6 +484,63 @@ export default function CalendarView({ userRole, userId }: CalendarViewProps) {
     }
   };
 
+  const handleEditDaySchedule = () => {
+    if (!emptySlotContextMenu) return;
+
+    const currentDate = format(emptySlotContextMenu.date, 'yyyy-MM-dd');
+
+    // Trouver le bloc d'availability pour ce jour
+    const dayAvailability = allBlocks.find(
+      block => block.professionalId === emptySlotContextMenu.professionalId &&
+      block.date === currentDate &&
+      block.startTime && block.endTime // Pas un blocage complet
+    );
+
+    if (!dayAvailability) {
+      toast.error('Aucun horaire trouvé pour ce jour');
+      return;
+    }
+
+    const professional = professionals.find(p => p.id === emptySlotContextMenu.professionalId);
+    const professionalName = professional ? `${professional.prenom} ${professional.nom}` : 'Professionnel';
+
+    setEditDayModal({
+      availabilityId: dayAvailability.id,
+      professionalName,
+      date: emptySlotContextMenu.date,
+      startTime: dayAvailability.startTime,
+      endTime: dayAvailability.endTime,
+    });
+
+    setEmptySlotContextMenu(null);
+  };
+
+  const handleEditBreak = () => {
+    if (!emptySlotContextMenu?.breakId) return;
+
+    const breakToEdit = allBreaks.find(br => br.id === emptySlotContextMenu.breakId);
+
+    if (!breakToEdit) {
+      toast.error('Pause non trouvée');
+      return;
+    }
+
+    const professional = professionals.find(p => p.id === emptySlotContextMenu.professionalId);
+    const professionalName = professional ? `${professional.prenom} ${professional.nom}` : 'Professionnel';
+
+    setEditBreakModal({
+      breakId: breakToEdit.id,
+      professionalName,
+      dayOfWeek: breakToEdit.dayOfWeek,
+      startTime: breakToEdit.startTime,
+      endTime: breakToEdit.endTime,
+      label: breakToEdit.label,
+      isActive: breakToEdit.isActive,
+    });
+
+    setEmptySlotContextMenu(null);
+  };
+
   const getStatusLabel = (status: BookingStatus): string => {
     const labels: Record<BookingStatus, string> = {
       PENDING: 'En attente',
@@ -614,8 +698,11 @@ export default function CalendarView({ userRole, userId }: CalendarViewProps) {
           onBlockTimePeriod={handleBlockTimePeriod}
           onDeleteBreak={handleDeleteBreakFromContextMenu}
           onUnblock={handleUnblock}
+          onEditDaySchedule={handleEditDaySchedule}
+          onEditBreak={handleEditBreak}
           hasExistingBreak={emptySlotContextMenu.hasExistingBreak}
           hasExistingBlock={emptySlotContextMenu.hasExistingBlock}
+          hasAvailability={emptySlotContextMenu.hasAvailability}
           blockReason={emptySlotContextMenu.blockReason}
         />
       )}
@@ -646,6 +733,42 @@ export default function CalendarView({ userRole, userId }: CalendarViewProps) {
           refetchBookings();
         }}
       />
+
+      {/* Edit Day Schedule Modal */}
+      {editDayModal && (
+        <EditDayModal
+          isOpen={true}
+          onClose={() => setEditDayModal(null)}
+          availabilityId={editDayModal.availabilityId}
+          professionalName={editDayModal.professionalName}
+          date={editDayModal.date}
+          currentStartTime={editDayModal.startTime}
+          currentEndTime={editDayModal.endTime}
+          onSuccess={() => {
+            refetchBookings();
+            setEditDayModal(null);
+          }}
+        />
+      )}
+
+      {/* Edit Break Modal */}
+      {editBreakModal && (
+        <EditBreakModal
+          isOpen={true}
+          onClose={() => setEditBreakModal(null)}
+          breakId={editBreakModal.breakId}
+          professionalName={editBreakModal.professionalName}
+          currentDayOfWeek={editBreakModal.dayOfWeek}
+          currentStartTime={editBreakModal.startTime}
+          currentEndTime={editBreakModal.endTime}
+          currentLabel={editBreakModal.label}
+          currentIsActive={editBreakModal.isActive}
+          onSuccess={() => {
+            refetchBookings();
+            setEditBreakModal(null);
+          }}
+        />
+      )}
     </div>
   );
 }
