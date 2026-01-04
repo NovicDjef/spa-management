@@ -19,10 +19,12 @@ import {
   Loader2,
   FileText,
   AlertCircle,
+  Edit,
 } from 'lucide-react';
 import { useGetClientByIdQuery } from '@/lib/redux/services/api';
 import { useAppSelector } from '@/lib/redux/hooks';
 import { BodyMap } from '@/components/forms/BodyMap';
+import { EditClientModal } from '@/components/clients/EditClientModal';
 
 export default function ClientDetailPage() {
   const params = useParams();
@@ -39,6 +41,7 @@ export default function ClientDetailPage() {
 
   const [activeTab, setActiveTab] = useState<'info' | 'notes'>('info');
   const [showReceiptModal, setShowReceiptModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   const [openReceiptDirectly, setOpenReceiptDirectly] = useState(false);
 
@@ -168,13 +171,26 @@ if (!client) {
               </div>
             </div>
 
-            <span
-              className={`badge ${
-                client.serviceType === 'MASSOTHERAPIE' ? 'badge-massotherapie' : 'badge-esthetique'
-              }`}
-            >
-              {client.serviceType === 'MASSOTHERAPIE' ? 'Massothérapie' : 'Esthétique'}
-            </span>
+            <div className="flex items-center gap-3">
+              <span
+                className={`badge ${
+                  client.serviceType === 'MASSOTHERAPIE' ? 'badge-massotherapie' : 'badge-esthetique'
+                }`}
+              >
+                {client.serviceType === 'MASSOTHERAPIE' ? 'Massothérapie' : 'Esthétique'}
+              </span>
+
+              {/* Bouton Modifier (visible seulement pour les professionnels) */}
+              {(currentUser?.role === 'MASSOTHERAPEUTE' || currentUser?.role === 'ESTHETICIENNE' || currentUser?.role === 'ADMIN') && (
+                <button
+                  onClick={() => setShowEditModal(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-spa-turquoise-500 text-white rounded-lg hover:bg-spa-turquoise-600 transition-colors"
+                >
+                  <Edit className="w-4 h-4" />
+                  Modifier
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Informations de contact */}
@@ -754,8 +770,17 @@ if (!client) {
           clientId={clientId as string}
           clientName={`${client.prenom} ${client.nom}`}
           therapistName={`${currentUser.prenom} ${currentUser.nom}`}
-          therapistOrderNumber={currentUser.numeroOrdre}
+          therapistOrderNumber={currentUser.numeroMembreOrdre}
           skipConfirmation={openReceiptDirectly}
+        />
+      )}
+
+      {/* Modal de modification du client */}
+      {client && (
+        <EditClientModal
+          isOpen={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          client={client}
         />
       )}
     </div>

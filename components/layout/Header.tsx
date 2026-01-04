@@ -87,7 +87,7 @@ export function Header({ user: userProp }: HeaderProps) {
           {user && (
             <div className="hidden md:flex items-center gap-3">
               {/* Bouton "Calendrier" pour admin et secrétaire */}
-              {(user.role === 'ADMIN' || user.role === 'SECRETAIRE') && (
+              {/* {(user.role === 'ADMIN' || user.role === 'SECRETAIRE') && (
                 <Link href="/admin/calendar">
                   <motion.button
                     whileHover={{ scale: 1.05, y: -2 }}
@@ -98,7 +98,7 @@ export function Header({ user: userProp }: HeaderProps) {
                     <span>Calendrier</span>
                   </motion.button>
                 </Link>
-              )}
+              )} */}
               <div className="h-8 w-px bg-gray-300 mx-1"></div>
               <div className="text-right">
                 <p className="font-medium text-gray-800 text-sm">{user.nom} {user.prenom}</p>
@@ -157,7 +157,7 @@ export function Header({ user: userProp }: HeaderProps) {
             </div>
             <div className="space-y-2">
               {/* Bouton "Calendrier" pour admin et secrétaire */}
-              {(user.role === 'ADMIN' || user.role === 'SECRETAIRE') && (
+              {/* {(user.role === 'ADMIN' || user.role === 'SECRETAIRE') && (
                 <Link
                   href="/admin/calendar"
                   onClick={() => setShowMenu(false)}
@@ -166,7 +166,7 @@ export function Header({ user: userProp }: HeaderProps) {
                   <Calendar className="w-4 h-4" />
                   <span>Calendrier</span>
                 </Link>
-              )}
+              )} */}
               <Link
                 href="/professionnel/profil"
                 onClick={() => setShowMenu(false)}

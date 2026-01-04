@@ -131,17 +131,17 @@ export default function BookingContextMenu({
             </button>
           )}
 
-          {/* Terminé */}
-          {(booking.status === 'IN_PROGRESS' || booking.status === 'ARRIVED') && (
+          {/* Terminé - Toujours disponible sauf si déjà terminé ou annulé */}
+          {booking.status !== 'COMPLETED' && booking.status !== 'CANCELLED' && (
             <button
               onClick={() => {
                 onChangeStatus(booking, 'COMPLETED');
                 onClose();
               }}
-              className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-3 text-sm transition-colors"
+              className="w-full px-4 py-2 text-left hover:bg-green-50 flex items-center gap-3 text-sm transition-colors"
             >
-              <CheckCircle className="w-4 h-4 text-gray-600" />
-              <span className="text-gray-700">Marquer comme terminé</span>
+              <CheckCircle className="w-4 h-4 text-green-600" />
+              <span className="text-green-700 font-medium">Terminer le soin</span>
             </button>
           )}
 

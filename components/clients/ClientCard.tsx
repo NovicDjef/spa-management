@@ -38,7 +38,7 @@ interface ClientCardProps {
     nom: string;
     prenom: string;
     role: string;
-    numeroOrdre?: string;
+    numeroMembreOrdre?: string;
   };
   showTherapistActions?: boolean; // Afficher les actions pour les massothérapeutes
   disableLink?: boolean; // Désactiver le lien vers le dossier du client (pour les secrétaires)
@@ -249,7 +249,7 @@ export function ClientCard({
           clientId={client.id}
           clientName={`${client.prenom} ${client.nom}`}
           therapistName={`${currentUser.prenom} ${currentUser.nom}`}
-          therapistOrderNumber={currentUser.numeroOrdre}
+          therapistOrderNumber={currentUser.numeroMembreOrdre}
           skipConfirmation={true}
         />
       )}

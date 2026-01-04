@@ -299,7 +299,7 @@ export default function DashboardPage() {
               )}
 
               {/* Calendrier */}
-              {(currentUser.role === 'MASSOTHERAPEUTE' || currentUser.role === 'ESTHETICIENNE') && (
+              {/* {(currentUser.role === 'MASSOTHERAPEUTE' || currentUser.role === 'ESTHETICIENNE') && (
                 <Link href="/professionnel/calendar">
                   <motion.div
                     whileHover={{ scale: 1.02, y: -4 }}
@@ -319,7 +319,7 @@ export default function DashboardPage() {
                     </div>
                   </motion.div>
                 </Link>
-              )}
+              )} */}
 
               {/* Reçus */}
               {(currentUser.role === 'ADMIN' || currentUser.role === 'MASSOTHERAPEUTE') && (

@@ -44,8 +44,8 @@ export default function SingleColumnCalendarGrid({
   onBookingContextMenu,
   onSlotClick,
   onSlotContextMenu,
-  startHour = 7,
-  endHour = 23,
+  startHour = 8,
+  endHour = 24,
   intervalMinutes = 60,
   slotHeight = 80, // Plus grand pour mobile
 }: SingleColumnCalendarGridProps) {
@@ -222,7 +222,7 @@ export default function SingleColumnCalendarGrid({
                 key={booking.id}
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="absolute left-16 right-3 bg-green-500 border-l-4 border-green-700 rounded-xl shadow-lg p-3 cursor-pointer hover:bg-green-600 hover:shadow-xl transition-all"
+                className="absolute left-16 right-3 bg-blue-500 border-l-4 border-blue-700 rounded-xl shadow-lg p-3 cursor-move hover:bg-blue-600 hover:shadow-xl transition-all"
                 style={{
                   top: `${booking.position.top}px`,
                   height: `${Math.max(booking.position.height, slotHeight)}px`,
@@ -236,7 +236,7 @@ export default function SingleColumnCalendarGrid({
                 {/* Infos client */}
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <div className="w-8 h-8 rounded-full bg-green-700 flex items-center justify-center flex-shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-blue-700 flex items-center justify-center flex-shrink-0">
                       <User className="w-4 h-4 text-white" />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -260,11 +260,11 @@ export default function SingleColumnCalendarGrid({
 
                 {/* Service et Statut */}
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="inline-flex px-2 py-1 rounded-full text-xs font-medium bg-white/90 text-green-700">
+                  <span className="inline-flex px-2 py-1 rounded-full text-xs font-medium bg-white/90 text-blue-700">
                     {booking.service?.name || (booking.serviceType === 'MASSOTHERAPIE' ? 'Massothérapie' : 'Esthétique')}
                   </span>
 
-                  <span className="inline-flex px-2 py-1 rounded-full text-xs font-medium bg-green-700 text-white">
+                  <span className="inline-flex px-2 py-1 rounded-full text-xs font-medium bg-blue-700 text-white">
                     {statusLabel}
                   </span>
                 </div>

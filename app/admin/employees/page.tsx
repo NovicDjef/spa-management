@@ -88,7 +88,7 @@ export default function EmployeesPage() {
     nom: '',
     prenom: '',
     adresse: '',
-    numeroOrdre: '',
+    numeroMembreOrdre: '',
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -98,10 +98,10 @@ export default function EmployeesPage() {
     setErrors({});
 
     // Validation du numéro RMQ pour les massothérapeutes
-    if (formData.role === 'MASSOTHERAPEUTE' && formData.numeroOrdre) {
+    if (formData.role === 'MASSOTHERAPEUTE' && formData.numeroMembreOrdre) {
       const rmqPattern = /^M-\d{4}$/;
-      if (!rmqPattern.test(formData.numeroOrdre)) {
-        setErrors({ numeroOrdre: 'Le numéro RMQ doit être au format M-XXXX (exemple: M-3444)' });
+      if (!rmqPattern.test(formData.numeroMembreOrdre)) {
+        setErrors({ numeroMembreOrdre: 'Le numéro RMQ doit être au format M-XXXX (exemple: M-3444)' });
         return;
       }
     }
@@ -120,7 +120,7 @@ export default function EmployeesPage() {
         nom: '',
         prenom: '',
         adresse: '',
-        numeroOrdre: '',
+        numeroMembreOrdre: '',
       });
     } catch (error: any) {
       setErrors({ general: error.data?.message || 'Erreur lors de la création' });
@@ -134,10 +134,10 @@ export default function EmployeesPage() {
     setErrors({});
 
     // Validation du numéro RMQ pour les massothérapeutes
-    if (formData.role === 'MASSOTHERAPEUTE' && formData.numeroOrdre) {
+    if (formData.role === 'MASSOTHERAPEUTE' && formData.numeroMembreOrdre) {
       const rmqPattern = /^M-\d{4}$/;
-      if (!rmqPattern.test(formData.numeroOrdre)) {
-        setErrors({ numeroOrdre: 'Le numéro RMQ doit être au format M-XXXX (exemple: M-3444)' });
+      if (!rmqPattern.test(formData.numeroMembreOrdre)) {
+        setErrors({ numeroMembreOrdre: 'Le numéro RMQ doit être au format M-XXXX (exemple: M-3444)' });
         return;
       }
     }
@@ -150,7 +150,7 @@ export default function EmployeesPage() {
         prenom: formData.prenom,
         role: formData.role,
         adresse: formData.adresse,
-        numeroOrdre: formData.numeroOrdre,
+        numeroMembreOrdre: formData.numeroMembreOrdre,
       };
 
       // Ajouter le mot de passe seulement s'il est fourni
@@ -229,7 +229,7 @@ export default function EmployeesPage() {
       nom: user.nom,
       prenom: user.prenom,
       adresse: user.adresse || '',
-      numeroOrdre: user.numeroOrdre || '',
+      numeroMembreOrdre: user.numeroMembreOrdre || '',
     });
     setShowEditModal(true);
   };
@@ -624,16 +624,16 @@ const handleToggleStatus = async (user: any) => {
                     <input
                       type="text"
                       required
-                      value={formData.numeroOrdre}
-                      onChange={(e) => setFormData({ ...formData, numeroOrdre: e.target.value })}
-                      className={`input-spa ${errors.numeroOrdre ? 'border-red-500' : ''}`}
+                      value={formData.numeroMembreOrdre}
+                      onChange={(e) => setFormData({ ...formData, numeroMembreOrdre: e.target.value })}
+                      className={`input-spa ${errors.numeroMembreOrdre ? 'border-red-500' : ''}`}
                       placeholder="M-3444"
                       pattern="M-\d{4}"
                       title="Format requis: M-XXXX (ex: M-3444)"
                       maxLength={6}
                     />
-                    {errors.numeroOrdre ? (
-                      <p className="text-xs text-red-600 mt-1">{errors.numeroOrdre}</p>
+                    {errors.numeroMembreOrdre ? (
+                      <p className="text-xs text-red-600 mt-1">{errors.numeroMembreOrdre}</p>
                     ) : (
                       <p className="text-xs text-gray-500 mt-1">
                         Format: M-XXXX (exemple: M-3444)
@@ -844,16 +844,16 @@ const handleToggleStatus = async (user: any) => {
               <input
                 type="text"
                 required
-                value={formData.numeroOrdre}
-                onChange={(e) => setFormData({ ...formData, numeroOrdre: e.target.value })}
-                className={`input-spa ${errors.numeroOrdre ? 'border-red-500' : ''}`}
+                value={formData.numeroMembreOrdre}
+                onChange={(e) => setFormData({ ...formData, numeroMembreOrdre: e.target.value })}
+                className={`input-spa ${errors.numeroMembreOrdre ? 'border-red-500' : ''}`}
                 placeholder="M-3444"
                 pattern="M-\d{4}"
                 title="Format requis: M-XXXX (ex: M-3444)"
                 maxLength={6}
               />
-              {errors.numeroOrdre ? (
-                <p className="text-xs text-red-600 mt-1">{errors.numeroOrdre}</p>
+              {errors.numeroMembreOrdre ? (
+                <p className="text-xs text-red-600 mt-1">{errors.numeroMembreOrdre}</p>
               ) : (
                 <p className="text-xs text-gray-500 mt-1">
                   Format: M-XXXX (exemple: M-3444)

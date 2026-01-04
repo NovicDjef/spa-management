@@ -18,8 +18,10 @@ import {
   useGetUsersQuery,
   useChangeBookingStatusMutation,
   useDeleteBookingMutation,
+  useUpdateBookingMutation,
   useGetAvailabilityBlocksQuery,
   useGetBreaksQuery,
+  useUpdateBreakMutation,
   useDeleteBreakMutation,
   useDeleteAvailabilityBlockMutation,
   useUnblockDayMutation,
@@ -146,8 +148,18 @@ export default function CalendarView({ userRole, userId }: CalendarViewProps) {
     format(selectedDate, 'yyyy-MM-dd')
   );
 
+  // DEBUG: Log des pauses récupérées
+  console.log('🔍 DEBUG Pauses récupérées:', {
+    date: format(selectedDate, 'yyyy-MM-dd'),
+    professionalIds,
+    breaks: allBreaks,
+    breaksCount: allBreaks.length,
+  });
+
   const [changeStatus] = useChangeBookingStatusMutation();
   const [deleteBooking] = useDeleteBookingMutation();
+  const [updateBooking] = useUpdateBookingMutation();
+  const [updateBreak] = useUpdateBreakMutation();
   const [deleteBreak] = useDeleteBreakMutation();
   const [deleteAvailabilityBlock] = useDeleteAvailabilityBlockMutation();
   const [unblockDay] = useUnblockDayMutation();
@@ -508,8 +520,8 @@ export default function CalendarView({ userRole, userId }: CalendarViewProps) {
       availabilityId: dayAvailability.id,
       professionalName,
       date: emptySlotContextMenu.date,
-      startTime: dayAvailability.startTime,
-      endTime: dayAvailability.endTime,
+      startTime: dayAvailability.startTime || '08:00',
+      endTime: dayAvailability.endTime || '20:00',
     });
 
     setEmptySlotContextMenu(null);
@@ -531,14 +543,94 @@ export default function CalendarView({ userRole, userId }: CalendarViewProps) {
     setEditBreakModal({
       breakId: breakToEdit.id,
       professionalName,
-      dayOfWeek: breakToEdit.dayOfWeek,
-      startTime: breakToEdit.startTime,
-      endTime: breakToEdit.endTime,
-      label: breakToEdit.label,
-      isActive: breakToEdit.isActive,
+      dayOfWeek: breakToEdit.dayOfWeek ?? null,
+      startTime: breakToEdit.startTime || '12:00',
+      endTime: breakToEdit.endTime || '13:00',
+      label: breakToEdit.label || 'Pause',
+      isActive: breakToEdit.isActive ?? true,
     });
 
     setEmptySlotContextMenu(null);
+  };
+
+  const handleBookingMove = async (bookingId: string, newProfessionalId: string, newDate: Date, newTimeSlot: string) => {
+    try {
+      // Trouver la réservation
+      const booking = bookings.find(b => b.id === bookingId);
+      if (!booking) {
+        toast.error('Réservation non trouvée');
+        return;
+      }
+
+      // Calculer la durée de la réservation
+      const originalStart = new Date(booking.startTime);
+      const originalEnd = new Date(booking.endTime);
+      const durationMinutes = (originalEnd.getTime() - originalStart.getTime()) / (1000 * 60);
+
+      // Calculer les nouvelles heures
+      const [hours, minutes] = newTimeSlot.split(':').map(Number);
+      const newStart = new Date(newDate);
+      newStart.setHours(hours, minutes, 0, 0);
+
+      const newEnd = new Date(newStart);
+      newEnd.setMinutes(newEnd.getMinutes() + durationMinutes);
+
+      // Mettre à jour la réservation
+      await updateBooking({
+        id: bookingId,
+        data: {
+          professionalId: newProfessionalId,
+          bookingDate: format(newDate, 'yyyy-MM-dd'),
+          startTime: format(newStart, 'HH:mm'),
+          endTime: format(newEnd, 'HH:mm'),
+        },
+      }).unwrap();
+
+      toast.success('Réservation déplacée avec succès !');
+      refetchBookings();
+    } catch (error: any) {
+      console.error('Erreur déplacement réservation:', error);
+      toast.error(error.data?.error || 'Erreur lors du déplacement de la réservation');
+    }
+  };
+
+  const handleBreakMove = async (breakId: string, newProfessionalId: string, newDate: Date, newTimeSlot: string) => {
+    try {
+      // Trouver la pause
+      const breakItem = allBreaks.find(b => b.id === breakId);
+      if (!breakItem) {
+        toast.error('Pause non trouvée');
+        return;
+      }
+
+      // Calculer la durée de la pause
+      const [origStartHours, origStartMinutes] = breakItem.startTime.split(':').map(Number);
+      const [origEndHours, origEndMinutes] = breakItem.endTime.split(':').map(Number);
+      const durationMinutes = (origEndHours * 60 + origEndMinutes) - (origStartHours * 60 + origStartMinutes);
+
+      // Calculer les nouvelles heures
+      const [hours, minutes] = newTimeSlot.split(':').map(Number);
+      const newStartTotalMinutes = hours * 60 + minutes;
+      const newEndTotalMinutes = newStartTotalMinutes + durationMinutes;
+
+      const newStartTime = `${Math.floor(newStartTotalMinutes / 60).toString().padStart(2, '0')}:${(newStartTotalMinutes % 60).toString().padStart(2, '0')}`;
+      const newEndTime = `${Math.floor(newEndTotalMinutes / 60).toString().padStart(2, '0')}:${(newEndTotalMinutes % 60).toString().padStart(2, '0')}`;
+
+      // Mettre à jour la pause
+      await updateBreak({
+        id: breakId,
+        data: {
+          startTime: newStartTime,
+          endTime: newEndTime,
+        },
+      }).unwrap();
+
+      toast.success('Pause déplacée avec succès !');
+      refetchBookings();
+    } catch (error: any) {
+      console.error('Erreur déplacement pause:', error);
+      toast.error(error.data?.error || 'Erreur lors du déplacement de la pause');
+    }
   };
 
   const getStatusLabel = (status: BookingStatus): string => {
@@ -652,6 +744,12 @@ export default function CalendarView({ userRole, userId }: CalendarViewProps) {
                 onBookingContextMenu={handleBookingContextMenu}
                 onSlotClick={handleSlotClick}
                 onSlotContextMenu={handleSlotContextMenu}
+                onBookingMove={handleBookingMove}
+                onBreakMove={handleBreakMove}
+                onBreakContextMenu={(breakItem, position) => {
+                  // TODO: Implémenter le menu contextuel pour les pauses
+                  console.log('Break context menu:', breakItem);
+                }}
               />
             </>
           )}

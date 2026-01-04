@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Coffee, Ban, Clock, Trash2, Unlock, Edit } from 'lucide-react';
+import { Plus, Coffee, Ban, Clock, Trash2, Unlock, Edit, UnlockKeyhole } from 'lucide-react';
 
 interface EmptySlotContextMenuProps {
   position: { x: number; y: number };
@@ -15,9 +15,11 @@ interface EmptySlotContextMenuProps {
   onUnblock?: () => void; // Débloquer une journée/période
   onEditDaySchedule?: () => void; // Modifier l'horaire du jour
   onEditBreak?: () => void; // Modifier une pause
+  onOpenTimeSlot?: () => void; // Ouvrir cette horaire pour les réservations
   hasExistingBreak?: boolean; // Pour afficher l'option de suppression seulement si une pause existe
   hasExistingBlock?: boolean; // Pour afficher l'option de déblocage seulement si un blocage existe
   hasAvailability?: boolean; // Pour afficher l'option de modification d'horaire du jour
+  isUnavailableSlot?: boolean; // Pour afficher l'option "Ouvrir cette horaire" si la zone est grise (non disponible)
   blockReason?: string; // Raison du blocage pour l'afficher
 }
 
@@ -35,9 +37,11 @@ export default function EmptySlotContextMenu({
   onUnblock,
   onEditDaySchedule,
   onEditBreak,
+  onOpenTimeSlot,
   hasExistingBreak = false,
   hasExistingBlock = false,
   hasAvailability = false,
+  isUnavailableSlot = false,
   blockReason,
 }: EmptySlotContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
@@ -80,8 +84,31 @@ export default function EmptySlotContextMenu({
           }}
           onClick={(e) => e.stopPropagation()}
         >
+          {/* Ouvrir cette horaire - Pour les zones grises (non disponibles) */}
+          {isUnavailableSlot && onOpenTimeSlot && (
+            <>
+              <button
+                onClick={() => {
+                  onOpenTimeSlot();
+                  onClose();
+                }}
+                className="w-full px-4 py-2.5 text-left hover:bg-green-50 flex items-center gap-3 text-sm text-gray-700 transition-colors"
+              >
+                <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                  <UnlockKeyhole className="w-4 h-4 text-green-600" />
+                </div>
+                <div>
+                  <div className="font-medium text-gray-900">Ouvrir cette horaire</div>
+                  <div className="text-xs text-gray-500">Activer ce créneau pour les réservations</div>
+                </div>
+              </button>
+              <div className="border-t border-gray-100 my-1"></div>
+            </>
+          )}
+
           {/* Créer une réservation */}
-          <button
+          {!isUnavailableSlot && (
+            <button
             onClick={() => {
               onCreateBooking();
               onClose();
@@ -96,12 +123,14 @@ export default function EmptySlotContextMenu({
               <div className="text-xs text-gray-500">Créer un rendez-vous client</div>
             </div>
           </button>
+          )}
 
           {/* Divider */}
-          <div className="border-t border-gray-100 my-1"></div>
+          {!isUnavailableSlot && <div className="border-t border-gray-100 my-1"></div>}
 
           {/* Ajouter une pause */}
-          <button
+          {!isUnavailableSlot && (
+            <button
             onClick={() => {
               onCreateBreak();
               onClose();
@@ -116,9 +145,10 @@ export default function EmptySlotContextMenu({
               <div className="text-xs text-gray-500">Bloquer ce créneau</div>
             </div>
           </button>
+          )}
 
           {/* Modifier l'horaire du jour (seulement si availability existe) */}
-          {hasAvailability && onEditDaySchedule && (
+          {!isUnavailableSlot && hasAvailability && onEditDaySchedule && (
             <button
               onClick={() => {
                 onEditDaySchedule();
@@ -137,7 +167,7 @@ export default function EmptySlotContextMenu({
           )}
 
           {/* Modifier la pause (seulement si pause existe) */}
-          {hasExistingBreak && onEditBreak && (
+          {!isUnavailableSlot && hasExistingBreak && onEditBreak && (
             <button
               onClick={() => {
                 onEditBreak();
@@ -156,10 +186,10 @@ export default function EmptySlotContextMenu({
           )}
 
           {/* Divider */}
-          <div className="border-t border-gray-100 my-1"></div>
+          {!isUnavailableSlot && <div className="border-t border-gray-100 my-1"></div>}
 
           {/* Bloquer la journée complète */}
-          {onBlockFullDay && (
+          {!isUnavailableSlot && onBlockFullDay && (
             <button
               onClick={() => {
                 onBlockFullDay();
@@ -178,7 +208,7 @@ export default function EmptySlotContextMenu({
           )}
 
           {/* Bloquer une période spécifique */}
-          {onBlockTimePeriod && (
+          {!isUnavailableSlot && onBlockTimePeriod && (
             <button
               onClick={() => {
                 onBlockTimePeriod();
@@ -197,7 +227,7 @@ export default function EmptySlotContextMenu({
           )}
 
           {/* Supprimer la pause (seulement si une pause existe) */}
-          {hasExistingBreak && onDeleteBreak && (
+          {!isUnavailableSlot && hasExistingBreak && onDeleteBreak && (
             <>
               <div className="border-t border-gray-100 my-1"></div>
               <button
@@ -219,7 +249,7 @@ export default function EmptySlotContextMenu({
           )}
 
           {/* Débloquer (seulement si un blocage existe) */}
-          {hasExistingBlock && onUnblock && (
+          {!isUnavailableSlot && hasExistingBlock && onUnblock && (
             <>
               <div className="border-t border-gray-100 my-1"></div>
               <button

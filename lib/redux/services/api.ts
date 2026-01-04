@@ -51,8 +51,55 @@ export interface Client {
   hasNoteAfterAssignment?: boolean; // Indique si une note a été ajoutée après l'assignation
   lastVisit?: string; // Date de dernière visite
   notes?: Note[]; // Notes incluses dans la réponse de /clients/:id
+  // Champs médicaux
+  zonesDouleur?: string[]; // Zones de douleur
+  raisonConsultation?: string;
+  traitementsActuels?: string;
+  allergies?: string;
+  medicaments?: string;
+  mauxDeDos?: boolean;
+  raideurs?: boolean;
+  arthrose?: boolean;
+  tendinite?: boolean;
   // Tous les autres champs...
   [key: string]: any;
+}
+
+export interface UpdateClientData {
+  // Informations personnelles
+  nom?: string;
+  prenom?: string;
+  telCellulaire?: string;
+  courriel?: string;
+  dateNaissance?: string;
+  adresse?: string;
+  ville?: string;
+  province?: string;
+  codePostal?: string;
+
+  // Informations médicales - Zones de douleur
+  zonesDouleur?: string[]; // ["Dos", "Nuque", "Épaules", etc.]
+  raisonConsultation?: string;
+  traitementsActuels?: string;
+
+  // Conditions médicales
+  mauxDeDos?: boolean;
+  raideurs?: boolean;
+  arthrose?: boolean;
+  tendinite?: boolean;
+  entorse?: boolean;
+  fracture?: boolean;
+  accident?: boolean;
+
+  // Allergies et médicaments
+  allergies?: string;
+  medicaments?: string;
+
+  // Autres informations médicales
+  problemesSante?: string;
+  interventionsChirurgicales?: string;
+  grossesse?: boolean;
+  moisGrossesse?: number;
 }
 
 export interface Note {
@@ -140,7 +187,7 @@ export interface User {
   prenom: string;
   role: 'ADMIN' | 'SECRETAIRE' | 'MASSOTHERAPEUTE' | 'ESTHETICIENNE';
   isActive: boolean;
-  numeroOrdre?: string; // Numéro d'ordre professionnel pour les thérapeutes
+  numeroMembreOrdre?: string; // Numéro d'ordre professionnel pour les thérapeutes
   adresse?: string; // Adresse de l'employé
   photoUrl?: string; // URL de la photo de profil
   createdAt: string;
@@ -161,7 +208,7 @@ export interface CreateUserData {
   nom: string;
   prenom: string;
   adresse?: string;
-  numeroOrdre?: string;
+  numeroMembreOrdre?: string;
 }
 
 export interface UpdateUserData {
@@ -172,7 +219,7 @@ export interface UpdateUserData {
   role?: 'ADMIN' | 'SECRETAIRE' | 'MASSOTHERAPEUTE' | 'ESTHETICIENNE';
   password?: string;
   adresse?: string;
-  numeroOrdre?: string;
+  numeroMembreOrdre?: string;
 }
 
 // Marketing Types
@@ -432,7 +479,7 @@ export interface ChangePasswordData {
 
 export interface UpdateProfileData {
   adresse?: string;
-  numeroOrdre?: string;
+  numeroMembreOrdre?: string;
   telephone?: string;
   nom?: string;
   prenom?: string;
@@ -627,7 +674,9 @@ export interface Break {
   startTime: string; // Format HH:mm
   endTime: string; // Format HH:mm
   label?: string;
+  isActive?: boolean; // Indique si la pause est active
   createdAt: string;
+  updatedAt?: string;
   professional?: {
     id: string;
     nom: string;
@@ -937,6 +986,22 @@ export const api = createApi({
       query: ({ clientId, includeHistory = true }) =>
         `/clients/${clientId}/bookings?includeHistory=${includeHistory}`,
       providesTags: ['Client', 'Booking'],
+    }),
+
+    // CLIENTS - Modifier les informations d'un client (ADMIN/MASSOTHERAPEUTE/ESTHETICIENNE)
+    updateClient: builder.mutation<
+      { success: boolean; message: string; data: Client },
+      { id: string; data: UpdateClientData }
+    >({
+      query: ({ id, data }) => ({
+        url: `/clients/${id}`,
+        method: 'PUT',
+        body: data,
+      }),
+      invalidatesTags: (result, error, { id }) => [
+        { type: 'Client', id },
+        'Client',
+      ],
     }),
 
     // NOTES - Récupérer les notes d'un client
@@ -1562,7 +1627,18 @@ export const api = createApi({
 
     // GET /api/availability/breaks/:professionalId - Liste des pauses
     getBreaks: builder.query<
-      { success: boolean; data: Break[] },
+      {
+        success: boolean;
+        data: {
+          professional: {
+            id: string;
+            nom: string;
+            prenom: string;
+            role: string;
+          };
+          breaks: Break[];
+        }
+      },
       string
     >({
       query: (professionalId) => `/availability/breaks/${professionalId}`,
@@ -1665,7 +1741,7 @@ export const api = createApi({
       { categoryName?: string } | void
     >({
       query: (params) => {
-        const query = params?.categoryName ? `?categoryName=${params.categoryName}` : '';
+        const query = params && 'categoryName' in params && params.categoryName ? `?categoryName=${params.categoryName}` : '';
         return `/public/services${query}`;
       },
       providesTags: ['Service'],
@@ -1713,7 +1789,7 @@ export const api = createApi({
       { serviceType?: 'MASSOTHERAPIE' | 'ESTHETIQUE' } | void
     >({
       query: (params) => {
-        const query = params?.serviceType ? `?serviceType=${params.serviceType}` : '';
+        const query = params && 'serviceType' in params && params.serviceType ? `?serviceType=${params.serviceType}` : '';
         return `/public/professionals${query}`;
       },
       providesTags: ['User'],
@@ -1732,6 +1808,7 @@ export const {
   useGetClientByIdQuery,
   useAutocompleteClientsQuery,
   useGetClientBookingsQuery,
+  useUpdateClientMutation,
   useGetNotesQuery,
   useAddNoteMutation,
   useUpdateNoteMutation,

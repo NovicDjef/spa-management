@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import type { Booking } from '@/lib/redux/services/api';
-import BookingCard from './BookingCard';
+import DraggableBookingCard from './DraggableBookingCard';
+import DraggableBreakCard from './DraggableBreakCard';
 import { Clock, Ban, Coffee } from 'lucide-react';
 
 interface HorizontalCalendarGridProps {
@@ -17,6 +18,9 @@ interface HorizontalCalendarGridProps {
   onBookingContextMenu: (booking: Booking, position: { x: number; y: number }) => void;
   onSlotClick: (professionalId: string, date: Date, timeSlot: string) => void;
   onSlotContextMenu?: (professionalId: string, date: Date, timeSlot: string, position: { x: number; y: number }) => void;
+  onBookingMove?: (bookingId: string, newProfessionalId: string, newDate: Date, newTimeSlot: string) => void;
+  onBreakMove?: (breakId: string, newProfessionalId: string, newDate: Date, newTimeSlot: string) => void;
+  onBreakContextMenu?: (breakItem: any, position: { x: number; y: number }) => void;
   startHour?: number;
   endHour?: number;
 }
@@ -38,9 +42,15 @@ export default function HorizontalCalendarGrid({
   onBookingContextMenu,
   onSlotClick,
   onSlotContextMenu,
-  startHour = 7,
-  endHour = 20,
+  onBookingMove,
+  onBreakMove,
+  onBreakContextMenu,
+  startHour = 8,
+  endHour = 24,
 }: HorizontalCalendarGridProps) {
+  const [draggedBooking, setDraggedBooking] = useState<Booking | null>(null);
+  const [draggedBreak, setDraggedBreak] = useState<any | null>(null);
+  const [dropTarget, setDropTarget] = useState<{ professionalId: string; timeSlot: string } | null>(null);
   // Générer les créneaux horaires (par heure avec demi-heure)
   const timeSlots = useMemo(() => {
     const slots: Array<{ time: string; isHour: boolean }> = [];
@@ -97,6 +107,9 @@ export default function HorizontalCalendarGrid({
       const breakMatch = breaks.find(br => {
         if (br.professionalId !== professionalId) return false;
 
+        // Ignorer les pauses inactives
+        if (br.isActive === false) return false;
+
         // Vérifier si la pause s'applique à ce jour de la semaine
         // dayOfWeek null = tous les jours
         // dayOfWeek spécifique = ce jour uniquement
@@ -148,12 +161,84 @@ export default function HorizontalCalendarGrid({
     return { top, height };
   };
 
+  // Calculer la position d'une pause
+  const getBreakPosition = (breakItem: any, professionalId: string) => {
+    if (breakItem.professionalId !== professionalId) return null;
+
+    // Vérifier si cette pause s'applique à ce jour
+    const currentDayOfWeek = date.getDay();
+    if (breakItem.dayOfWeek !== null && breakItem.dayOfWeek !== currentDayOfWeek) {
+      return null;
+    }
+
+    // Parser les heures
+    const [startHours, startMinutes] = breakItem.startTime.split(':').map(Number);
+    const [endHours, endMinutes] = breakItem.endTime.split(':').map(Number);
+
+    // Calculer la position en slots (30 min = 1 slot)
+    const startSlot = (startHours - startHour) * 2 + (startMinutes >= 30 ? 1 : 0);
+    const endSlot = (endHours - startHour) * 2 + (endMinutes >= 30 ? 1 : 0);
+
+    const height = (endSlot - startSlot) * 60; // 60px par slot de 30min
+    const top = startSlot * 60;
+
+    return { top, height };
+  };
+
   // Gérer le clic sur un créneau
   const handleSlotClick = (professionalId: string, time: string) => {
     const [hours, minutes] = time.split(':').map(Number);
     const slotDate = new Date(date);
     slotDate.setHours(hours, minutes, 0, 0);
     onSlotClick(professionalId, slotDate, time);
+  };
+
+  // Gérer le drag & drop pour les réservations
+  const handleDragStart = (booking: Booking) => {
+    setDraggedBooking(booking);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedBooking(null);
+    setDraggedBreak(null);
+    setDropTarget(null);
+  };
+
+  // Gérer le drag & drop pour les pauses
+  const handleBreakDragStart = (breakItem: any) => {
+    setDraggedBreak(breakItem);
+  };
+
+  const handleDragOver = (e: React.DragEvent, professionalId: string, timeSlot: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDropTarget({ professionalId, timeSlot });
+  };
+
+  const handleDragLeave = () => {
+    setDropTarget(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, professionalId: string, timeSlot: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const itemId = e.dataTransfer.getData('bookingId') || e.dataTransfer.getData('breakId');
+    const type = e.dataTransfer.getData('type');
+
+    const [hours, minutes] = timeSlot.split(':').map(Number);
+    const newDate = new Date(date);
+    newDate.setHours(hours, minutes, 0, 0);
+
+    if (type === 'booking' && itemId && onBookingMove) {
+      onBookingMove(itemId, professionalId, newDate, timeSlot);
+    } else if (type === 'break' && itemId && onBreakMove) {
+      onBreakMove(itemId, professionalId, newDate, timeSlot);
+    }
+
+    setDraggedBooking(null);
+    setDraggedBreak(null);
+    setDropTarget(null);
   };
 
   return (
@@ -182,7 +267,7 @@ export default function HorizontalCalendarGrid({
             return (
               <div
                 key={prof.id}
-                className={`w-[280px] flex-shrink-0 p-4 border-r border-gray-200 ${
+                className={`w-[220px] flex-shrink-0 p-2 border-r border-gray-200 ${
                   fullDayBlock
                     ? 'bg-gradient-to-b from-red-100 to-red-50'
                     : 'bg-gradient-to-b from-spa-turquoise-50 to-white'
@@ -190,34 +275,34 @@ export default function HorizontalCalendarGrid({
               >
                 {/* BANDEAU DE BLOCAGE - TRÈS VISIBLE */}
                 {fullDayBlock && (
-                  <div className="mb-3 -mx-4 -mt-4 px-4 py-3 bg-red-600 text-white text-center">
-                    <div className="flex items-center justify-center gap-2 mb-1">
-                      <Ban className="w-5 h-5" />
-                      <span className="font-bold text-sm uppercase">JOURNÉE BLOQUÉE</span>
+                  <div className="mb-2 -mx-2 -mt-2 px-2 py-2 bg-red-600 text-white text-center">
+                    <div className="flex items-center justify-center gap-1.5 mb-0.5">
+                      <Ban className="w-4 h-4" />
+                      <span className="font-bold text-xs uppercase">JOURNÉE BLOQUÉE</span>
                     </div>
-                    <div className="text-xs font-medium">
+                    <div className="text-[10px] font-medium">
                       {fullDayBlock.reason || 'Congé'}
                     </div>
                   </div>
                 )}
 
-                <div className="flex flex-col items-center gap-2">
-                  {/* Photo du professionnel */}
+                <div className="flex items-center gap-2 py-1">
+                  {/* Photo du professionnel - Logo à côté du nom */}
                   {prof.photoUrl ? (
                     <img
                       src={prof.photoUrl}
                       alt={`${prof.prenom} ${prof.nom}`}
-                      className={`w-12 h-12 rounded-full object-cover border-2 ${
+                      className={`w-10 h-10 rounded-full object-cover border-2 flex-shrink-0 ${
                         fullDayBlock ? 'border-red-400 opacity-60' : 'border-spa-turquoise-400'
                       }`}
                     />
                   ) : (
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center border-2 ${
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 flex-shrink-0 ${
                       fullDayBlock
                         ? 'bg-red-200 border-red-400 opacity-60'
                         : 'bg-spa-turquoise-200 border-spa-turquoise-400'
                     }`}>
-                      <span className={`font-bold text-lg ${
+                      <span className={`font-bold text-sm ${
                         fullDayBlock ? 'text-red-700' : 'text-spa-turquoise-700'
                       }`}>
                         {prof.prenom[0]}{prof.nom[0]}
@@ -226,11 +311,11 @@ export default function HorizontalCalendarGrid({
                   )}
 
                   {/* Nom du professionnel */}
-                  <div className="text-center">
-                    <div className={`font-semibold ${fullDayBlock ? 'text-red-700' : 'text-gray-900'}`}>
+                  <div className="flex-1 min-w-0">
+                    <div className={`font-semibold text-sm truncate ${fullDayBlock ? 'text-red-700' : 'text-gray-900'}`}>
                       {prof.prenom} {prof.nom}
                     </div>
-                    <div className={`text-xs ${fullDayBlock ? 'text-red-600' : 'text-gray-500'}`}>
+                    <div className={`text-[10px] truncate ${fullDayBlock ? 'text-red-600' : 'text-gray-500'}`}>
                       {prof.role === 'MASSOTHERAPEUTE' ? 'Massothérapeute' : 'Esthéticienne'}
                     </div>
                   </div>
@@ -275,7 +360,7 @@ export default function HorizontalCalendarGrid({
             return (
               <div
                 key={`prof-${prof.id}`}
-                className={`w-[280px] flex-shrink-0 relative border-r border-gray-200 ${
+                className={`w-[220px] flex-shrink-0 relative border-r border-gray-200 ${
                   fullDayBlock ? 'bg-red-50' : ''
                 }`}
               >
@@ -302,6 +387,10 @@ export default function HorizontalCalendarGrid({
                         : 'border-t border-dashed border-gray-300'
                     } ${
                       !isBlocked && !isBreak && !fullDayBlock ? 'hover:bg-spa-turquoise-50' : ''
+                    } ${
+                      dropTarget?.professionalId === prof.id && dropTarget?.timeSlot === slot.time
+                        ? 'bg-spa-turquoise-200 border-2 border-spa-turquoise-500 shadow-inner'
+                        : ''
                     }`}
                     onClick={() => {
                       if (!isBlocked && !isBreak && !fullDayBlock) {
@@ -322,6 +411,9 @@ export default function HorizontalCalendarGrid({
                         );
                       }
                     }}
+                    onDragOver={(e) => handleDragOver(e, prof.id, slot.time)}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e, prof.id, slot.time)}
                   >
                     {/* Overlay pour blocage journée complète */}
                     {fullDayBlock && (
@@ -343,20 +435,43 @@ export default function HorizontalCalendarGrid({
                       </div>
                     )}
 
-                    {/* Overlay pour pause - ORANGE BIEN VISIBLE */}
-                    {!fullDayBlock && isBreak && (
-                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <div className="flex items-center gap-1 text-xs text-white font-bold">
-                          <Coffee className="w-4 h-4" />
-                          <span>{blockStatus.label || 'PAUSE'}</span>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 );
               })}
 
-              {/* Réservations (positionnées absolument) */}
+              {/* Pauses (positionnées absolument) - z-index 15 pour être au-dessus des créneaux mais sous les réservations */}
+              {!fullDayBlock && (
+                <div className="absolute inset-0 pointer-events-none z-15">
+                  {breaks
+                    .filter((breakItem) => breakItem.isActive !== false)
+                    .map((breakItem) => {
+                      const position = getBreakPosition(breakItem, prof.id);
+                      if (!position) return null;
+
+                      return (
+                        <div
+                          key={breakItem.id}
+                          className="absolute left-2 right-2 pointer-events-auto"
+                          style={{
+                            top: `${position.top}px`,
+                            height: `${position.height}px`,
+                            zIndex: 15,
+                          }}
+                        >
+                          <DraggableBreakCard
+                            breakItem={breakItem}
+                            position={position}
+                            onContextMenu={onBreakContextMenu || (() => {})}
+                            onDragStart={handleBreakDragStart}
+                            onDragEnd={handleDragEnd}
+                          />
+                        </div>
+                      );
+                    })}
+                </div>
+              )}
+
+              {/* Réservations (positionnées absolument) - z-index 20 pour être au-dessus des pauses */}
               {!fullDayBlock && (
                 <div className="absolute inset-0 pointer-events-none z-10">
                 {bookings
@@ -393,11 +508,13 @@ export default function HorizontalCalendarGrid({
                           zIndex: 20,
                         }}
                       >
-                        <BookingCard
+                        <DraggableBookingCard
                           booking={booking}
                           position={position}
                           onEdit={onBookingEdit}
                           onContextMenu={onBookingContextMenu}
+                          onDragStart={handleDragStart}
+                          onDragEnd={handleDragEnd}
                         />
                       </div>
                     );

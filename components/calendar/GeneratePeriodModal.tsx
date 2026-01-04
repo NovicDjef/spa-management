@@ -48,11 +48,15 @@ export default function GeneratePeriodModal({
     }
 
     try {
+      console.log('📤 Envoi de la requête de génération:', { professionalId, startDate, endDate });
+
       const result = await generatePeriod({
         professionalId,
         startDate,
         endDate,
       }).unwrap();
+
+      console.log('✅ Réponse reçue:', result);
 
       toast.success(
         <div>
@@ -68,8 +72,37 @@ export default function GeneratePeriodModal({
       onSuccess();
       onClose();
     } catch (error: any) {
-      console.error('Erreur génération horaires:', error);
-      toast.error(error.data?.message || 'Erreur lors de la génération des horaires');
+      console.error('❌ Erreur génération horaires COMPLÈTE:', error);
+      console.error('❌ Error data:', error.data);
+      console.error('❌ Error status:', error.status);
+      console.error('❌ Error message:', error.message);
+
+      let errorMessage = 'Erreur lors de la génération des horaires';
+
+      if (error.status === 'PARSING_ERROR') {
+        errorMessage = 'Erreur de communication avec le serveur. Vérifiez que le backend est démarré.';
+      } else if (error.status === 'FETCH_ERROR') {
+        errorMessage = 'Impossible de contacter le serveur. Vérifiez votre connexion et que le backend est démarré.';
+      } else if (error.status === 404) {
+        errorMessage = "L'endpoint /availability/generate-period n'existe pas sur le serveur. Contactez l'administrateur.";
+      } else if (error.status === 401) {
+        errorMessage = 'Vous devez être connecté pour effectuer cette action.';
+      } else if (error.data?.message) {
+        errorMessage = error.data.message;
+      } else if (error.error) {
+        errorMessage = error.error;
+      }
+
+      toast.error(
+        <div>
+          <div className="font-bold">Erreur</div>
+          <div className="text-sm mt-1">{errorMessage}</div>
+          {error.status && (
+            <div className="text-xs mt-1 opacity-75">Code: {error.status}</div>
+          )}
+        </div>,
+        { duration: 6000 }
+      );
     }
   };
 

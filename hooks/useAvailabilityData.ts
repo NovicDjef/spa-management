@@ -87,8 +87,8 @@ export function useAvailabilityData(
   const allBreaks = useMemo(() => {
     const queries = [break0, break1, break2, break3, break4, break5, break6, break7, break8, break9];
     return queries
-      .filter(query => query.data?.data)
-      .flatMap(query => query.data!.data);
+      .filter(query => query.data?.data?.breaks)
+      .flatMap(query => query.data!.data.breaks);
   }, [break0, break1, break2, break3, break4, break5, break6, break7, break8, break9]);
 
   // Vérifier si toutes les queries sont en cours de chargement

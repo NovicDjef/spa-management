@@ -9,7 +9,7 @@ interface User {
   prenom: string;
   isActive?: boolean;
   role: string;
-  numeroOrdre?: string; // Numéro d'ordre professionnel pour les thérapeutes
+  numeroMembreOrdre?: string; // Numéro d'ordre professionnel pour les thérapeutes
   adresse?: string; // Adresse de l'employé
   photoUrl?: string; // URL de la photo de profil
   updatedAt?: string; // Date de dernière mise à jour
