@@ -51,8 +51,55 @@ export interface Client {
   hasNoteAfterAssignment?: boolean; // Indique si une note a été ajoutée après l'assignation
   lastVisit?: string; // Date de dernière visite
   notes?: Note[]; // Notes incluses dans la réponse de /clients/:id
+  // Champs médicaux
+  zonesDouleur?: string[]; // Zones de douleur
+  raisonConsultation?: string;
+  traitementsActuels?: string;
+  allergies?: string;
+  medicaments?: string;
+  mauxDeDos?: boolean;
+  raideurs?: boolean;
+  arthrose?: boolean;
+  tendinite?: boolean;
   // Tous les autres champs...
   [key: string]: any;
+}
+
+export interface UpdateClientData {
+  // Informations personnelles
+  nom?: string;
+  prenom?: string;
+  telCellulaire?: string;
+  courriel?: string;
+  dateNaissance?: string;
+  adresse?: string;
+  ville?: string;
+  province?: string;
+  codePostal?: string;
+
+  // Informations médicales - Zones de douleur
+  zonesDouleur?: string[]; // ["Dos", "Nuque", "Épaules", etc.]
+  raisonConsultation?: string;
+  traitementsActuels?: string;
+
+  // Conditions médicales
+  mauxDeDos?: boolean;
+  raideurs?: boolean;
+  arthrose?: boolean;
+  tendinite?: boolean;
+  entorse?: boolean;
+  fracture?: boolean;
+  accident?: boolean;
+
+  // Allergies et médicaments
+  allergies?: string;
+  medicaments?: string;
+
+  // Autres informations médicales
+  problemesSante?: string;
+  interventionsChirurgicales?: string;
+  grossesse?: boolean;
+  moisGrossesse?: number;
 }
 
 export interface Note {
@@ -140,7 +187,7 @@ export interface User {
   prenom: string;
   role: 'ADMIN' | 'SECRETAIRE' | 'MASSOTHERAPEUTE' | 'ESTHETICIENNE';
   isActive: boolean;
-  numeroOrdre?: string; // Numéro d'ordre professionnel pour les thérapeutes
+  numeroMembreOrdre?: string; // Numéro d'ordre professionnel pour les thérapeutes
   adresse?: string; // Adresse de l'employé
   photoUrl?: string; // URL de la photo de profil
   createdAt: string;
@@ -161,7 +208,7 @@ export interface CreateUserData {
   nom: string;
   prenom: string;
   adresse?: string;
-  numeroOrdre?: string;
+  numeroMembreOrdre?: string;
 }
 
 export interface UpdateUserData {
@@ -172,7 +219,7 @@ export interface UpdateUserData {
   role?: 'ADMIN' | 'SECRETAIRE' | 'MASSOTHERAPEUTE' | 'ESTHETICIENNE';
   password?: string;
   adresse?: string;
-  numeroOrdre?: string;
+  numeroMembreOrdre?: string;
 }
 
 // Marketing Types
@@ -432,7 +479,7 @@ export interface ChangePasswordData {
 
 export interface UpdateProfileData {
   adresse?: string;
-  numeroOrdre?: string;
+  numeroMembreOrdre?: string;
   telephone?: string;
   nom?: string;
   prenom?: string;
@@ -502,6 +549,335 @@ export interface AllReviewsResponse {
   pagination: PaginationInfo;
 }
 
+// ==== BOOKING TYPES ====
+
+// Booking Status
+export type BookingStatus =
+  | 'PENDING'
+  | 'CONFIRMED'
+  | 'ARRIVED'
+  | 'IN_PROGRESS'
+  | 'COMPLETED'
+  | 'NO_SHOW'
+  | 'CANCELLED';
+
+// Main Booking Interface
+export interface Booking {
+  id: string;
+  clientId: string;
+  professionalId: string;
+  serviceId?: string;
+  startTime: string; // ISO datetime
+  endTime: string;
+  status: BookingStatus;
+  notes?: string;
+  serviceType: 'MASSOTHERAPIE' | 'ESTHETIQUE';
+  createdAt: string;
+  updatedAt: string;
+
+  // Populated relations
+  client: {
+    id: string;
+    nom: string;
+    prenom: string;
+    telCellulaire: string;
+    courriel: string;
+  };
+
+  professional: {
+    id: string;
+    nom: string;
+    prenom: string;
+    role: 'MASSOTHERAPEUTE' | 'ESTHETICIENNE';
+    photoUrl?: string;
+    color?: string; // For calendar display
+  };
+
+  service?: {
+    id: string;
+    name: string;
+    duration: number;
+    price: number;
+  };
+}
+
+// Create Booking Data (format backend)
+export interface CreateBookingData {
+  // Client existant
+  clientId?: string;
+
+  // Ou nouveau client (sans dossier complet)
+  clientName?: string;
+  clientPhone?: string;
+  clientEmail?: string;
+
+  // Informations de réservation
+  professionalId: string;
+  serviceId?: string;
+  serviceVariationId?: string; // Pour les services avec variations
+  bookingDate: string; // Format YYYY-MM-DD
+  startTime: string; // Format HH:mm
+  endTime: string; // Format HH:mm
+  specialNotes?: string;
+
+  // Options de rappel
+  sendSmsReminder?: boolean;
+  sendEmailReminder?: boolean;
+}
+
+// Update Booking Data (format backend)
+export interface UpdateBookingData {
+  professionalId?: string;
+  serviceId?: string;
+  serviceVariationId?: string;
+  bookingDate?: string; // Format YYYY-MM-DD
+  startTime?: string; // Format HH:mm
+  endTime?: string; // Format HH:mm
+  specialNotes?: string;
+  status?: BookingStatus;
+}
+
+// ==== END BOOKING TYPES ====
+
+// ==== AVAILABILITY TYPES ====
+
+// Availability Block (bloquer une journée ou période)
+export interface AvailabilityBlock {
+  id: string;
+  professionalId: string;
+  date: string; // Format YYYY-MM-DD
+  startTime?: string; // Format HH:mm (optionnel, si null = toute la journée)
+  endTime?: string; // Format HH:mm
+  reason?: string;
+  createdAt: string;
+  professional?: {
+    id: string;
+    nom: string;
+    prenom: string;
+  };
+}
+
+// Create Availability Block Data
+export interface CreateAvailabilityBlockData {
+  professionalId: string;
+  date: string; // Format YYYY-MM-DD
+  startTime?: string; // Format HH:mm (optionnel pour bloquer toute la journée)
+  endTime?: string; // Format HH:mm
+  reason?: string;
+}
+
+// Break (pause récurrente ou ponctuelle)
+export interface Break {
+  id: string;
+  professionalId: string;
+  dayOfWeek?: number | null; // 0-6 (0=Dimanche, 1=Lundi, etc.) ou null pour tous les jours
+  startTime: string; // Format HH:mm
+  endTime: string; // Format HH:mm
+  label?: string;
+  isActive?: boolean; // Indique si la pause est active
+  createdAt: string;
+  updatedAt?: string;
+  professional?: {
+    id: string;
+    nom: string;
+    prenom: string;
+  };
+}
+
+// Create Break Data
+export interface CreateBreakData {
+  professionalId: string;
+  dayOfWeek?: number | null; // null = tous les jours
+  startTime: string; // Format HH:mm
+  endTime: string; // Format HH:mm
+  label?: string;
+}
+
+// Update Break Data
+export interface UpdateBreakData {
+  dayOfWeek?: number | null;
+  startTime?: string;
+  endTime?: string;
+  label?: string;
+  isActive?: boolean;
+}
+
+// Generate Period Data
+export interface GeneratePeriodData {
+  professionalId: string;
+  startDate: string; // Format YYYY-MM-DD
+  endDate: string; // Format YYYY-MM-DD
+}
+
+// Generate Period Response
+export interface GeneratePeriodResponse {
+  success: boolean;
+  message: string;
+  data: {
+    professionalId: string;
+    startDate: string;
+    endDate: string;
+    generated: number;
+    period: string;
+  };
+}
+
+// Update Day Availability Data
+export interface UpdateDayAvailabilityData {
+  startTime?: string; // Format HH:mm
+  endTime?: string; // Format HH:mm
+  isAvailable?: boolean;
+  reason?: string;
+}
+
+// Unblock Day Data
+export interface UnblockDayData {
+  professionalId: string;
+  date: string; // Format YYYY-MM-DD
+}
+
+// Unblock Day Response
+export interface UnblockDayResponse {
+  success: boolean;
+  message: string;
+  data: AvailabilityBlock;
+}
+
+// Working Schedule (template hebdomadaire)
+export interface WorkingSchedule {
+  id: string;
+  professionalId: string;
+  dayOfWeek: number; // 0-6 (0=Dimanche, 1=Lundi, etc.)
+  startTime: string; // Format HH:mm
+  endTime: string; // Format HH:mm
+  isActive: boolean;
+  createdAt: string;
+}
+
+// Set Working Schedule Data
+export interface SetWorkingScheduleData {
+  professionalId: string;
+  schedules: {
+    dayOfWeek: number; // 0-6
+    startTime: string; // Format HH:mm
+    endTime: string; // Format HH:mm
+    isActive?: boolean;
+  }[];
+}
+
+// Client Profile (pour autocomplete et historique)
+export interface ClientProfile {
+  id: string;
+  nom: string;
+  prenom: string;
+  telCellulaire: string;
+  courriel: string;
+  dateNaissance?: string;
+  serviceType: 'MASSOTHERAPIE' | 'ESTHETIQUE';
+  lastVisit?: string;
+}
+
+// Client Bookings Stats
+export interface ClientBookingsStats {
+  total: number;
+  completed: number;
+  cancelled: number;
+  noShow: number;
+  upcoming: number;
+}
+
+// Client Bookings History Response
+export interface ClientBookingsHistoryResponse {
+  success: boolean;
+  data: {
+    client: ClientProfile;
+    bookings: Booking[];
+    stats: ClientBookingsStats;
+  };
+}
+
+// ==== END AVAILABILITY TYPES ====
+
+// ==== SERVICE TYPES ====
+
+// Service Category
+export interface ServiceCategory {
+  id: string;
+  name: string;
+  description?: string;
+  services: Service[];
+}
+
+// Service Variation
+export interface ServiceVariation {
+  id: string;
+  name: string;
+  duration: number; // en minutes
+  price: number;
+  description?: string;
+}
+
+// Service
+export interface Service {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  duration: number; // en minutes
+  price: number;
+  imageUrl?: string;
+  requiresProfessional?: boolean;
+  variations?: ServiceVariation[]; // Variations de durée/prix
+  category?: {
+    id: string;
+    name: string;
+    description?: string;
+  };
+}
+
+// Package Service
+export interface PackageService {
+  serviceName: string;
+  serviceId?: string;
+  serviceDuration?: number;
+  serviceDescription?: string;
+  quantity: number;
+  isOptional: boolean;
+  extraCost?: number;
+}
+
+// Package
+export interface Package {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  variant?: string;
+  price: number;
+  imageUrl?: string;
+  services: PackageService[];
+}
+
+// Gym Membership
+export interface GymMembership {
+  id: string;
+  type: string;
+  name: string;
+  price: number;
+  duration: number; // en jours
+  description?: string;
+}
+
+// Available Professional (simplifié pour affichage public)
+export interface AvailableProfessional {
+  id: string;
+  name: string;
+  photoUrl?: string;
+  speciality: string;
+}
+
+// ==== END SERVICE TYPES ====
+
 // API Service avec RTK Query
 export const api = createApi({
   reducerPath: 'api',
@@ -520,7 +896,7 @@ export const api = createApi({
       return headers;
     },
   }),
-  tagTypes: ['Client', 'Note', 'Assignment', 'User', 'Receipts', 'EmailLog', 'Campaign'],
+  tagTypes: ['Client', 'Note', 'Assignment', 'User', 'Receipts', 'EmailLog', 'Campaign', 'Booking', 'Service', 'Package', 'Availability', 'Break'],
   endpoints: (builder) => ({
     // AUTH - Connexion employé
     login: builder.mutation<AuthResponse, LoginCredentials>({
@@ -591,6 +967,41 @@ export const api = createApi({
         return { client: response.data || response };
       },
       providesTags: (result, error, id) => [{ type: 'Client', id }],
+    }),
+
+    // CLIENTS - Autocomplete pour recherche rapide (min 2 caractères)
+    autocompleteClients: builder.query<
+      { success: boolean; data: ClientProfile[] },
+      string
+    >({
+      query: (q) => `/clients/autocomplete?q=${q}`,
+      providesTags: ['Client'],
+    }),
+
+    // CLIENTS - Historique complet des réservations d'un client
+    getClientBookings: builder.query<
+      ClientBookingsHistoryResponse,
+      { clientId: string; includeHistory?: boolean }
+    >({
+      query: ({ clientId, includeHistory = true }) =>
+        `/clients/${clientId}/bookings?includeHistory=${includeHistory}`,
+      providesTags: ['Client', 'Booking'],
+    }),
+
+    // CLIENTS - Modifier les informations d'un client (ADMIN/MASSOTHERAPEUTE/ESTHETICIENNE)
+    updateClient: builder.mutation<
+      { success: boolean; message: string; data: Client },
+      { id: string; data: UpdateClientData }
+    >({
+      query: ({ id, data }) => ({
+        url: `/clients/${id}`,
+        method: 'PUT',
+        body: data,
+      }),
+      invalidatesTags: (result, error, { id }) => [
+        { type: 'Client', id },
+        'Client',
+      ],
     }),
 
     // NOTES - Récupérer les notes d'un client
@@ -1091,6 +1502,301 @@ export const api = createApi({
       transformResponse: (response: any) => response.data || response,
       invalidatesTags: ['User'],
     }),
+
+    // ==== BOOKING ENDPOINTS ====
+
+    // GET bookings by date range
+    getBookingsByDateRange: builder.query<
+      { bookings: Booking[] },
+      { startDate: string; endDate: string; professionalId?: string }
+    >({
+      query: ({ startDate, endDate, professionalId }) => {
+        const params = new URLSearchParams({ startDate, endDate });
+        if (professionalId) params.append('professionalId', professionalId);
+        return `/bookings/range?${params.toString()}`;
+      },
+      transformResponse: (response: any) => response.data || response,
+      providesTags: ['Booking'],
+    }),
+
+    // CREATE booking
+    createBooking: builder.mutation<
+      { booking: Booking; message: string },
+      CreateBookingData
+    >({
+      query: (data) => ({
+        url: '/bookings',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['Booking', 'Client', 'Availability', 'Break'],
+    }),
+
+    // UPDATE booking
+    updateBooking: builder.mutation<
+      { booking: Booking; message: string },
+      { id: string; data: UpdateBookingData }
+    >({
+      query: ({ id, data }) => ({
+        url: `/bookings/${id}`,
+        method: 'PUT',
+        body: data,
+      }),
+      invalidatesTags: ['Booking', 'Availability', 'Break'],
+    }),
+
+    // CHANGE status
+    changeBookingStatus: builder.mutation<
+      { booking: Booking; message: string },
+      { id: string; status: BookingStatus }
+    >({
+      query: ({ id, status }) => ({
+        url: `/bookings/${id}/status`,
+        method: 'PATCH',
+        body: { status },
+      }),
+      invalidatesTags: ['Booking', 'Availability', 'Break'],
+    }),
+
+    // DELETE booking
+    deleteBooking: builder.mutation<{ message: string }, string>({
+      query: (id) => ({
+        url: `/bookings/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Booking', 'Availability', 'Break'],
+    }),
+
+    // ==== END BOOKING ENDPOINTS ====
+
+    // ==== AVAILABILITY ENDPOINTS ====
+
+    // POST /api/availability/block - Bloquer une journée ou période
+    createAvailabilityBlock: builder.mutation<
+      { success: boolean; message: string; data: AvailabilityBlock },
+      CreateAvailabilityBlockData
+    >({
+      query: (data) => ({
+        url: '/availability/block',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['Availability', 'Booking'],
+    }),
+
+    // GET /api/availability/blocks/:professionalId - Liste des blocages
+    getAvailabilityBlocks: builder.query<
+      { success: boolean; data: AvailabilityBlock[] },
+      { professionalId: string; startDate?: string; endDate?: string }
+    >({
+      query: ({ professionalId, startDate, endDate }) => {
+        let url = `/availability/blocks/${professionalId}`;
+        const params = new URLSearchParams();
+        if (startDate) params.append('startDate', startDate);
+        if (endDate) params.append('endDate', endDate);
+        const queryString = params.toString();
+        if (queryString) url += `?${queryString}`;
+        return url;
+      },
+      providesTags: ['Availability'],
+    }),
+
+    // DELETE /api/availability/:id - Débloquer une journée/période
+    deleteAvailabilityBlock: builder.mutation<
+      { success: boolean; message: string },
+      string
+    >({
+      query: (id) => ({
+        url: `/availability/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Availability', 'Booking'],
+    }),
+
+    // POST /api/availability/breaks - Ajouter une pause
+    createBreak: builder.mutation<
+      { success: boolean; message: string; data: Break },
+      CreateBreakData
+    >({
+      query: (data) => ({
+        url: '/availability/breaks',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['Break', 'Booking'],
+    }),
+
+    // GET /api/availability/breaks/:professionalId - Liste des pauses
+    getBreaks: builder.query<
+      {
+        success: boolean;
+        data: {
+          professional: {
+            id: string;
+            nom: string;
+            prenom: string;
+            role: string;
+          };
+          breaks: Break[];
+        }
+      },
+      string
+    >({
+      query: (professionalId) => `/availability/breaks/${professionalId}`,
+      providesTags: ['Break'],
+    }),
+
+    // DELETE /api/availability/breaks/:id - Supprimer une pause
+    deleteBreak: builder.mutation<
+      { success: boolean; message: string },
+      string
+    >({
+      query: (id) => ({
+        url: `/availability/breaks/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Break', 'Booking'],
+    }),
+
+    // PATCH /api/availability/breaks/:id - Modifier une pause
+    updateBreak: builder.mutation<
+      { success: boolean; message: string; data: Break },
+      { id: string; data: UpdateBreakData }
+    >({
+      query: ({ id, data }) => ({
+        url: `/availability/breaks/${id}`,
+        method: 'PATCH',
+        body: data,
+      }),
+      invalidatesTags: ['Break', 'Booking'],
+    }),
+
+    // POST /api/availability/generate-period - Générer horaires sur période
+    generatePeriodSchedule: builder.mutation<
+      GeneratePeriodResponse,
+      GeneratePeriodData
+    >({
+      query: (data) => ({
+        url: '/availability/generate-period',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['Availability', 'Break', 'Booking'],
+    }),
+
+    // PATCH /api/availability/day/:id - Modifier un horaire d'un jour
+    updateDayAvailability: builder.mutation<
+      { success: boolean; message: string; data: AvailabilityBlock },
+      { id: string; data: UpdateDayAvailabilityData }
+    >({
+      query: ({ id, data }) => ({
+        url: `/availability/day/${id}`,
+        method: 'PATCH',
+        body: data,
+      }),
+      invalidatesTags: ['Availability', 'Booking'],
+    }),
+
+    // POST /api/availability/unblock-day - Débloquer une journée
+    unblockDay: builder.mutation<
+      UnblockDayResponse,
+      UnblockDayData
+    >({
+      query: (data) => ({
+        url: '/availability/unblock-day',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['Availability', 'Booking'],
+    }),
+
+    // POST /api/availability/working-schedule - Définir les horaires hebdomadaires
+    setWorkingSchedule: builder.mutation<
+      { success: boolean; message: string },
+      SetWorkingScheduleData
+    >({
+      query: (data) => ({
+        url: '/availability/working-schedule',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['Availability'],
+    }),
+
+    // GET /api/availability/working-schedule/:professionalId - Récupérer le template hebdomadaire
+    getWorkingSchedule: builder.query<
+      { success: boolean; data: WorkingSchedule[] },
+      string
+    >({
+      query: (professionalId) => `/availability/working-schedule/${professionalId}`,
+      providesTags: ['Availability'],
+    }),
+
+    // ==== END AVAILABILITY ENDPOINTS ====
+
+    // ==== SERVICE ENDPOINTS ====
+
+    // GET all services with categories
+    getAllServices: builder.query<
+      { success: boolean; data: ServiceCategory[] },
+      { categoryName?: string } | void
+    >({
+      query: (params) => {
+        const query = params && 'categoryName' in params && params.categoryName ? `?categoryName=${params.categoryName}` : '';
+        return `/public/services${query}`;
+      },
+      providesTags: ['Service'],
+    }),
+
+    // GET service by slug
+    getServiceBySlug: builder.query<
+      { success: boolean; data: Service },
+      string
+    >({
+      query: (slug) => `/public/services/${slug}`,
+      providesTags: ['Service'],
+    }),
+
+    // GET all packages
+    getAllPackages: builder.query<
+      { success: boolean; data: Package[] },
+      void
+    >({
+      query: () => '/public/packages',
+      providesTags: ['Package'],
+    }),
+
+    // GET package by slug
+    getPackageBySlug: builder.query<
+      { success: boolean; data: Package },
+      string
+    >({
+      query: (slug) => `/public/packages/${slug}`,
+      providesTags: ['Package'],
+    }),
+
+    // GET gym memberships
+    getGymMemberships: builder.query<
+      { success: boolean; data: GymMembership[] },
+      void
+    >({
+      query: () => '/public/gym-memberships',
+      providesTags: ['Service'],
+    }),
+
+    // GET available professionals
+    getAvailableProfessionals: builder.query<
+      { success: boolean; data: AvailableProfessional[] },
+      { serviceType?: 'MASSOTHERAPIE' | 'ESTHETIQUE' } | void
+    >({
+      query: (params) => {
+        const query = params && 'serviceType' in params && params.serviceType ? `?serviceType=${params.serviceType}` : '';
+        return `/public/professionals${query}`;
+      },
+      providesTags: ['User'],
+    }),
+
+    // ==== END SERVICE ENDPOINTS ====
   }),
 });
 
@@ -1101,6 +1807,9 @@ export const {
   useGetClientsQuery,
   useGetAssignedClientsQuery,
   useGetClientByIdQuery,
+  useAutocompleteClientsQuery,
+  useGetClientBookingsQuery,
+  useUpdateClientMutation,
   useGetNotesQuery,
   useAddNoteMutation,
   useUpdateNoteMutation,
@@ -1150,4 +1859,30 @@ export const {
   useGetMyProfileQuery,
   useChangePasswordMutation,
   useUpdateProfileMutation,
+  // Booking hooks
+  useGetBookingsByDateRangeQuery,
+  useCreateBookingMutation,
+  useUpdateBookingMutation,
+  useChangeBookingStatusMutation,
+  useDeleteBookingMutation,
+  // Availability hooks
+  useCreateAvailabilityBlockMutation,
+  useGetAvailabilityBlocksQuery,
+  useDeleteAvailabilityBlockMutation,
+  useCreateBreakMutation,
+  useGetBreaksQuery,
+  useDeleteBreakMutation,
+  useUpdateBreakMutation,
+  useGeneratePeriodScheduleMutation,
+  useUpdateDayAvailabilityMutation,
+  useUnblockDayMutation,
+  useSetWorkingScheduleMutation,
+  useGetWorkingScheduleQuery,
+  // Service hooks
+  useGetAllServicesQuery,
+  useGetServiceBySlugQuery,
+  useGetAllPackagesQuery,
+  useGetPackageBySlugQuery,
+  useGetGymMembershipsQuery,
+  useGetAvailableProfessionalsQuery,
 } = api;

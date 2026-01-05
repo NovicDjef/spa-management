@@ -59,12 +59,8 @@ export default function ConnexionPage() {
     try {
       const result = await login(formData).unwrap();
 
-      // Redirect based on user role
-      if (result.data.user.role === 'SECRETAIRE' || result.data.user.role === 'ADMIN') {
-        router.push('/professionnel/dashboard');
-      } else {
-        router.push('/professionnel/clients');
-      }
+      // Tous les utilisateurs vont sur le dashboard
+      router.push('/professionnel/dashboard');
     } catch (error: any) {
       console.error('Erreur de connexion:', error);
       const errorMsg = extractErrorMessage(error, 'Identifiants invalides. Veuillez vérifier vos informations.');

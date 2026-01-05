@@ -13,7 +13,13 @@
       "Bash(grep:*)",
       "Bash(npm run build:*)",
       "Bash(pkill:*)",
+<<<<<<< HEAD
       "Bash(git add:*)"
+=======
+      "Bash(tree:*)",
+      "Bash(npx tsc:*)",
+      "Bash(timeout 15 npm run dev:*)"
+>>>>>>> test
     ]
   }
 }

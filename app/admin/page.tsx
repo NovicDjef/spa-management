@@ -23,6 +23,15 @@ export default function AdminDashboardPage() {
 
   const menuItems = [
     {
+      title: 'Calendrier des Réservations',
+      description: 'Gérer les réservations, créer de nouvelles réservations et visualiser le calendrier en temps réel.',
+      icon: Calendar,
+      href: '/admin/calendar',
+      color: 'from-blue-500 to-indigo-500',
+      iconBg: 'bg-blue-50',
+      iconColor: 'text-blue-600',
+    },
+    {
       title: 'Gestion des Employés',
       description: 'Créer, modifier et gérer les employés. Voir les statistiques de performance et les avis clients.',
       icon: Users,

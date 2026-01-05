@@ -112,7 +112,7 @@ export function BodyMap({ selectedZones, onZonesChange }: BodyMapProps) {
 
   return (
     <div className="card-spa">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-semibold text-gray-800">
             Indiquez les zones de douleur

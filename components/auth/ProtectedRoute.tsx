@@ -36,23 +36,15 @@ export function ProtectedRoute({
 
     // Vérifier la permission si spécifiée
     if (requiredPermission && !hasPermission(user.role, requiredPermission)) {
-      // Rediriger vers la page appropriée selon le rôle
-      if (user.role === 'SECRETAIRE' || user.role === 'ADMIN') {
-        router.push('/professionnel/dashboard');
-      } else {
-        router.push('/professionnel/clients');
-      }
+      // Tous les utilisateurs vont sur le dashboard
+      router.push('/professionnel/dashboard');
       return;
     }
 
     // Vérifier les rôles autorisés si spécifiés
     if (allowedRoles && !allowedRoles.includes(user.role as Role)) {
-      // Rediriger vers la page appropriée selon le rôle
-      if (user.role === 'SECRETAIRE' || user.role === 'ADMIN') {
-        router.push('/professionnel/dashboard');
-      } else {
-        router.push('/professionnel/clients');
-      }
+      // Tous les utilisateurs vont sur le dashboard
+      router.push('/professionnel/dashboard');
       return;
     }
   }, [isAuthenticated, user, requiredPermission, allowedRoles, router, redirectTo]);

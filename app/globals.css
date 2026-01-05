@@ -90,6 +90,29 @@
   .section-spa {
     @apply py-8 sm:py-12;
   }
+
+  /* Calendrier - Grille */
+  .calendar-grid {
+    @apply grid auto-cols-fr gap-0 border-l border-gray-200;
+  }
+
+  /* Calendrier - Créneau horaire */
+  .calendar-slot {
+    @apply border-t border-gray-200 h-slot relative;
+  }
+
+  /* Calendrier - Carte de réservation */
+  .calendar-booking {
+    @apply relative w-full h-full rounded-lg shadow-md
+           border-l-4 p-2 overflow-hidden cursor-pointer
+           hover:shadow-lg transition-all;
+  }
+
+  /* Calendrier - Créneau vide (cliquable) */
+  .calendar-empty-slot {
+    @apply hover:bg-spa-turquoise-50/30 cursor-pointer
+           transition-colors;
+  }
 }
 
 @layer utilities {

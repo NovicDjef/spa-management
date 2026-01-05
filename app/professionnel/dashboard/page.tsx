@@ -5,8 +5,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { Header } from '@/components/layout/Header';
 import { SearchBar } from '@/components/clients/SearchBar';
 import { ClientCard } from '@/components/clients/ClientCard';
-import { Users, UserPlus, Loader2, X, Target, AlertCircle, Clock, UserCheck, User as UserIcon, ArrowRight, UserMinus, FileText, BarChart3 } from 'lucide-react';
-import { useGetClientsQuery, useGetUsersQuery, useAssignClientMutation, useUnassignClientMutation, useGetAssignmentHistoryQuery } from '@/lib/redux/services/api';
+import { Users, UserPlus, Loader2, X, Target, AlertCircle, Clock, UserCheck, User as UserIcon, ArrowRight, UserMinus, FileText, BarChart3, Calendar } from 'lucide-react';
+import { useGetClientsQuery, useGetAssignedClientsQuery, useGetUsersQuery, useAssignClientMutation, useUnassignClientMutation, useGetAssignmentHistoryQuery } from '@/lib/redux/services/api';
 import { useAppSelector } from '@/lib/redux/hooks';
 import { hasPermission, isAdminOrSecretary } from '@/lib/permissions';
 import { extractErrorMessage } from '@/lib/utils/errorHandler';
@@ -22,6 +22,9 @@ interface Client {
   serviceType: 'MASSOTHERAPIE' | 'ESTHETIQUE';
   createdAt: string;
   assignedAt?: string;
+  isActive?: boolean;
+  hasNoteAfterAssignment?: boolean;
+  notes?: any[];
   assignedBy?: {
     id: string;
     nom: string;
@@ -45,12 +48,26 @@ interface Professional {
 }
 
 export default function DashboardPage() {
-  const { data: clientsData, isLoading } = useGetClientsQuery({});
-  const { 
-    data: usersData, 
-    isLoading: isLoadingUsers, 
+  const currentUser = useAppSelector((state) => state.auth.user);
+
+  // Utiliser la bonne requête selon le rôle
+  const isProfessional = currentUser?.role === 'MASSOTHERAPEUTE' || currentUser?.role === 'ESTHETICIENNE';
+
+  // Pour les professionnels : récupérer uniquement leurs clients assignés
+  const { data: assignedClientsData, isLoading: isLoadingAssignedClients } = useGetAssignedClientsQuery(undefined, {
+    skip: !isProfessional,
+  });
+
+  // Pour les admin/secrétaire : récupérer tous les clients
+  const { data: allClientsData, isLoading: isLoadingAllClients } = useGetClientsQuery({}, {
+    skip: isProfessional,
+  });
+
+  const {
+    data: usersData,
+    isLoading: isLoadingUsers,
     error: usersError,
-    refetch: refetchUsers 
+    refetch: refetchUsers
   } = useGetUsersQuery({}, {
     // Refetch automatique si la requête échoue
     refetchOnMountOrArgChange: true,
@@ -59,16 +76,12 @@ export default function DashboardPage() {
   const [unassignClient, { isLoading: isUnassigning }] = useUnassignClientMutation();
   const { data: assignmentHistoryData, isLoading: isLoadingHistory } = useGetAssignmentHistoryQuery({ limit: 10 });
 
-  const currentUser = useAppSelector((state) => state.auth.user) || {
-    id: 'temp-id',
-    email: 'marie@spa.com',
-    telephone: '5141234567',
-    nom: 'Dubois',
-    prenom: 'Marie',
-    role: 'SECRETAIRE',
-  };
+  // Déterminer quelle source de clients utiliser
+  const clients = isProfessional
+    ? (assignedClientsData?.clients || [])
+    : (allClientsData?.clients || []);
 
-  const clients = clientsData?.clients || [];
+  const isLoading = isProfessional ? isLoadingAssignedClients : isLoadingAllClients;
 
   // Filtrer uniquement les professionnels (massothérapeutes et esthéticiennes)
   // Utiliser useMemo pour éviter de recalculer à chaque render
@@ -115,10 +128,7 @@ export default function DashboardPage() {
   const filterClients = () => {
     let filtered = [...clients];
 
-    // Filter by assigned clients for therapists
-    if (currentUser.role === 'MASSOTHERAPEUTE' || currentUser.role === 'ESTHETICIENNE') {
-      filtered = filtered.filter((client) => client.assignedTo?.id === currentUser.id);
-    }
+    // Pas besoin de filtrer par assignation, l'API le fait déjà pour les professionnels
 
     // Filter by search query
     if (searchQuery) {
@@ -219,6 +229,18 @@ export default function DashboardPage() {
     return `${professional.prenom} ${professional.nom} - ${roleLabel}`;
   };
 
+  // Afficher un loader si currentUser n'est pas encore chargé
+  if (!currentUser) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-spa-beige-50 via-white to-spa-turquoise-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 text-spa-turquoise-500 animate-spin mx-auto mb-4" />
+          <p className="text-gray-600">Chargement...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-spa-beige-50 via-white to-spa-turquoise-50">
       <Header user={currentUser ?? undefined} />
@@ -257,7 +279,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Cartes d'accès rapide */}
-          {(currentUser.role === 'ADMIN' || currentUser.role === 'SECRETAIRE' || currentUser.role === 'MASSOTHERAPEUTE') && (
+          {(currentUser.role === 'ADMIN' || currentUser.role === 'SECRETAIRE' || currentUser.role === 'MASSOTHERAPEUTE' || currentUser.role === 'ESTHETICIENNE') && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -286,6 +308,29 @@ export default function DashboardPage() {
                   </motion.div>
                 </Link>
               )}
+
+              {/* Calendrier */}
+              {/* {(currentUser.role === 'MASSOTHERAPEUTE' || currentUser.role === 'ESTHETICIENNE') && (
+                <Link href="/professionnel/calendar">
+                  <motion.div
+                    whileHover={{ scale: 1.02, y: -4 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="group relative p-4 sm:p-5 bg-gradient-to-br from-blue-50 via-white to-blue-50/30 rounded-2xl shadow-soft hover:shadow-soft-lg transition-all cursor-pointer border-2 border-transparent hover:border-blue-200 overflow-hidden"
+                  >
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-blue-100 rounded-full blur-2xl opacity-0 group-hover:opacity-50 transition-opacity"></div>
+                    <div className="relative">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="w-11 h-11 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
+                          <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                        </div>
+                        <ArrowRight className="w-5 h-5 text-blue-400 group-hover:translate-x-1 transition-transform" />
+                      </div>
+                      <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-1">Mon Calendrier</h3>
+                      <p className="text-xs sm:text-sm text-gray-600">Voir mes réservations</p>
+                    </div>
+                  </motion.div>
+                </Link>
+              )} */}
 
               {/* Reçus */}
               {(currentUser.role === 'ADMIN' || currentUser.role === 'MASSOTHERAPEUTE') && (
@@ -343,7 +388,7 @@ export default function DashboardPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="mb-0 sm:mb-4"
+          className="mb-8 sm:mb-14"
         >
           <SearchBar
             onSearch={setSearchQuery}
@@ -377,29 +422,140 @@ export default function DashboardPage() {
             </p>
           </motion.div>
         ) : (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 -mt-[10px] sm:mt-4"
-          >
-            {filteredClients.map((client, index) => (
+          <>
+            {/* Affichage pour ADMIN et SECRETAIRE : Format grille avec toutes les infos */}
+            {(currentUser.role === 'ADMIN' || currentUser.role === 'SECRETAIRE') ? (
               <motion.div
-                key={client.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 * index }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.2 }}
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 -mt-[10px] sm:mt-4"
               >
-                <ClientCard
-                  client={client}
-                  showActions={currentUser.role === 'ADMIN' || currentUser.role === 'SECRETAIRE'}
-                  onAssign={hasPermission(currentUser.role, 'ASSIGN_CLIENTS') ? handleAssignClient : undefined}
-                  currentUser={currentUser}
-                  showTherapistActions={currentUser.role === 'MASSOTHERAPEUTE' || currentUser.role === 'ESTHETICIENNE'}
-                />
+                {filteredClients.map((client, index) => (
+                  <motion.div
+                    key={client.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 * index }}
+                  >
+                    <ClientCard
+                      client={client}
+                      showActions={currentUser.role === 'ADMIN' || currentUser.role === 'SECRETAIRE'}
+                      onAssign={hasPermission(currentUser.role, 'ASSIGN_CLIENTS') ? handleAssignClient : undefined}
+                      currentUser={currentUser}
+                      showTherapistActions={false}
+                      disableLink={currentUser.role === 'SECRETAIRE'}
+                    />
+                  </motion.div>
+                ))}
               </motion.div>
-            ))}
-          </motion.div>
+            ) : (
+              /* Affichage pour MASSOTHERAPEUTE et ESTHETICIENNE : Format liste avec infos masquées */
+              <div className="space-y-3 -mt-[10px] sm:mt-4">
+                {filteredClients.map((client, index) => {
+                  const notesCount = client.notes?.length || 0;
+                  const isNew = !client.hasNoteAfterAssignment;
+                  const initials = `${client.prenom.charAt(0)}${client.nom.charAt(0)}`;
+
+                  return (
+                    <motion.div
+                      key={client.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.03 }}
+                    >
+                      <Link href={`/professionnel/clients/${client.id}`}>
+                        <div className="group relative bg-white rounded-xl p-5 sm:p-6 shadow-sm hover:shadow-md border border-gray-100 hover:border-spa-turquoise-200 transition-all duration-200 cursor-pointer">
+                          {/* Badge Nouveau */}
+                          <AnimatePresence>
+                            {isNew && (
+                              <motion.div
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                exit={{ scale: 0 }}
+                                className="absolute -top-2 -right-2 sm:top-4 sm:right-4"
+                              >
+                                <div className="px-2.5 py-1 bg-gradient-to-r from-orange-400 to-orange-500 text-white text-xs font-bold rounded-full shadow-lg flex items-center gap-1">
+                                  <span>NOUVEAU</span>
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+
+                          <div className="flex items-center gap-4">
+                            {/* Avatar */}
+                            <div className="flex-shrink-0">
+                              <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-spa-turquoise-400 to-spa-turquoise-600 rounded-full flex items-center justify-center text-white text-lg sm:text-xl font-bold shadow-sm">
+                                {initials}
+                              </div>
+                            </div>
+
+                            {/* Informations */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-3 mb-1">
+                                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 truncate">
+                                  {client.prenom} {client.nom}
+                                </h3>
+                                {client.isActive !== false && (
+                                  <div className="hidden sm:flex items-center gap-1.5 px-2 py-0.5 bg-green-50 text-green-700 text-xs font-medium rounded-full">
+                                    <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                                    Actif
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Informations masquées pour les techniciens */}
+                              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-sm text-gray-500 mb-3">
+                                <span className="truncate">***@***.***</span>
+                                <span className="hidden sm:inline text-gray-300">•</span>
+                                <span>***-***-****</span>
+                              </div>
+
+                              {/* Compteur de notes et date */}
+                              <div className="flex items-center gap-3 text-xs text-gray-500">
+                                <div className="flex items-center gap-1.5">
+                                  <div className={`px-2 py-1 rounded-md font-medium ${
+                                    notesCount > 0
+                                      ? 'bg-spa-turquoise-50 text-spa-turquoise-700'
+                                      : 'bg-gray-100 text-gray-600'
+                                  }`}>
+                                    {notesCount} note{notesCount !== 1 ? 's' : ''}
+                                  </div>
+                                </div>
+                                <span className="text-gray-300">•</span>
+                                <span>
+                                  Assigné le{' '}
+                                  {client.assignedAt
+                                    ? new Date(client.assignedAt).toLocaleDateString('fr-FR', {
+                                        day: 'numeric',
+                                        month: 'long',
+                                        year: 'numeric'
+                                      })
+                                    : new Date(client.createdAt).toLocaleDateString('fr-FR', {
+                                        day: 'numeric',
+                                        month: 'long',
+                                        year: 'numeric'
+                                      })
+                                  }
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Flèche */}
+                            <div className="flex-shrink-0 hidden sm:block">
+                              <div className="w-10 h-10 rounded-full bg-gray-50 group-hover:bg-spa-turquoise-50 flex items-center justify-center transition-colors">
+                                <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-spa-turquoise-600 transition-colors" />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </Link>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            )}
+          </>
         )}
 
         {/* Historique des Assignations Récentes */}

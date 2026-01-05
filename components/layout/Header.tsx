@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Sparkles, LogOut, User, Menu, X, FileText, Users } from 'lucide-react';
+import { Sparkles, LogOut, User, Menu, X, Users, Calendar } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -55,14 +55,8 @@ export function Header({ user: userProp }: HeaderProps) {
   };
 
   const getHomeLink = () => {
-    // Pendant l'hydration, toujours retourner le même lien pour éviter le mismatch
-    if (!isMounted) return '/professionnel/dashboard';
-
-    if (!user) return '/professionnel/dashboard';
-    if (user.role === 'SECRETAIRE' || user.role === 'ADMIN') {
-      return '/professionnel/dashboard';
-    }
-    return '/professionnel/clients';
+    // Tous les utilisateurs vont sur le dashboard
+    return '/professionnel/dashboard';
   };
 
   return (
@@ -92,19 +86,19 @@ export function Header({ user: userProp }: HeaderProps) {
           {/* User info & actions - Desktop */}
           {user && (
             <div className="hidden md:flex items-center gap-3">
-              {/* Bouton "Mes Reçus" uniquement pour les massothérapeutes */}
-              {user.role === 'MASSOTHERAPEUTE' && (
-                <Link href="/professionnel/recus">
+              {/* Bouton "Calendrier" pour admin et secrétaire */}
+              {/* {(user.role === 'ADMIN' || user.role === 'SECRETAIRE') && (
+                <Link href="/admin/calendar">
                   <motion.button
                     whileHover={{ scale: 1.05, y: -2 }}
                     whileTap={{ scale: 0.95 }}
-                    className="relative px-4 py-2.5 bg-gradient-to-r from-spa-menthe-500 to-spa-menthe-600 text-white rounded-xl shadow-md hover:shadow-lg transition-all flex items-center gap-2 font-medium"
+                    className="relative px-4 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl shadow-md hover:shadow-lg transition-all flex items-center gap-2 font-medium"
                   >
-                    <FileText className="w-4 h-4" />
-                    <span>Mes Reçus</span>
+                    <Calendar className="w-4 h-4" />
+                    <span>Calendrier</span>
                   </motion.button>
                 </Link>
-              )}
+              )} */}
               <div className="h-8 w-px bg-gray-300 mx-1"></div>
               <div className="text-right">
                 <p className="font-medium text-gray-800 text-sm">{user.nom} {user.prenom}</p>
@@ -162,17 +156,17 @@ export function Header({ user: userProp }: HeaderProps) {
               </div>
             </div>
             <div className="space-y-2">
-              {/* Bouton "Mes Reçus" uniquement pour les massothérapeutes */}
-              {user.role === 'MASSOTHERAPEUTE' && (
+              {/* Bouton "Calendrier" pour admin et secrétaire */}
+              {/* {(user.role === 'ADMIN' || user.role === 'SECRETAIRE') && (
                 <Link
-                  href="/professionnel/recus"
+                  href="/admin/calendar"
                   onClick={() => setShowMenu(false)}
-                  className="w-full btn-primary flex items-center justify-center gap-2"
+                  className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-6 py-3 rounded-2xl font-medium shadow-soft hover:shadow-soft-lg transition-all flex items-center justify-center gap-2"
                 >
-                  <FileText className="w-4 h-4" />
-                  <span>Mes Reçus</span>
+                  <Calendar className="w-4 h-4" />
+                  <span>Calendrier</span>
                 </Link>
-              )}
+              )} */}
               <Link
                 href="/professionnel/profil"
                 onClick={() => setShowMenu(false)}

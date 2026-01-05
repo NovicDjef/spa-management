@@ -19,10 +19,57 @@ import {
   Loader2,
   FileText,
   AlertCircle,
+  Edit,
 } from 'lucide-react';
 import { useGetClientByIdQuery } from '@/lib/redux/services/api';
 import { useAppSelector } from '@/lib/redux/hooks';
 import { BodyMap } from '@/components/forms/BodyMap';
+import { EditClientModal } from '@/components/clients/EditClientModal';
+
+// Mapping entre les labels et les IDs du BodyMap
+const LABEL_TO_ZONE_ID: Record<string, string> = {
+  'tête': 'tete',
+  'nuque': 'cou',
+  'épaule gauche': 'epaule-gauche',
+  'épaule droite': 'epaule-droite',
+  'bras gauche': 'bras-gauche',
+  'bras droit': 'bras-droit',
+  'coude gauche': 'coude-gauche',
+  'coude droit': 'coude-droit',
+  'avant-bras gauche': 'avant-bras-gauche',
+  'avant-bras droit': 'avant-bras-droit',
+  'main gauche': 'main-gauche',
+  'main droite': 'main-droite',
+  'poitrine': 'poitrine',
+  'abdomen': 'abdomen',
+  'bassin': 'bassin',
+  'cuisse gauche': 'cuisse-gauche',
+  'cuisse droite': 'cuisse-droite',
+  'genou gauche': 'genou-gauche',
+  'genou droit': 'genou-droit',
+  'mollet gauche': 'mollet-gauche',
+  'mollet droit': 'mollet-droit',
+  'pied gauche': 'pied-gauche',
+  'pied droit': 'pied-droit',
+  'haut du dos': 'dos-haut',
+  'milieu du dos': 'dos-milieu',
+  'bas du dos / lombaires': 'dos-bas',
+  'lombaires': 'dos-bas',
+  'hanche gauche': 'hanche-gauche',
+  'hanche droite': 'hanche-droite',
+  'fessier gauche': 'fessier-gauche',
+  'fessier droit': 'fessier-droit',
+};
+
+// Fonction pour convertir les labels en IDs
+const labelsToIds = (labels: string[]): string[] => {
+  return labels
+    .map(label => {
+      const normalizedLabel = label.toLowerCase().trim();
+      return LABEL_TO_ZONE_ID[normalizedLabel] || null;
+    })
+    .filter((id): id is string => id !== null);
+};
 
 export default function ClientDetailPage() {
   const params = useParams();
@@ -39,8 +86,12 @@ export default function ClientDetailPage() {
 
   const [activeTab, setActiveTab] = useState<'info' | 'notes'>('info');
   const [showReceiptModal, setShowReceiptModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   const [openReceiptDirectly, setOpenReceiptDirectly] = useState(false);
+
+  // Convertir les zones de douleur en IDs pour le BodyMap
+  const bodyMapZones = client?.zonesDouleur ? labelsToIds(client.zonesDouleur) : [];
 
   const handleNoteAdded = () => {
     // Ouvrir le modal de reçu avec confirmation pour les massothérapeutes
@@ -168,13 +219,26 @@ if (!client) {
               </div>
             </div>
 
-            <span
-              className={`badge ${
-                client.serviceType === 'MASSOTHERAPIE' ? 'badge-massotherapie' : 'badge-esthetique'
-              }`}
-            >
-              {client.serviceType === 'MASSOTHERAPIE' ? 'Massothérapie' : 'Esthétique'}
-            </span>
+            <div className="flex items-center gap-3">
+              <span
+                className={`badge ${
+                  client.serviceType === 'MASSOTHERAPIE' ? 'badge-massotherapie' : 'badge-esthetique'
+                }`}
+              >
+                {client.serviceType === 'MASSOTHERAPIE' ? 'Massothérapie' : 'Esthétique'}
+              </span>
+
+              {/* Bouton Modifier (visible seulement pour les professionnels) */}
+              {(currentUser?.role === 'MASSOTHERAPEUTE' || currentUser?.role === 'ESTHETICIENNE' || currentUser?.role === 'ADMIN') && (
+                <button
+                  onClick={() => setShowEditModal(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-spa-turquoise-500 text-white rounded-lg hover:bg-spa-turquoise-600 transition-colors"
+                >
+                  <Edit className="w-4 h-4" />
+                  Modifier
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Informations de contact */}
@@ -427,12 +491,33 @@ if (!client) {
 
                   {/* Section: Zones de douleur avec silhouette 3D */}
                   {client.zonesDouleur && client.zonesDouleur.length > 0 && (
-                    <div className="">
+                    <div className="bg-gradient-to-br from-spa-beige-50 to-white p-2 rounded-xl border-2 border-spa-rose-100">
+                      <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                        <span className="w-2 h-2 bg-spa-rose-500 rounded-full"></span>
+                        Zones de douleur
+                      </h3>
                       {/* Silhouette 3D interactive en mode consultation */}
-                        <BodyMap
-                          selectedZones={client.zonesDouleur}
-                          onZonesChange={() => {}}
-                        />
+                      <BodyMap
+                        selectedZones={bodyMapZones}
+                        onZonesChange={() => {}}
+                      />
+
+                      {/* Liste des zones */}
+                      <div className="mt-4 bg-spa-turquoise-50 p-4 rounded-lg border border-spa-turquoise-200">
+                        <p className="text-sm font-semibold text-spa-turquoise-800 mb-2">
+                          Zones affectées ({client.zonesDouleur.length}) :
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {client.zonesDouleur.map((zone) => (
+                            <span
+                              key={zone}
+                              className="px-3 py-1 bg-spa-turquoise-500 text-white text-xs rounded-full"
+                            >
+                              {zone}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
                     </div>
                   )}
 
@@ -754,8 +839,17 @@ if (!client) {
           clientId={clientId as string}
           clientName={`${client.prenom} ${client.nom}`}
           therapistName={`${currentUser.prenom} ${currentUser.nom}`}
-          therapistOrderNumber={currentUser.numeroOrdre}
+          therapistOrderNumber={currentUser.numeroMembreOrdre}
           skipConfirmation={openReceiptDirectly}
+        />
+      )}
+
+      {/* Modal de modification du client */}
+      {client && (
+        <EditClientModal
+          isOpen={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          client={client}
         />
       )}
     </div>

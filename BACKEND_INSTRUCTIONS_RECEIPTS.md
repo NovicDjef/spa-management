@@ -8,7 +8,7 @@ Le système permet aux massothérapeutes d'envoyer automatiquement des reçus po
 
 ## 1. Modifications de la base de données
 
-### Ajouter le champ `numeroOrdre` à la table User
+### Ajouter le champ `numeroMembreOrdre` à la table User
 
 ```prisma
 model User {
@@ -20,7 +20,7 @@ model User {
   password     String
   role         Role     @default(MASSOTHERAPEUTE)
   isActive     Boolean  @default(true)
-  numeroOrdre  String?  // ⭐ NOUVEAU CHAMP - Numéro d'ordre professionnel
+  numeroMembreOrdre  String?  // ⭐ NOUVEAU CHAMP - Numéro d'ordre professionnel
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -106,7 +106,7 @@ async function sendReceipt(req, res) {
         id: true,
         nom: true,
         prenom: true,
-        numeroOrdre: true,
+        numeroMembreOrdre: true,
         telephone: true,
       },
     });
@@ -138,7 +138,7 @@ async function sendReceipt(req, res) {
 
       // Informations thérapeute
       therapistName: `${therapist.prenom} ${therapist.nom}`,
-      therapistOrderNumber: therapist.numeroOrdre || 'N/A',
+      therapistOrderNumber: therapist.numeroMembreOrdre || 'N/A',
 
       // Détails du traitement
       massageType: formatMassageType(massageType),
@@ -508,16 +508,16 @@ if (!assignment) {
 
 ## 5. Modification de la création d'utilisateur
 
-### Ajouter le champ `numeroOrdre` lors de la création
+### Ajouter le champ `numeroMembreOrdre` lors de la création
 
 ```javascript
 // users.controller.ts - Fonction de création d'utilisateur
 
 async function createUser(req, res) {
-  const { email, telephone, nom, prenom, role, numeroOrdre } = req.body;
+  const { email, telephone, nom, prenom, role, numeroMembreOrdre } = req.body;
 
   // Validation
-  if (role === 'MASSOTHERAPEUTE' && !numeroOrdre) {
+  if (role === 'MASSOTHERAPEUTE' && !numeroMembreOrdre) {
     return res.status(400).json({
       success: false,
       message: 'Le numéro d\'ordre est obligatoire pour les massothérapeutes'
@@ -531,7 +531,7 @@ async function createUser(req, res) {
       nom,
       prenom,
       role,
-      numeroOrdre,  // ⭐ Nouveau champ
+      numeroMembreOrdre,  // ⭐ Nouveau champ
       password: hashedPassword,
     },
   });
@@ -595,12 +595,12 @@ export default router;
 
 | Modification | Fichier | Action |
 |-------------|---------|--------|
-| Ajouter `numeroOrdre` au modèle User | `prisma/schema.prisma` | Nouveau champ optionnel String |
+| Ajouter `numeroMembreOrdre` au modèle User | `prisma/schema.prisma` | Nouveau champ optionnel String |
 | Créer table Receipt (optionnel) | `prisma/schema.prisma` | Table pour historique |
 | Créer contrôleur de reçu | `receipts.controller.ts` | Fonction `sendReceipt` |
 | Créer générateur HTML | `receiptGenerator.ts` | Fonction `generateReceiptHTML` |
 | Ajouter route | `receipts.routes.ts` | POST /receipts/send |
-| Modifier création user | `users.controller.ts` | Ajouter `numeroOrdre` dans le body |
+| Modifier création user | `users.controller.ts` | Ajouter `numeroMembreOrdre` dans le body |
 
 ---
 

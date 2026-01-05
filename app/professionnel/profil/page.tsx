@@ -41,7 +41,7 @@ export default function ProfilPage() {
   const [prenom, setPrenom] = useState('');
   const [telephone, setTelephone] = useState('');
   const [adresse, setAdresse] = useState('');
-  const [numeroOrdre, setNumeroOrdre] = useState('');
+  const [numeroMembreOrdre, setnumeroMembreOrdre] = useState('');
   const [profileError, setProfileError] = useState('');
   const [profileSuccess, setProfileSuccess] = useState('');
 
@@ -52,7 +52,7 @@ export default function ProfilPage() {
       setPrenom(currentUser.prenom || '');
       setTelephone(currentUser.telephone || '');
       setAdresse(currentUser.adresse || '');
-      setNumeroOrdre(currentUser.numeroOrdre || '');
+      setnumeroMembreOrdre(currentUser.numeroMembreOrdre || '');
     }
   }, [currentUser]);
 
@@ -113,27 +113,34 @@ export default function ProfilPage() {
 
     // Validation spécifique pour les massothérapeutes (numéro RMQ obligatoire)
     if (currentUser?.role === 'MASSOTHERAPEUTE') {
-      if (!numeroOrdre || numeroOrdre.trim() === '') {
+      if (!numeroMembreOrdre || numeroMembreOrdre.trim() === '') {
         setProfileError('Le numéro d\'ordre RMQ est requis pour pouvoir émettre des reçus d\'assurance');
         return;
       }
 
       // Vérifier le format M-XXXX
       const rmqPattern = /^M-\d{4}$/;
-      if (!rmqPattern.test(numeroOrdre)) {
+      if (!rmqPattern.test(numeroMembreOrdre)) {
         setProfileError('Le numéro RMQ doit être au format M-XXXX (exemple: M-3444)');
         return;
       }
     }
 
     try {
-      const result = await updateProfile({
+      const updateData = {
         nom: nom !== currentUser?.nom ? nom : undefined,
         prenom: prenom !== currentUser?.prenom ? prenom : undefined,
         telephone: telephone !== currentUser?.telephone ? telephone : undefined,
         adresse: adresse, // ⭐ Toujours envoyer l'adresse, même si vide
-        numeroOrdre: numeroOrdre, // ⭐ Toujours envoyer le numéro d'ordre, même si vide
-      }).unwrap();
+        numeroMembreOrdre: numeroMembreOrdre, // ⭐ Toujours envoyer le numéro d'ordre, même si vide
+      };
+
+      console.log('📤 DONNÉES ENVOYÉES AU BACKEND:', updateData);
+
+      const result = await updateProfile(updateData).unwrap();
+
+      console.log('📥 RÉPONSE DU BACKEND:', result);
+      console.log('🔍 numeroMembreOrdre dans la réponse:', result.user?.numeroMembreOrdre);
 
       // Mettre à jour l'utilisateur dans Redux
       if (result.user) {
@@ -246,7 +253,7 @@ export default function ProfilPage() {
             )}
 
             {/* Indicateur de champs pré-remplis */}
-            {currentUser && (adresse || numeroOrdre || nom || prenom || telephone) && (
+            {currentUser && (adresse || numeroMembreOrdre || nom || prenom || telephone) && (
               <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-xl">
                 <p className="text-sm text-green-800">
                   ✅ Vos informations actuelles sont affichées dans les champs ci-dessous
@@ -341,8 +348,8 @@ export default function ProfilPage() {
                   </label>
                   <input
                     type="text"
-                    value={numeroOrdre}
-                    onChange={(e) => setNumeroOrdre(e.target.value)}
+                    value={numeroMembreOrdre}
+                    onChange={(e) => setnumeroMembreOrdre(e.target.value)}
                     className="input-spa"
                     placeholder={currentUser.role === 'MASSOTHERAPEUTE' ? "M-3444" : "Votre numéro d'ordre"}
                     maxLength={currentUser.role === 'MASSOTHERAPEUTE' ? 6 : undefined}
@@ -352,7 +359,7 @@ export default function ProfilPage() {
                       ? "⚠️ Requis pour l'envoi de reçus d'assurance. Format: M-XXXX (ex: M-3444)"
                       : "Requis pour l'envoi de reçus d'assurance"}
                   </p>
-                  {!numeroOrdre && currentUser.role === 'MASSOTHERAPEUTE' && (
+                  {!numeroMembreOrdre && currentUser.role === 'MASSOTHERAPEUTE' && (
                     <p className="text-xs text-amber-600 mt-1 font-medium">
                       ⚠️ Vous devez ajouter votre numéro RMQ pour pouvoir émettre des reçus
                     </p>
