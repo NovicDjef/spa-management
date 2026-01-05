@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { X, Save, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
 import { useUpdateClientMutation, type Client, type UpdateClientData } from '@/lib/redux/services/api';
+import { useAppSelector } from '@/lib/redux/hooks';
+import { BodyMap } from '@/components/forms/BodyMap';
 
 interface EditClientModalProps {
   isOpen: boolean;
@@ -11,26 +13,54 @@ interface EditClientModalProps {
   client: Client;
 }
 
-const ZONES_DOULEUR_OPTIONS = [
-  'Tête',
-  'Nuque',
-  'Épaules',
-  'Bras',
-  'Coudes',
-  'Poignets',
-  'Mains',
-  'Dos',
-  'Lombaires',
-  'Hanches',
-  'Cuisses',
-  'Genoux',
-  'Mollets',
-  'Chevilles',
-  'Pieds',
-];
+// Mapping entre les IDs du BodyMap et les labels lisibles
+const ZONE_ID_TO_LABEL: Record<string, string> = {
+  'tete': 'Tête',
+  'cou': 'Nuque',
+  'epaule-gauche': 'Épaule gauche',
+  'epaule-droite': 'Épaule droite',
+  'bras-gauche': 'Bras gauche',
+  'bras-droit': 'Bras droit',
+  'coude-gauche': 'Coude gauche',
+  'coude-droit': 'Coude droit',
+  'avant-bras-gauche': 'Avant-bras gauche',
+  'avant-bras-droit': 'Avant-bras droit',
+  'main-gauche': 'Main gauche',
+  'main-droite': 'Main droite',
+  'poitrine': 'Poitrine',
+  'abdomen': 'Abdomen',
+  'bassin': 'Bassin',
+  'cuisse-gauche': 'Cuisse gauche',
+  'cuisse-droite': 'Cuisse droite',
+  'genou-gauche': 'Genou gauche',
+  'genou-droit': 'Genou droit',
+  'mollet-gauche': 'Mollet gauche',
+  'mollet-droit': 'Mollet droit',
+  'pied-gauche': 'Pied gauche',
+  'pied-droit': 'Pied droit',
+  'dos-haut': 'Haut du dos',
+  'dos-milieu': 'Milieu du dos',
+  'dos-bas': 'Bas du dos / Lombaires',
+  'hanche-gauche': 'Hanche gauche',
+  'hanche-droite': 'Hanche droite',
+  'fessier-gauche': 'Fessier gauche',
+  'fessier-droit': 'Fessier droit',
+};
+
+// Mapping inverse pour convertir les labels en IDs
+const LABEL_TO_ZONE_ID: Record<string, string> = Object.entries(ZONE_ID_TO_LABEL).reduce(
+  (acc, [id, label]) => ({ ...acc, [label.toLowerCase()]: id }),
+  {}
+);
 
 export function EditClientModal({ isOpen, onClose, client }: EditClientModalProps) {
   const [updateClient, { isLoading, isSuccess, isError, error }] = useUpdateClientMutation();
+  const currentUser = useAppSelector((state) => state.auth.user);
+
+  // Vérifier si c'est un massothérapeute ou esthéticienne (ne doit pas voir les infos de contact)
+  const isMassotherapeute = currentUser?.role === 'MASSOTHERAPEUTE';
+  const isEstheticienne = currentUser?.role === 'ESTHETICIENNE';
+  const isProfessional = isMassotherapeute || isEstheticienne;
 
   // États du formulaire
   const [formData, setFormData] = useState<UpdateClientData>({
@@ -61,6 +91,26 @@ export function EditClientModal({ isOpen, onClose, client }: EditClientModalProp
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
 
+  // État pour les zones sélectionnées dans le BodyMap (IDs)
+  const [selectedBodyZones, setSelectedBodyZones] = useState<string[]>([]);
+
+  // Convertir les labels de zones en IDs pour le BodyMap
+  const labelsToIds = (labels: string[]): string[] => {
+    return labels
+      .map(label => {
+        const normalizedLabel = label.toLowerCase();
+        return LABEL_TO_ZONE_ID[normalizedLabel] || null;
+      })
+      .filter((id): id is string => id !== null);
+  };
+
+  // Convertir les IDs du BodyMap en labels pour le backend
+  const idsToLabels = (ids: string[]): string[] => {
+    return ids
+      .map(id => ZONE_ID_TO_LABEL[id])
+      .filter((label): label is string => label !== undefined);
+  };
+
   // Pré-remplir le formulaire avec les données du client
   useEffect(() => {
     if (client && isOpen) {
@@ -88,6 +138,10 @@ export function EditClientModal({ isOpen, onClose, client }: EditClientModalProp
         grossesse: client.grossesse || false,
         moisGrossesse: client.moisGrossesse || 0,
       });
+
+      // Convertir les zones de douleur en IDs pour le BodyMap
+      const zoneIds = labelsToIds(client.zonesDouleur || []);
+      setSelectedBodyZones(zoneIds);
     }
   }, [client, isOpen]);
 
@@ -115,24 +169,24 @@ export function EditClientModal({ isOpen, onClose, client }: EditClientModalProp
     e.preventDefault();
 
     try {
+      // Convertir les IDs des zones en labels pour le backend
+      const zonesLabels = idsToLabels(selectedBodyZones);
+
       await updateClient({
         id: client.id,
-        data: formData,
+        data: {
+          ...formData,
+          zonesDouleur: zonesLabels,
+        },
       }).unwrap();
     } catch (err) {
       console.error('Erreur mise à jour client:', err);
     }
   };
 
-  const toggleZoneDouleur = (zone: string) => {
-    setFormData((prev) => {
-      const zones = prev.zonesDouleur || [];
-      if (zones.includes(zone)) {
-        return { ...prev, zonesDouleur: zones.filter((z) => z !== zone) };
-      } else {
-        return { ...prev, zonesDouleur: [...zones, zone] };
-      }
-    });
+  // Handler pour les changements de zones du BodyMap
+  const handleBodyZonesChange = (zones: string[]) => {
+    setSelectedBodyZones(zones);
   };
 
   if (!isOpen) return null;
@@ -185,87 +239,111 @@ export function EditClientModal({ isOpen, onClose, client }: EditClientModalProp
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Informations personnelles */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">
-                Informations personnelles
-              </h3>
+            {!isProfessional && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">
+                  Informations personnelles
+                </h3>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="label-spa">Nom</label>
-                  <input
-                    type="text"
-                    value={formData.nom}
-                    onChange={(e) =>
-                      setFormData({ ...formData, nom: e.target.value })
-                    }
-                    className="input-spa"
-                  />
-                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="label-spa">Nom</label>
+                    <input
+                      type="text"
+                      value={formData.nom}
+                      onChange={(e) =>
+                        setFormData({ ...formData, nom: e.target.value })
+                      }
+                      className="input-spa"
+                    />
+                  </div>
 
-                <div>
-                  <label className="label-spa">Prénom</label>
-                  <input
-                    type="text"
-                    value={formData.prenom}
-                    onChange={(e) =>
-                      setFormData({ ...formData, prenom: e.target.value })
-                    }
-                    className="input-spa"
-                  />
-                </div>
+                  <div>
+                    <label className="label-spa">Prénom</label>
+                    <input
+                      type="text"
+                      value={formData.prenom}
+                      onChange={(e) =>
+                        setFormData({ ...formData, prenom: e.target.value })
+                      }
+                      className="input-spa"
+                    />
+                  </div>
 
-                <div>
-                  <label className="label-spa">Téléphone</label>
-                  <input
-                    type="tel"
-                    value={formData.telCellulaire}
-                    onChange={(e) =>
-                      setFormData({ ...formData, telCellulaire: e.target.value })
-                    }
-                    className="input-spa"
-                  />
-                </div>
+                  <div>
+                    <label className="label-spa">Téléphone</label>
+                    <input
+                      type="tel"
+                      value={formData.telCellulaire}
+                      onChange={(e) =>
+                        setFormData({ ...formData, telCellulaire: e.target.value })
+                      }
+                      className="input-spa"
+                    />
+                  </div>
 
-                <div>
-                  <label className="label-spa">Courriel</label>
-                  <input
-                    type="email"
-                    value={formData.courriel}
-                    onChange={(e) =>
-                      setFormData({ ...formData, courriel: e.target.value })
-                    }
-                    className="input-spa"
-                  />
+                  <div>
+                    <label className="label-spa">Courriel</label>
+                    <input
+                      type="email"
+                      value={formData.courriel}
+                      onChange={(e) =>
+                        setFormData({ ...formData, courriel: e.target.value })
+                      }
+                      className="input-spa"
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="label-spa">Adresse</label>
+                    <input
+                      type="text"
+                      value={formData.adresse}
+                      onChange={(e) =>
+                        setFormData({ ...formData, adresse: e.target.value })
+                      }
+                      className="input-spa"
+                      placeholder="Adresse complète"
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
-            {/* Zones de douleur */}
+            {/* Zones de douleur avec BodyMap */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">
                 Zones de douleur
               </h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Cliquez sur les zones du corps où le client ressent de la douleur ou de l'inconfort
+              </p>
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                {ZONES_DOULEUR_OPTIONS.map((zone) => (
-                  <button
-                    key={zone}
-                    type="button"
-                    onClick={() => toggleZoneDouleur(zone)}
-                    className={`
-                      px-3 py-2 rounded-lg border-2 transition-all text-sm font-medium
-                      ${
-                        formData.zonesDouleur?.includes(zone)
-                          ? 'bg-spa-rose-500 border-spa-rose-500 text-white'
-                          : 'bg-white border-gray-300 text-gray-700 hover:border-spa-rose-300'
-                      }
-                    `}
-                  >
-                    {zone}
-                  </button>
-                ))}
+              <div className="bg-gradient-to-br from-spa-beige-50 to-white p-6 rounded-xl border-2 border-spa-rose-100">
+                <BodyMap
+                  selectedZones={selectedBodyZones}
+                  onZonesChange={handleBodyZonesChange}
+                />
               </div>
+
+              {/* Liste des zones sélectionnées */}
+              {selectedBodyZones.length > 0 && (
+                <div className="bg-spa-turquoise-50 p-4 rounded-lg border border-spa-turquoise-200">
+                  <p className="text-sm font-semibold text-spa-turquoise-800 mb-2">
+                    Zones sélectionnées ({selectedBodyZones.length}) :
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {idsToLabels(selectedBodyZones).map((label) => (
+                      <span
+                        key={label}
+                        className="px-3 py-1 bg-spa-turquoise-500 text-white text-xs rounded-full"
+                      >
+                        {label}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Raison de consultation */}

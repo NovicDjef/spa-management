@@ -26,6 +26,51 @@ import { useAppSelector } from '@/lib/redux/hooks';
 import { BodyMap } from '@/components/forms/BodyMap';
 import { EditClientModal } from '@/components/clients/EditClientModal';
 
+// Mapping entre les labels et les IDs du BodyMap
+const LABEL_TO_ZONE_ID: Record<string, string> = {
+  'tête': 'tete',
+  'nuque': 'cou',
+  'épaule gauche': 'epaule-gauche',
+  'épaule droite': 'epaule-droite',
+  'bras gauche': 'bras-gauche',
+  'bras droit': 'bras-droit',
+  'coude gauche': 'coude-gauche',
+  'coude droit': 'coude-droit',
+  'avant-bras gauche': 'avant-bras-gauche',
+  'avant-bras droit': 'avant-bras-droit',
+  'main gauche': 'main-gauche',
+  'main droite': 'main-droite',
+  'poitrine': 'poitrine',
+  'abdomen': 'abdomen',
+  'bassin': 'bassin',
+  'cuisse gauche': 'cuisse-gauche',
+  'cuisse droite': 'cuisse-droite',
+  'genou gauche': 'genou-gauche',
+  'genou droit': 'genou-droit',
+  'mollet gauche': 'mollet-gauche',
+  'mollet droit': 'mollet-droit',
+  'pied gauche': 'pied-gauche',
+  'pied droit': 'pied-droit',
+  'haut du dos': 'dos-haut',
+  'milieu du dos': 'dos-milieu',
+  'bas du dos / lombaires': 'dos-bas',
+  'lombaires': 'dos-bas',
+  'hanche gauche': 'hanche-gauche',
+  'hanche droite': 'hanche-droite',
+  'fessier gauche': 'fessier-gauche',
+  'fessier droit': 'fessier-droit',
+};
+
+// Fonction pour convertir les labels en IDs
+const labelsToIds = (labels: string[]): string[] => {
+  return labels
+    .map(label => {
+      const normalizedLabel = label.toLowerCase().trim();
+      return LABEL_TO_ZONE_ID[normalizedLabel] || null;
+    })
+    .filter((id): id is string => id !== null);
+};
+
 export default function ClientDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -44,6 +89,9 @@ export default function ClientDetailPage() {
   const [showEditModal, setShowEditModal] = useState(false);
 
   const [openReceiptDirectly, setOpenReceiptDirectly] = useState(false);
+
+  // Convertir les zones de douleur en IDs pour le BodyMap
+  const bodyMapZones = client?.zonesDouleur ? labelsToIds(client.zonesDouleur) : [];
 
   const handleNoteAdded = () => {
     // Ouvrir le modal de reçu avec confirmation pour les massothérapeutes
@@ -443,12 +491,33 @@ if (!client) {
 
                   {/* Section: Zones de douleur avec silhouette 3D */}
                   {client.zonesDouleur && client.zonesDouleur.length > 0 && (
-                    <div className="">
+                    <div className="bg-gradient-to-br from-spa-beige-50 to-white p-6 rounded-xl border-2 border-spa-rose-100">
+                      <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                        <span className="w-2 h-2 bg-spa-rose-500 rounded-full"></span>
+                        Zones de douleur
+                      </h3>
                       {/* Silhouette 3D interactive en mode consultation */}
-                        <BodyMap
-                          selectedZones={client.zonesDouleur}
-                          onZonesChange={() => {}}
-                        />
+                      <BodyMap
+                        selectedZones={bodyMapZones}
+                        onZonesChange={() => {}}
+                      />
+
+                      {/* Liste des zones */}
+                      <div className="mt-4 bg-spa-turquoise-50 p-4 rounded-lg border border-spa-turquoise-200">
+                        <p className="text-sm font-semibold text-spa-turquoise-800 mb-2">
+                          Zones affectées ({client.zonesDouleur.length}) :
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {client.zonesDouleur.map((zone) => (
+                            <span
+                              key={zone}
+                              className="px-3 py-1 bg-spa-turquoise-500 text-white text-xs rounded-full"
+                            >
+                              {zone}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
                     </div>
                   )}
 

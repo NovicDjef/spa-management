@@ -3,11 +3,12 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import StoreProvider from '@/lib/redux/StoreProvider';
 import ToastProvider from '@/components/providers/ToastProvider';
+import PWAInstaller from '@/components/PWAInstaller';
 
 const inter = Inter({ subsets: ['latin'] });
 
 export const viewport: Viewport = {
-  themeColor: '#7bacaf', // Turquoise Spa - Couleur principale
+  themeColor: '#D4A574', // Couleur dorée du spa
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
@@ -57,6 +58,7 @@ export default function RootLayout({
         <StoreProvider>
           {children}
           <ToastProvider />
+          <PWAInstaller />
         </StoreProvider>
       </body>
     </html>
