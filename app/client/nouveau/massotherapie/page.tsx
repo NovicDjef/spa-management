@@ -11,7 +11,6 @@ import { extractErrorMessage } from '@/lib/utils/errorHandler';
 
 interface FormData {
   // Informations personnelles
-  selectedZones: string[]; 
   nom: string;
   prenom: string;
   adresse: string;
@@ -92,7 +91,6 @@ interface FormData {
 
 const initialFormData: FormData = {
   nom: '',
-  selectedZones: [],
   prenom: '',
   adresse: '',
   ville: '',
@@ -271,7 +269,6 @@ export default function MassotherapieFormPage() {
     const dataToSubmit = {
       ...formData,
       serviceType: 'MASSOTHERAPIE' as const,
-      zonesDouleur: formData.selectedZones,
       // Champs requis par le backend mais non utilisés pour la massothérapie
       fumeur: 'NON' as const,
       expositionSoleil: 'RARE' as const,
@@ -325,6 +322,8 @@ export default function MassotherapieFormPage() {
     try {
        await createClient(dataToSubmit as any).unwrap();
 
+       console.log('Client créé avec succès');
+       console.log("dataToSubmit", dataToSubmit);
       router.push('/client/confirmation');
     } catch (error: any) {
  

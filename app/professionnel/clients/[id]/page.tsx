@@ -63,8 +63,18 @@ const LABEL_TO_ZONE_ID: Record<string, string> = {
 
 // Fonction pour convertir les labels en IDs
 const labelsToIds = (labels: string[]): string[] => {
+  if (!labels || !Array.isArray(labels)) return [];
+  
   return labels
     .map(label => {
+      if (!label) return null;
+      
+      // Si le label est déjà un ID valide (sans espace et avec des tirets), on le retourne tel quel
+      if (typeof label === 'string' && !label.includes(' ')) {
+        return label;
+      }
+      
+      // Sinon, on essaie de le convertir à partir du mapping
       const normalizedLabel = label.toLowerCase().trim();
       return LABEL_TO_ZONE_ID[normalizedLabel] || null;
     })
@@ -232,10 +242,11 @@ if (!client) {
               {(currentUser?.role === 'MASSOTHERAPEUTE' || currentUser?.role === 'ESTHETICIENNE' || currentUser?.role === 'ADMIN') && (
                 <button
                   onClick={() => setShowEditModal(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-spa-turquoise-500 text-white rounded-lg hover:bg-spa-turquoise-600 transition-colors"
+                  className="flex items-center gap-2 p-2 md:px-4 md:py-2 bg-spa-turquoise-500 text-white rounded-lg hover:bg-spa-turquoise-600 transition-colors"
+                  aria-label="Modifier le client"
                 >
-                  <Edit className="w-4 h-4" />
-                  Modifier
+                  <Edit className="w-5 h-5 md:w-4 md:h-4" />
+                  <span className="hidden md:inline">Modifier</span>
                 </button>
               )}
             </div>
@@ -500,6 +511,7 @@ if (!client) {
                       <BodyMap
                         selectedZones={bodyMapZones}
                         onZonesChange={() => {}}
+                        readOnly={true}
                       />
 
                       {/* Liste des zones */}

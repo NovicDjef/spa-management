@@ -6,7 +6,8 @@ import { RotateCcw, RotateCw } from 'lucide-react';
 
 interface BodyMapProps {
   selectedZones: string[];
-  onZonesChange: (zones: string[]) => void;
+  onZonesChange?: (zones: string[]) => void;
+  readOnly?: boolean;
 }
 
 // Zones du corps avec coordonnées pour vue AVANT
@@ -59,11 +60,13 @@ const BODY_ZONES_BACK = [
   { id: 'pied-droit', label: 'Pied D', area: { cx: 58, cy: 98, rx: 3, ry: 2 } },
 ];
 
-export function BodyMap({ selectedZones, onZonesChange }: BodyMapProps) {
+export function BodyMap({ selectedZones, onZonesChange = () => {}, readOnly = false }: BodyMapProps) {
   const [hoveredZone, setHoveredZone] = useState<string | null>(null);
   const [view, setView] = useState<'front' | 'back'>('front');
 
   const toggleZone = (zoneId: string) => {
+    if (readOnly) return;
+    
     if (selectedZones.includes(zoneId)) {
       onZonesChange(selectedZones.filter((z) => z !== zoneId));
     } else {
@@ -115,16 +118,18 @@ export function BodyMap({ selectedZones, onZonesChange }: BodyMapProps) {
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-semibold text-gray-800">
-            Indiquez les zones de douleur
+            {readOnly ? 'Zones de douleur' : 'Indiquez les zones de douleur'}
           </h3>
-          <p className="text-sm text-gray-600 mt-1">
-            Cliquez sur les zones du corps où vous ressentez de la douleur ou de l'inconfort
-          </p>
+          {!readOnly && (
+            <p className="text-sm text-gray-600 mt-1">
+              Cliquez sur les zones du corps où vous ressentez de la douleur ou de l'inconfort
+            </p>
+          )}
         </div>
 
         <button
           onClick={() => setView(view === 'front' ? 'back' : 'front')}
-          className="flex items-center gap-2 px-4 py-2 bg-spa-menthe-100 hover:bg-spa-menthe-200 text-spa-menthe-700 rounded-lg transition-colors text-sm font-medium"
+          className={`flex items-center gap-2 px-4 py-2 ${readOnly ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : 'bg-spa-menthe-100 hover:bg-spa-menthe-200 text-spa-menthe-700'} rounded-lg transition-colors text-sm font-medium`}
           title={view === 'front' ? 'Voir la vue arrière' : 'Voir la vue avant'}
         >
           {view === 'front' ? (
@@ -173,7 +178,7 @@ export function BodyMap({ selectedZones, onZonesChange }: BodyMapProps) {
                         rx={zone.area.rx * 1.5}
                         ry={zone.area.ry * 1.5}
                         fill="transparent"
-                        className="cursor-pointer"
+                        className={readOnly ? 'cursor-default' : 'cursor-pointer'}
                         onClick={() => toggleZone(zone.id)}
                         onMouseEnter={() => setHoveredZone(zone.id)}
                         onMouseLeave={() => setHoveredZone(null)}
@@ -200,7 +205,7 @@ export function BodyMap({ selectedZones, onZonesChange }: BodyMapProps) {
                             : '#c2b4a0'
                         }
                         strokeWidth={isSelected || isHovered ? '0.5' : '0.2'}
-                        className="cursor-pointer"
+                        className={readOnly ? 'cursor-default' : 'cursor-pointer'}
                         onClick={() => toggleZone(zone.id)}
                         onMouseEnter={() => setHoveredZone(zone.id)}
                         onMouseLeave={() => setHoveredZone(null)}
