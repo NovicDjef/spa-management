@@ -267,9 +267,11 @@ export default function MassotherapieFormPage() {
   const handleSubmit = async () => {
     if (!validateStep(currentStep)) return;
 
+    // Préparer les données pour l'API
     const dataToSubmit = {
       ...formData,
       serviceType: 'MASSOTHERAPIE' as const,
+      zonesDouleur: formData.selectedZones,
       // Champs requis par le backend mais non utilisés pour la massothérapie
       fumeur: 'NON' as const,
       expositionSoleil: 'RARE' as const,
@@ -277,33 +279,55 @@ export default function MassotherapieFormPage() {
       suffisanceEau: 'OUI' as const,
       travailExterieur: 'NON' as const,
       bainChauds: 'NON' as const,
+      // Convertir les champs booléens en chaînes pour l'API
+      allergies: formData.allergies ? 'OUI' : 'NON',
+      problemesCardiaques: formData.problemesCardiaques ? 'OUI' : 'NON',
+      maladiesGraves: formData.maladiesGraves ? 'OUI' : 'NON',
+      ortheses: formData.ortheses ? 'OUI' : 'NON',
+      autreMaladie: formData.autreMaladie ? 'OUI' : 'NON',
+      raideurs: formData.raideurs ? 'OUI' : 'NON',
+      arthrose: formData.arthrose ? 'OUI' : 'NON',
+      hernieDiscale: formData.hernieDiscale ? 'OUI' : 'NON',
+      oedeme: formData.oedeme ? 'OUI' : 'NON',
+      tendinite: formData.tendinite ? 'OUI' : 'NON',
+      mauxDeTete: formData.mauxDeTete ? 'OUI' : 'NON',
+      flatulence: formData.flatulence ? 'OUI' : 'NON',
+      troublesCirculatoires: formData.troublesCirculatoires ? 'OUI' : 'NON',
+      hypothyroidie: formData.hypothyroidie ? 'OUI' : 'NON',
+      diabete: formData.diabete ? 'OUI' : 'NON',
+      stresse: formData.stresse ? 'OUI' : 'NON',
+      premenopause: formData.premenopause ? 'OUI' : 'NON',
+      douleurMusculaire: formData.douleurMusculaire ? 'OUI' : 'NON',
+      fibromyalgie: formData.fibromyalgie ? 'OUI' : 'NON',
+      rhumatisme: formData.rhumatisme ? 'OUI' : 'NON',
+      sciatique: formData.sciatique ? 'OUI' : 'NON',
+      bursite: formData.bursite ? 'OUI' : 'NON',
+      migraine: formData.migraine ? 'OUI' : 'NON',
+      diarrhee: formData.diarrhee ? 'OUI' : 'NON',
+      phlebite: formData.phlebite ? 'OUI' : 'NON',
+      hypertension: formData.hypertension ? 'OUI' : 'NON',
+      hypoglycemie: formData.hypoglycemie ? 'OUI' : 'NON',
+      burnOut: formData.burnOut ? 'OUI' : 'NON',
+      menopause: formData.menopause ? 'OUI' : 'NON',
+      inflammationAigue: formData.inflammationAigue ? 'OUI' : 'NON',
+      arteriosclerose: formData.arteriosclerose ? 'OUI' : 'NON',
+      osteoporose: formData.osteoporose ? 'OUI' : 'NON',
+      mauxDeDos: formData.mauxDeDos ? 'OUI' : 'NON',
+      fatigueDesJambes: formData.fatigueDesJambes ? 'OUI' : 'NON',
+      troublesDigestifs: formData.troublesDigestifs ? 'OUI' : 'NON',
+      constipation: formData.constipation ? 'OUI' : 'NON',
+      hyperthyroidie: formData.hyperthyroidie ? 'OUI' : 'NON',
+      hypotension: formData.hypotension ? 'OUI' : 'NON',
+      insomnie: formData.insomnie ? 'OUI' : 'NON',
+      depressionNerveuse: formData.depressionNerveuse ? 'OUI' : 'NON',
     };
 
-    console.log('='.repeat(80));
-    console.log('📤 SOUMISSION DU FORMULAIRE MASSOTHÉRAPIE');
-    console.log('='.repeat(80));
-    console.log('Données complètes à envoyer au backend:');
-    console.log(JSON.stringify(dataToSubmit, null, 2));
-    console.log('='.repeat(80));
-    console.log('Endpoint:', 'POST /api/clients');
-    console.log('Service Type:', dataToSubmit.serviceType);
-    console.log('Zones de douleur sélectionnées:', dataToSubmit.zonesDouleur);
-    console.log('='.repeat(80));
-
     try {
-      const result = await createClient(dataToSubmit).unwrap();
-
-      console.log('✅ SUCCÈS - Réponse du backend:');
-      console.log(JSON.stringify(result, null, 2));
-      console.log('='.repeat(80));
+       await createClient(dataToSubmit as any).unwrap();
 
       router.push('/client/confirmation');
     } catch (error: any) {
-      console.error('❌ ERREUR lors de la soumission:');
-      console.error('Détails:', error);
-      console.error('Message:', error.data?.message || error.message);
-      console.log('='.repeat(80));
-
+ 
       const errorMsg = extractErrorMessage(error, 'Une erreur est survenue lors de l\'enregistrement');
       setErrorMessage(errorMsg);
       setShowErrorModal(true);
