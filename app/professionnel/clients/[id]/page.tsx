@@ -491,7 +491,7 @@ if (!client) {
 
                   {/* Section: Zones de douleur avec silhouette 3D */}
                   {client.zonesDouleur && client.zonesDouleur.length > 0 && (
-                    <div className="bg-gradient-to-br from-spa-beige-50 to-white p-6 rounded-xl border-2 border-spa-rose-100">
+                    <div className="bg-gradient-to-br from-spa-beige-50 to-white p-2 rounded-xl border-2 border-spa-rose-100">
                       <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                         <span className="w-2 h-2 bg-spa-rose-500 rounded-full"></span>
                         Zones de douleur
