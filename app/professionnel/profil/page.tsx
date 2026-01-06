@@ -4,9 +4,10 @@ import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/layout/Header';
-import { User, Lock, Save, Eye, EyeOff, CheckCircle, AlertCircle, Phone, MapPin, IdCard, ArrowLeft, Loader2 } from 'lucide-react';
+import { User, Lock, Save, Eye, EyeOff, CheckCircle, AlertCircle, Phone, MapPin, IdCard, ArrowLeft, Loader2, Camera } from 'lucide-react';
 import { useAppSelector } from '@/lib/redux/hooks';
-import { useGetMyProfileQuery, useChangePasswordMutation, useUpdateProfileMutation } from '@/lib/redux/services/api';
+import { useGetMyProfileQuery, useChangePasswordMutation, useUpdateProfileMutation, useUploadMyPhotoMutation, useDeleteMyPhotoMutation } from '@/lib/redux/services/api';
+import { ProfilePhotoUpload } from '@/components/profile/ProfilePhotoUpload';
 import { useDispatch } from 'react-redux';
 import { setCredentials } from '@/lib/redux/slices/authSlice';
 import { extractErrorMessage, extractSuccessMessage } from '@/lib/utils/errorHandler';
@@ -25,6 +26,8 @@ export default function ProfilPage() {
 
   const [changePassword, { isLoading: isChangingPassword }] = useChangePasswordMutation();
   const [updateProfile, { isLoading: isUpdatingProfile }] = useUpdateProfileMutation();
+  const [uploadPhoto, { isLoading: isUploadingPhoto }] = useUploadMyPhotoMutation();
+  const [deletePhoto, { isLoading: isDeletingPhoto }] = useDeleteMyPhotoMutation();
 
   // État pour le changement de mot de passe
   const [currentPassword, setCurrentPassword] = useState('');
@@ -159,6 +162,36 @@ export default function ProfilPage() {
     }
   };
 
+  const handlePhotoUpload = async (file: File) => {
+    try {
+      const result = await uploadPhoto(file).unwrap();
+      if (result.user) {
+        dispatch(setCredentials({ user: result.user }));
+      }
+      const successMsg = extractSuccessMessage(result, 'Photo mise à jour !');
+      setProfileSuccess(successMsg);
+      setTimeout(() => setProfileSuccess(''), 3000);
+    } catch (err: any) {
+      const errorMsg = extractErrorMessage(err, 'Erreur lors de l\'upload');
+      setProfileError(errorMsg);
+    }
+  };
+
+  const handlePhotoDelete = async () => {
+    try {
+      const result = await deletePhoto().unwrap();
+      if (result.user) {
+        dispatch(setCredentials({ user: result.user }));
+      }
+      const successMsg = extractSuccessMessage(result, 'Photo supprimée');
+      setProfileSuccess(successMsg);
+      setTimeout(() => setProfileSuccess(''), 3000);
+    } catch (err: any) {
+      const errorMsg = extractErrorMessage(err, 'Erreur suppression photo');
+      setProfileError(errorMsg);
+    }
+  };
+
   // Afficher un loader pendant le chargement du profil
   if (isLoadingProfile) {
     return (
@@ -213,6 +246,31 @@ export default function ProfilPage() {
               <p className="text-gray-600">Gérez vos informations personnelles</p>
             </div>
           </div>
+        </motion.div>
+
+        {/* Section Photo de Profil */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          className="card-spa p-6 mb-6"
+        >
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 bg-gradient-to-br from-spa-rose-100 to-spa-rose-200 rounded-full flex items-center justify-center">
+              <Camera className="w-5 h-5 text-spa-rose-600" />
+            </div>
+            <h2 className="text-xl font-bold text-gray-800">Photo de Profil</h2>
+          </div>
+
+          <ProfilePhotoUpload
+            currentPhotoUrl={currentUser?.photoUrl}
+            userName={`${currentUser?.prenom} ${currentUser?.nom}`}
+            onUpload={handlePhotoUpload}
+            onDelete={handlePhotoDelete}
+            isUploading={isUploadingPhoto}
+            isDeleting={isDeletingPhoto}
+            mode="self"
+          />
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

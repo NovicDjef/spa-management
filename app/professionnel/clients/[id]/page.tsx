@@ -726,7 +726,7 @@ if (!client) {
                       )}
                       {client.expositionSoleil && (
                         <div className="bg-white p-3 rounded-lg">
-                          <p className="text-xs text-gray-500 mb-1">Exposition au soleil</p>
+                          <p className="text-xs text-gray-500 mb-1">Exposition au soleil <span className="text-xs text-red-800">*</span></p>
                           <p className="font-medium text-gray-800">{client.expositionSoleil}</p>
                         </div>
                       )}

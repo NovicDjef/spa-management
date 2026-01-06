@@ -360,7 +360,7 @@ export function ReceiptModal({
                 ) : servicesError ? (
                   <div className="mb-6 p-4 bg-red-50 border-2 border-red-200 rounded-xl">
                     <p className="text-red-800 text-sm">
-                      ⚠️ Erreur lors du chargement des services. Vérifiez que le backend est démarré sur http://localhost:5003
+                      ⚠️ Erreur lors du chargement des services. Vérifiez que le backend est démarré sur 
                     </p>
                     <p className="text-red-600 text-xs mt-2">
                       Endpoint: GET /api/receipts/massage-services

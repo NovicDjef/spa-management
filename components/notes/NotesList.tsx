@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { useState } from 'react';
 import { FileText, Clock, User, AlertCircle, Edit2, X, Check, Loader2 } from 'lucide-react';
 import { useUpdateNoteMutation } from '@/lib/redux/services/api';
+import { ProfilePhotoDisplay } from '@/components/profile/ProfilePhotoDisplay';
 
 interface Note {
   id: string;
@@ -14,6 +15,7 @@ interface Note {
     nom: string;
     prenom: string;
     role: string;
+    photoUrl?: string;
   };
 }
 
@@ -180,9 +182,12 @@ export function NotesList({ notes, isLoading = false, currentUserId, currentUser
             {/* En-tête */}
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-start gap-3 flex-1">
-                <div className="w-10 h-10 bg-gradient-to-br from-spa-rose-100 to-spa-lavande-100 rounded-full flex items-center justify-center flex-shrink-0">
-                  <User className="w-5 h-5 text-spa-rose-600" />
-                </div>
+                <ProfilePhotoDisplay
+                  photoUrl={note.author.photoUrl || null}
+                  userName={`${note.author.prenom} ${note.author.nom}`}
+                  size="md"
+                  className="flex-shrink-0"
+                />
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <p className="font-semibold text-gray-800">

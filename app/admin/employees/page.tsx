@@ -22,6 +22,7 @@ import {
   MessageSquare,
   FileText,
   ArrowLeft,
+  Camera,
 } from 'lucide-react';
 import {
   useGetUsersQuery,
@@ -30,7 +31,11 @@ import {
   useDeleteUserMutation,
   useResetUserPasswordMutation,
   useToggleUserStatusMutation,
+  useUploadEmployeePhotoMutation,
+  useDeleteEmployeePhotoMutation,
 } from '@/lib/redux/services/api';
+import { ProfilePhotoDisplay } from '@/components/profile/ProfilePhotoDisplay';
+import { ProfilePhotoUpload } from '@/components/profile/ProfilePhotoUpload';
 import { useAppSelector } from '@/lib/redux/hooks';
 import { getRoleLabel, getRoleColor } from '@/lib/permissions';
 import { ReviewsModal } from '@/components/reviews/ReviewsModal';
@@ -71,6 +76,8 @@ export default function EmployeesPage() {
   const [deleteUser, { isLoading: isDeleting }] = useDeleteUserMutation();
   const [resetPassword, { isLoading: isResetting }] = useResetUserPasswordMutation();
   const [toggleUserStatus, { isLoading: isTogglingStatus }] = useToggleUserStatusMutation();
+  const [uploadEmployeePhoto, { isLoading: isUploadingEmployeePhoto }] = useUploadEmployeePhotoMutation();
+  const [deleteEmployeePhoto, { isLoading: isDeletingEmployeePhoto }] = useDeleteEmployeePhotoMutation();
 
   const [users, setUsers] = useState<any[]>(usersData?.users || []);
 
@@ -247,6 +254,28 @@ export default function EmployeesPage() {
     setShowReviewsModal(true);
   };
 
+  const handleEmployeePhotoUpload = async (file: File) => {
+    if (!selectedUser) return;
+    try {
+      const result = await uploadEmployeePhoto({ userId: selectedUser.id, file }).unwrap();
+      setUsers(users.map(u => u.id === selectedUser.id ? { ...u, photoUrl: result.photoUrl } : u));
+      alert('Photo mise à jour');
+    } catch (error: any) {
+      alert(error.data?.message || 'Erreur upload photo');
+    }
+  };
+
+  const handleEmployeePhotoDelete = async () => {
+    if (!selectedUser) return;
+    try {
+      await deleteEmployeePhoto(selectedUser.id).unwrap();
+      setUsers(users.map(u => u.id === selectedUser.id ? { ...u, photoUrl: null } : u));
+      alert('Photo supprimée');
+    } catch (error: any) {
+      alert(error.data?.message || 'Erreur suppression');
+    }
+  };
+
 
 const handleToggleStatus = async (user: any) => {
   if (!user) return;
@@ -395,16 +424,21 @@ const handleToggleStatus = async (user: any) => {
                 className="card-spa p-6 hover:shadow-lg transition-shadow"
               >
                 {/* En-tête */}
-                <div className="flex items-start justify-between mb-4">
+                <div className="flex items-start gap-4 mb-4">
+                  <ProfilePhotoDisplay
+                    photoUrl={user.photoUrl || null}
+                    userName={`${user.prenom} ${user.nom}`}
+                    size="lg"
+                  />
                   <div className="flex-1">
                     <h3 className="font-semibold text-lg text-gray-800">
                       {user.prenom} {user.nom}
                     </h3>
                     <p className="text-sm text-gray-600">{user.email}</p>
                     <p className="text-sm text-gray-600">{user.telephone}</p>
-                  </div>
-                  <div className={`px-3 py-1 rounded-full text-xs font-medium bg-${getRoleColor(user.role)}/10 text-${getRoleColor(user.role)}`}>
-                    {getRoleLabel(user.role)}
+                    <div className={`mt-2 inline-block px-3 py-1 rounded-full text-xs font-medium bg-${getRoleColor(user.role)}/10 text-${getRoleColor(user.role)}`}>
+                      {getRoleLabel(user.role)}
+                    </div>
                   </div>
                 </div>
 
@@ -763,6 +797,23 @@ const handleToggleStatus = async (user: any) => {
               <p className="text-red-800 text-sm">{errors.general}</p>
             </div>
           )}
+
+          {/* Photo de profil */}
+          <div className="mb-6 p-4 bg-gray-50 rounded-xl">
+            <h3 className="text-sm font-medium text-gray-700 mb-4 flex items-center gap-2">
+              <Camera className="w-4 h-4" />
+              Photo de profil
+            </h3>
+            <ProfilePhotoUpload
+              currentPhotoUrl={selectedUser?.photoUrl}
+              userName={`${formData.prenom} ${formData.nom}`}
+              onUpload={handleEmployeePhotoUpload}
+              onDelete={handleEmployeePhotoDelete}
+              isUploading={isUploadingEmployeePhoto}
+              isDeleting={isDeletingEmployeePhoto}
+              mode="admin"
+            />
+          </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>

@@ -1,4 +1,5 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import type { Headers } from 'node-fetch';
 
 // Types
 export interface LoginCredentials {
@@ -517,6 +518,7 @@ export interface ProfessionalPublic {
   nom: string;
   role: 'MASSOTHERAPEUTE' | 'ESTHETICIENNE';
   isActive: boolean;
+  photoUrl?: string | null;
 }
 
 export interface ReviewWithProfessional extends Review {
@@ -1503,6 +1505,76 @@ export const api = createApi({
       invalidatesTags: ['User'],
     }),
 
+    // PHOTO - Upload de sa propre photo de profil
+    uploadMyPhoto: builder.mutation<
+      { user: User; photoUrl: string; message: string },
+      File
+    >({
+      query: (file) => {
+        const formData = new FormData();
+        formData.append('photo', file);
+        return {
+          url: '/users/me/photo',
+          method: 'POST',
+          body: formData,
+          prepareHeaders: (headers: Headers) => {
+            headers.delete('Content-Type'); // Laisser le navigateur définir le boundary
+            return headers;
+          },
+        };
+      },
+      invalidatesTags: ['User'],
+      transformResponse: (response: any) => response.data || response,
+    }),
+
+    // PHOTO - Suppression de sa propre photo de profil
+    deleteMyPhoto: builder.mutation<{ user: User; message: string }, void>({
+      query: () => ({
+        url: '/users/me/photo',
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['User'],
+      transformResponse: (response: any) => response.data || response,
+    }),
+
+    // PHOTO - Admin upload photo d'un employé
+    uploadEmployeePhoto: builder.mutation<
+      { user: User; photoUrl: string; message: string },
+      { userId: string; file: File }
+    >({
+      query: ({ userId, file }) => {
+        const formData = new FormData();
+        formData.append('photo', file);
+        return {
+          url: `/users/${userId}/photo`,
+          method: 'POST',
+          body: formData,
+          prepareHeaders: (headers: Headers) => {
+            headers.delete('Content-Type');
+            return headers;
+          },
+        };
+      },
+      invalidatesTags: (result, error, { userId }) => [
+        { type: 'User', id: userId },
+        'User',
+      ],
+      transformResponse: (response: any) => response.data || response,
+    }),
+
+    // PHOTO - Admin suppression photo d'un employé
+    deleteEmployeePhoto: builder.mutation<{ user: User; message: string }, string>({
+      query: (userId) => ({
+        url: `/users/${userId}/photo`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: (result, error, userId) => [
+        { type: 'User', id: userId },
+        'User',
+      ],
+      transformResponse: (response: any) => response.data || response,
+    }),
+
     // ==== BOOKING ENDPOINTS ====
 
     // GET bookings by date range
@@ -1825,6 +1897,11 @@ export const {
   useDeleteUserMutation,
   useResetUserPasswordMutation,
   useToggleUserStatusMutation,
+  // Photo upload/delete hooks
+  useUploadMyPhotoMutation,
+  useDeleteMyPhotoMutation,
+  useUploadEmployeePhotoMutation,
+  useDeleteEmployeePhotoMutation,
   // Marketing hooks
   useGetMarketingContactsQuery,
   useSendIndividualEmailMutation,

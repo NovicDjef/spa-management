@@ -2,6 +2,7 @@
 
 import { useGetPublicProfessionalsQuery } from '@/lib/redux/services/api';
 import { Loader2 } from 'lucide-react';
+import { ProfilePhotoDisplay } from '@/components/profile/ProfilePhotoDisplay';
 
 interface ProfessionalSelectorProps {
   value: string;
@@ -37,13 +38,36 @@ export function ProfessionalSelector({
     (p) => p.role === 'ESTHETICIENNE'
   );
 
+  // Trouver le professionnel sélectionné
+  const selectedProfessional = professionals.find(p => p.id === value);
+
   return (
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="input-spa"
-      required
-    >
+    <div className="space-y-3">
+      {/* Afficher la photo du professionnel sélectionné */}
+      {selectedProfessional && (
+        <div className="flex items-center gap-3 p-3 bg-spa-beige-50 rounded-xl border border-spa-turquoise-200">
+          <ProfilePhotoDisplay
+            photoUrl={selectedProfessional.photoUrl || null}
+            userName={`${selectedProfessional.prenom} ${selectedProfessional.nom}`}
+            size="md"
+          />
+          <div>
+            <p className="font-medium text-gray-800">
+              {selectedProfessional.prenom} {selectedProfessional.nom}
+            </p>
+            <p className="text-sm text-gray-600">
+              {selectedProfessional.role === 'MASSOTHERAPEUTE' ? 'Massothérapeute' : 'Esthéticienne'}
+            </p>
+          </div>
+        </div>
+      )}
+
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="input-spa"
+        required
+      >
       <option value="">Sélectionnez un professionnel</option>
 
       {massotherapeutes.length > 0 && (
@@ -66,5 +90,6 @@ export function ProfessionalSelector({
         </optgroup>
       )}
     </select>
+    </div>
   );
 }

@@ -6,7 +6,10 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAppDispatch, useAppSelector } from '@/lib/redux/hooks';
-import { logout } from '@/lib/redux/slices/authSlice';
+import { logout, setCredentials } from '@/lib/redux/slices/authSlice';
+import { ProfilePhotoDisplay } from '@/components/profile/ProfilePhotoDisplay';
+import { ProfilePhotoModal } from '@/components/profile/ProfilePhotoModal';
+import { useUploadMyPhotoMutation, useDeleteMyPhotoMutation } from '@/lib/redux/services/api';
 
 interface HeaderProps {
   user?: {
@@ -16,6 +19,7 @@ interface HeaderProps {
     nom: string;
     prenom: string;
     role: string;
+    photoUrl?: string | null;
   } | null;
 }
 
@@ -24,6 +28,9 @@ export function Header({ user: userProp }: HeaderProps) {
   const dispatch = useAppDispatch();
   const [showMenu, setShowMenu] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [showPhotoModal, setShowPhotoModal] = useState(false);
+  const [uploadPhoto, { isLoading: isUploadingPhoto }] = useUploadMyPhotoMutation();
+  const [deletePhoto, { isLoading: isDeletingPhoto }] = useDeleteMyPhotoMutation();
 
   // Utiliser l'utilisateur de Redux si disponible, sinon utiliser le prop
   const reduxUser = useAppSelector((state) => state.auth.user);
@@ -37,6 +44,29 @@ export function Header({ user: userProp }: HeaderProps) {
   const handleLogout = () => {
     dispatch(logout());
     router.push('/professionnel/connexion');
+  };
+
+  const handlePhotoUpload = async (file: File) => {
+    try {
+      const result = await uploadPhoto(file).unwrap();
+      if (result.user) {
+        dispatch(setCredentials({ user: result.user }));
+      }
+      setShowPhotoModal(false);
+    } catch (err) {
+      console.error('Erreur upload photo:', err);
+    }
+  };
+
+  const handlePhotoDelete = async () => {
+    try {
+      const result = await deletePhoto().unwrap();
+      if (result.user) {
+        dispatch(setCredentials({ user: result.user }));
+      }
+    } catch (err) {
+      console.error('Erreur suppression photo:', err);
+    }
   };
 
   const getRoleLabel = (role: string) => {
@@ -100,19 +130,23 @@ export function Header({ user: userProp }: HeaderProps) {
                 </Link>
               )} */}
               <div className="h-8 w-px bg-gray-300 mx-1"></div>
-              <div className="text-right">
-                <p className="font-medium text-gray-800 text-sm">{user.nom} {user.prenom}</p>
+              <Link href="/professionnel/profil" className="text-right hover:opacity-80 transition-opacity">
+                <p className="font-medium text-gray-800 text-sm cursor-pointer">{user.nom} {user.prenom}</p>
                 <p className="text-xs text-gray-600">{getRoleLabel(user.role)}</p>
-              </div>
-              <Link href="/professionnel/profil">
-                <motion.div
-                  whileHover={{ scale: 1.1, rotate: 5 }}
-                  whileTap={{ scale: 0.9 }}
-                  className="w-10 h-10 bg-gradient-to-br from-spa-rose-400 to-spa-lavande-500 rounded-full flex items-center justify-center cursor-pointer shadow-md hover:shadow-lg transition-all"
-                >
-                  <User className="w-5 h-5 text-white" />
-                </motion.div>
               </Link>
+              <motion.div
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setShowPhotoModal(true)}
+                className="cursor-pointer"
+              >
+                <ProfilePhotoDisplay
+                  photoUrl={user.photoUrl || null}
+                  userName={`${user.prenom} ${user.nom}`}
+                  size="md"
+                  className="shadow-md hover:shadow-lg transition-all"
+                />
+              </motion.div>
               <button
                 onClick={handleLogout}
                 className="px-3 py-2 text-gray-700 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-2"
@@ -146,9 +180,11 @@ export function Header({ user: userProp }: HeaderProps) {
             className="md:hidden pb-4 border-t border-gray-200 mt-4 pt-4"
           >
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-spa-rose-100 to-spa-lavande-100 rounded-full flex items-center justify-center">
-                <User className="w-6 h-6 text-spa-rose-600" />
-              </div>
+              <ProfilePhotoDisplay
+                photoUrl={user.photoUrl || null}
+                userName={`${user.prenom} ${user.nom}`}
+                size="lg"
+              />
               <div>
                 <p className="font-medium text-gray-800">{user.nom} {user.prenom}</p>
                 <p className="text-sm text-gray-600">{getRoleLabel(user.role)}</p>
@@ -184,6 +220,20 @@ export function Header({ user: userProp }: HeaderProps) {
               </button>
             </div>
           </motion.div>
+        )}
+
+        {/* Modal de photo de profil */}
+        {user && (
+          <ProfilePhotoModal
+            isOpen={showPhotoModal}
+            onClose={() => setShowPhotoModal(false)}
+            currentPhotoUrl={user.photoUrl}
+            userName={`${user.prenom} ${user.nom}`}
+            onUpload={handlePhotoUpload}
+            onDelete={handlePhotoDelete}
+            isUploading={isUploadingPhoto}
+            isDeleting={isDeletingPhoto}
+          />
         )}
       </div>
     </header>

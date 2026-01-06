@@ -12,7 +12,7 @@ export function initializeSocket(token: string): Socket {
   if (socket?.connected) return socket;
 
   // Extraire l'URL de base (sans /api)
-  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api', '') || 'http://localhost:5003';
+  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api', '');
 
   console.log('🔌 Initialisation WebSocket:', baseUrl);
 
