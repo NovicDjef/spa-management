@@ -850,6 +850,7 @@ if (!client) {
           }}
           clientId={clientId as string}
           clientName={`${client.prenom} ${client.nom}`}
+          clientEmail={client.courriel}
           therapistName={`${currentUser.prenom} ${currentUser.nom}`}
           therapistOrderNumber={currentUser.numeroMembreOrdre}
           skipConfirmation={openReceiptDirectly}

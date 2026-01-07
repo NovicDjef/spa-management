@@ -20,6 +20,18 @@ export default function ReceiptsPage() {
   const [selectedDate, setSelectedDate] = useState('');
   const [isMounted, setIsMounted] = useState(false);
 
+  // Debug: Log pour voir la structure des données
+  useEffect(() => {
+    if (receipts !== undefined) {
+      console.log('📊 Données reçues de l\'API:', receipts);
+      console.log('📊 Type de receipts:', typeof receipts);
+      console.log('📊 Is Array?', Array.isArray(receipts));
+      if (receipts && typeof receipts === 'object' && !Array.isArray(receipts)) {
+        console.log('📊 Clés de l\'objet:', Object.keys(receipts));
+      }
+    }
+  }, [receipts]);
+
   // Modal de visualisation
   const [selectedReceipt, setSelectedReceipt] = useState<{
     id: string;
@@ -75,7 +87,10 @@ export default function ReceiptsPage() {
   }
 
   // Filtrer les reçus avec vérifications de sécurité
-  const filteredReceipts = receipts?.filter((receipt) => {
+  // Vérifier que receipts est bien un tableau
+  const receiptsArray = Array.isArray(receipts) ? receipts : [];
+
+  const filteredReceipts = receiptsArray.filter((receipt) => {
     if (!receipt) return false;
 
     const matchesSearch = searchQuery
@@ -93,7 +108,7 @@ export default function ReceiptsPage() {
       : true;
 
     return matchesSearch && matchesMonth && matchesDate;
-  }) || [];
+  });
 
   // Statistiques avec gestion des valeurs manquantes
   const totalRevenue = isMounted
@@ -146,7 +161,7 @@ export default function ReceiptsPage() {
         </motion.div>
 
         {/* Statistiques */}
-        {!isLoading && receipts && receipts.length > 0 && (
+        {!isLoading && receiptsArray.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -190,7 +205,7 @@ export default function ReceiptsPage() {
                 <div>
                   <p className="text-sm text-gray-600">Ce Mois</p>
                   <p className="text-2xl font-bold text-gray-800">
-                    {receipts.filter((r) => {
+                    {receiptsArray.filter((r) => {
                       if (!r?.sentAt) return false;
                       try {
                         const receiptDate = new Date(r.sentAt);

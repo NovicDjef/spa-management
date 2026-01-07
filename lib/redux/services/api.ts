@@ -1502,7 +1502,25 @@ export const api = createApi({
     // RECEIPTS - Liste de tous les reçus du thérapeute connecté
     getReceipts: builder.query<Receipt[], void>({
       query: () => '/receipts',
-      transformResponse: (response: ReceiptsListResponse) => response.data,
+      transformResponse: (response: any) => {
+        console.log('🔍 Raw API response pour getReceipts:', response);
+        console.log('🔍 response.data:', response.data);
+        console.log('🔍 Is response.data an array?', Array.isArray(response.data));
+
+        // Si la réponse a une structure { success, data }, retourner data
+        if (response && response.data) {
+          return Array.isArray(response.data) ? response.data : [];
+        }
+
+        // Si la réponse est déjà un tableau
+        if (Array.isArray(response)) {
+          return response;
+        }
+
+        // Sinon retourner un tableau vide
+        console.warn('⚠️ Format de réponse inattendu pour getReceipts:', response);
+        return [];
+      },
       providesTags: ['Receipts'],
     }),
 

@@ -248,6 +248,7 @@ export function ClientCard({
           onClose={() => setShowReceiptModal(false)}
           clientId={client.id}
           clientName={`${client.prenom} ${client.nom}`}
+          clientEmail={client.courriel}
           therapistName={`${currentUser.prenom} ${currentUser.nom}`}
           therapistOrderNumber={currentUser.numeroMembreOrdre}
           skipConfirmation={true}

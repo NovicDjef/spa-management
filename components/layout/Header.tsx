@@ -9,7 +9,7 @@ import { useAppDispatch, useAppSelector } from '@/lib/redux/hooks';
 import { logout, setCredentials } from '@/lib/redux/slices/authSlice';
 import { ProfilePhotoDisplay } from '@/components/profile/ProfilePhotoDisplay';
 import { ProfilePhotoModal } from '@/components/profile/ProfilePhotoModal';
-import { useUploadMyPhotoMutation, useDeleteMyPhotoMutation } from '@/lib/redux/services/api';
+import { useUploadMyPhotoMutation, useDeleteMyPhotoMutation, api } from '@/lib/redux/services/api';
 
 interface HeaderProps {
   user?: {
