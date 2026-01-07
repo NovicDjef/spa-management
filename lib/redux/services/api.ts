@@ -148,7 +148,7 @@ export interface AssignmentDetails {
   id: string;
   clientId: string;
   professionalId: string;
-  createdById: string;
+  assignedById: string;
   assignedAt: string;
   client: {
     id: string;
@@ -165,7 +165,7 @@ export interface AssignmentDetails {
     email: string;
     role: 'MASSOTHERAPEUTE' | 'ESTHETICIENNE' | 'ADMIN';
   };
-  createdBy?: {
+  assignedBy?: {
     id: string;
     nom: string;
     prenom: string;

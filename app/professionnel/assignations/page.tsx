@@ -210,15 +210,15 @@ export default function AssignationsPage() {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          {assignment.createdBy ? (
+                          {assignment.assignedBy ? (
                             <div className="flex items-center gap-2">
                               <UserIcon className="w-4 h-4 text-spa-turquoise-500" />
                               <div className="text-sm">
                                 <div className="font-medium text-gray-900">
-                                  {assignment.createdBy.prenom} {assignment.createdBy.nom}
+                                  {assignment.assignedBy.prenom} {assignment.assignedBy.nom}
                                 </div>
                                 <div className="text-gray-500 text-xs">
-                                  {assignment.createdBy.role === 'ADMIN' ? 'Admin' : 'Secrétaire'}
+                                  {assignment.assignedBy.role === 'ADMIN' ? 'Admin' : 'Secrétaire'}
                                 </div>
                               </div>
                             </div>
