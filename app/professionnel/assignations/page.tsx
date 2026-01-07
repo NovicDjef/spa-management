@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Header } from '@/components/layout/Header';
 import { useAppSelector } from '@/lib/redux/hooks';
@@ -8,7 +8,6 @@ import { useGetAllAssignmentsQuery, useUnassignClientMutation } from '@/lib/redu
 import { Users, Clock, UserCheck, User as UserIcon, Loader2, Trash2, AlertCircle, CheckCircle, ArrowLeft } from 'lucide-react';
 import { extractErrorMessage } from '@/lib/utils/errorHandler';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
 import Link from 'next/link';
 
 export default function AssignationsPage() {
@@ -19,6 +18,7 @@ export default function AssignationsPage() {
   const [selectedAssignment, setSelectedAssignment] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState('');
 
+  console.log('assignmentsData', assignmentsData);
   // Rediriger si l'utilisateur n'a pas accès
   useEffect(() => {
     if (currentUser && currentUser.role !== 'SECRETAIRE' && currentUser.role !== 'ADMIN') {
@@ -210,20 +210,20 @@ export default function AssignationsPage() {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          {assignment.createdBy ? (
+                          {assignment.assignedBy ? (
                             <div className="flex items-center gap-2">
                               <UserIcon className="w-4 h-4 text-spa-turquoise-500" />
                               <div className="text-sm">
                                 <div className="font-medium text-gray-900">
-                                  {assignment.createdBy.prenom} {assignment.createdBy.nom}
+                                  {assignment.assignedBy.prenom} {assignment.assignedBy.nom}
                                 </div>
                                 <div className="text-gray-500 text-xs">
-                                  {assignment.createdBy.role === 'ADMIN' ? 'Admin' : 'Secrétaire'}
+                                  {assignment.assignedBy.role === 'ADMIN' ? 'Admin' : 'Secrétaire'}
                                 </div>
                               </div>
                             </div>
                           ) : (
-                            <span className="text-sm text-gray-400">—</span>
+                            <span className="text-gray-400">-</span>
                           )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">

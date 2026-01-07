@@ -391,11 +391,14 @@ export interface CampaignDetailsResponse {
 
 // Types pour les reçus d'assurance
 export interface SendReceiptData {
-  clientId: string; // ✅ ID du client (requis)
+  clientName: string; // ✅ Nom complet du client (requis)
+  clientEmail: string; // ✅ Email du client (requis)
   serviceName: string; // ✅ Nom du service (requis)
   duration: number; // ✅ Durée en minutes (requis)
-  treatmentDate: string; // ✅ Format: "YYYY-MM-DD" (requis)
-  treatmentTime: string; // ✅ Format: "HH:mm" (requis)
+  price: number; // ✅ Prix avant taxes (requis)
+  serviceDate: string; // ✅ Format: "YYYY-MM-DD" (requis)
+  // Optionnels
+  clientId?: string; // ⚠️ ID du client (optionnel, pour référence)
   noteId?: string; // ⚠️ ID de la note (optionnel)
   serviceId?: string; // ⚠️ ID du service (optionnel)
 }
@@ -1414,14 +1417,64 @@ export const api = createApi({
       },
     }),
 
-    // RECEIPTS - Aperçu du reçu (sans envoyer)
-    previewReceipt: builder.mutation<PreviewReceiptResponse, SendReceiptData>({
-      query: (receiptData) => ({
-        url: '/receipts/preview',
-        method: 'POST',
-        body: receiptData,
-      }),
-      transformResponse: (response: any) => response,
+    // RECEIPTS - Aperçu du reçu (sans envoyer) - Retourne un PDF binaire
+    previewReceipt: builder.mutation<Blob, SendReceiptData>({
+      queryFn: async (receiptData, { getState }) => {
+        try {
+          // Récupérer le token d'authentification
+          const token = (getState() as any).auth?.token;
+          const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || '';
+
+          console.log('🔍 Données envoyées au backend:', receiptData);
+          console.log('🔍 URL backend:', `${baseUrl}/receipts/preview`);
+          console.log('🔍 Token présent:', !!token);
+
+          // Faire la requête fetch pour récupérer le PDF binaire
+          const response = await fetch(`${baseUrl}/receipts/preview`, {
+            method: 'POST',
+            headers: {
+              'Authorization': token ? `Bearer ${token}` : '',
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(receiptData),
+          });
+
+          console.log('📡 Réponse HTTP status:', response.status);
+          console.log('📡 Réponse headers:', Object.fromEntries(response.headers.entries()));
+
+          // Si la réponse n'est pas OK, essayer de parser l'erreur en JSON
+          if (!response.ok) {
+            const contentType = response.headers.get('Content-Type') || '';
+            if (contentType.indexOf('application/json') !== -1) {
+              const errorData = await response.json();
+              return {
+                error: {
+                  status: response.status,
+                  data: errorData.message || errorData
+                } as any
+              };
+            }
+            return {
+              error: {
+                status: response.status,
+                data: 'Erreur lors de la génération du PDF'
+              } as any
+            };
+          }
+
+          // Récupérer le PDF en tant que blob
+          const blob = await response.blob();
+
+          return { data: blob };
+        } catch (error: any) {
+          return {
+            error: {
+              status: 'FETCH_ERROR',
+              data: error.message || 'Erreur réseau'
+            } as any
+          };
+        }
+      },
     }),
 
     // RECEIPTS - Envoi de reçu pour assurances (crée et envoie par email)

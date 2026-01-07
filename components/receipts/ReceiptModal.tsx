@@ -10,7 +10,8 @@ interface ReceiptModalProps {
   isOpen: boolean;
   onClose: () => void;
   clientId: string; // ✅ ID du client (requis)
-  clientName: string;
+  clientName: string; // ✅ Nom complet du client
+  clientEmail: string; // ✅ Email du client (requis pour le backend)
   therapistName: string;
   therapistOrderNumber?: string;
   skipConfirmation?: boolean; // Si true, ouvre directement le formulaire
@@ -22,6 +23,7 @@ export function ReceiptModal({
   onClose,
   clientId,
   clientName,
+  clientEmail,
   therapistName,
   therapistOrderNumber,
   skipConfirmation = false,
@@ -32,7 +34,6 @@ export function ReceiptModal({
   );
   const [previewReceipt, { isLoading: isLoadingPreview }] = usePreviewReceiptMutation();
   const [sendReceipt, { isLoading: isSending }] = useSendReceiptMutation();
-  const [pdfBase64, setPdfBase64] = useState<string>('');
   const [pdfBlobUrl, setPdfBlobUrl] = useState<string>('');
   const {
     data: services,
@@ -83,43 +84,15 @@ export function ReceiptModal({
     }
   }, [selectedServiceId]);
 
-  // Convertir le base64 en Blob URL pour affichage dans l'iframe
+  // Nettoyer l'URL du blob quand le composant est démonté
   useEffect(() => {
-    if (pdfBase64) {
-      console.log('🔄 Conversion base64 → Blob URL...');
-      console.log('📏 Taille base64:', pdfBase64.length);
-
-      try {
-        // Convertir base64 en Blob
-        const byteCharacters = atob(pdfBase64);
-        const byteNumbers = new Array(byteCharacters.length);
-        for (let i = 0; i < byteCharacters.length; i++) {
-          byteNumbers[i] = byteCharacters.charCodeAt(i);
-        }
-        const byteArray = new Uint8Array(byteNumbers);
-        const blob = new Blob([byteArray], { type: 'application/pdf' });
-
-        console.log('📦 Blob créé, taille:', blob.size, 'bytes');
-
-        // Créer une URL pour le blob
-        const url = URL.createObjectURL(blob);
-        setPdfBlobUrl(url);
-
-        console.log('✅ Blob URL créée:', url);
-
-        // Nettoyer l'URL quand le composant est démonté ou le PDF change
-        return () => {
-          if (url) {
-            console.log('🧹 Nettoyage de l\'URL Blob');
-            URL.revokeObjectURL(url);
-          }
-        };
-      } catch (error) {
-        console.error('❌ Erreur lors de la conversion base64 → Blob:', error);
-        setError('Erreur lors de la préparation du PDF');
+    return () => {
+      if (pdfBlobUrl) {
+        console.log('🧹 Nettoyage de l\'URL Blob');
+        URL.revokeObjectURL(pdfBlobUrl);
       }
-    }
-  }, [pdfBase64]);
+    };
+  }, [pdfBlobUrl]);
 
   const handleCancel = () => {
     setStep(skipConfirmation ? 'form' : 'confirm');
@@ -127,7 +100,10 @@ export function ReceiptModal({
     setDuration(0);
     setTreatmentDate('');
     setTreatmentTime('');
-    setPdfBase64('');
+    // Nettoyer l'URL du blob si elle existe
+    if (pdfBlobUrl) {
+      URL.revokeObjectURL(pdfBlobUrl);
+    }
     setPdfBlobUrl('');
     setError('');
     onClose();
@@ -167,27 +143,54 @@ export function ReceiptModal({
       setError('');
       console.log('📤 Envoi de la requête d\'aperçu...');
 
-      const response = await previewReceipt({
+      // Vérifier que le prix est disponible
+      if (!selectedDurationData) {
+        setError('Impossible de récupérer le prix du service');
+        return;
+      }
+
+      // Format attendu par le backend
+      const requestData = {
+        clientName,           // ✅ Nom complet du client
+        clientEmail,          // ✅ Email du client
+        serviceName: selectedService.name, // ✅ Nom du service
+        duration,             // ✅ Durée en minutes (nombre)
+        price: selectedDurationData.price, // ✅ Prix avant taxes (nombre)
+        serviceDate: treatmentDate, // ✅ Date du service (YYYY-MM-DD)
+        // Optionnels pour référence
         clientId,
         serviceId: selectedServiceId,
+        noteId: noteId || undefined,
+      };
+
+      console.log('📋 Données du formulaire:', {
+        clientName,
+        clientEmail,
         serviceName: selectedService.name,
         duration,
-        treatmentDate,
-        treatmentTime,
-        ...(noteId && { noteId }), // Ajouter noteId seulement s'il existe
-      }).unwrap();
+        price: selectedDurationData.price,
+        serviceDate: treatmentDate,
+        treatmentTime, // Gardé en log mais pas envoyé au backend
+      });
 
-      console.log('📥 Réponse reçue:', response);
-      console.log('📄 PDF base64 reçu (longueur):', response.data?.pdf?.length || 0);
+      console.log('📦 Objet complet envoyé au backend:', requestData);
 
-      if (response.data?.pdf) {
-        setPdfBase64(response.data.pdf);
-        setStep('preview');
-        console.log('✅ PDF défini, passage à l\'étape preview');
-      } else {
-        console.error('❌ Pas de PDF dans la réponse');
-        setError('Aucun PDF reçu du serveur');
+      // La réponse est maintenant directement un Blob (PDF binaire)
+      const pdfBlob = await previewReceipt(requestData).unwrap();
+
+      console.log('📥 Blob PDF reçu, taille:', pdfBlob.size, 'bytes');
+
+      // Nettoyer l'ancienne URL si elle existe
+      if (pdfBlobUrl) {
+        URL.revokeObjectURL(pdfBlobUrl);
       }
+
+      // Créer une URL pour le blob PDF
+      const url = URL.createObjectURL(pdfBlob);
+      setPdfBlobUrl(url);
+      setStep('preview');
+
+      console.log('✅ URL du blob créée, passage à l\'étape preview');
     } catch (err: any) {
       console.error('❌ Erreur lors de la génération:', err);
       const errorMsg = extractErrorMessage(err, 'Erreur lors de la génération de l\'aperçu');
@@ -202,17 +205,34 @@ export function ReceiptModal({
       return;
     }
 
+    if (!selectedDurationData) {
+      setError('Impossible de récupérer le prix du service');
+      return;
+    }
+
     try {
       setError('');
-      await sendReceipt({
+
+      // Format attendu par le backend (identique à preview)
+      const sendData = {
+        clientName,           // ✅ Nom complet du client
+        clientEmail,          // ✅ Email du client
+        serviceName: selectedService.name, // ✅ Nom du service
+        duration,             // ✅ Durée en minutes (nombre)
+        price: selectedDurationData.price, // ✅ Prix avant taxes (nombre)
+        serviceDate: treatmentDate, // ✅ Date du service (YYYY-MM-DD)
+        // Optionnels pour référence
         clientId,
         serviceId: selectedServiceId,
-        serviceName: selectedService.name,
-        duration,
-        treatmentDate,
-        treatmentTime,
-        ...(noteId && { noteId }), // Ajouter noteId seulement s'il existe
-      }).unwrap();
+        noteId: noteId || undefined,
+      };
+
+      console.log('📧 Envoi du reçu au client par email...');
+      console.log('📦 Données envoyées:', sendData);
+
+      const result = await sendReceipt(sendData).unwrap();
+
+      console.log('✅ Reçu envoyé avec succès:', result);
 
       setStep('success');
 
