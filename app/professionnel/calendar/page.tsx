@@ -12,13 +12,6 @@ import { useAppSelector } from '@/lib/redux/hooks';
 export default function ProfessionalCalendarPage() {
   const currentUser = useAppSelector((state) => state.auth.user);
 
-  console.log('🔍 DEBUG ProfessionalCalendarPage:', {
-    currentUser,
-    hasCurrentUser: !!currentUser,
-    userRole: currentUser?.role,
-    userId: currentUser?.id,
-  });
-
   // Si pas d'utilisateur, afficher un message
   if (!currentUser) {
     return (

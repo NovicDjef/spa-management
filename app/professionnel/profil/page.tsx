@@ -138,12 +138,7 @@ export default function ProfilPage() {
         numeroMembreOrdre: numeroMembreOrdre, // ⭐ Toujours envoyer le numéro d'ordre, même si vide
       };
 
-      console.log('📤 DONNÉES ENVOYÉES AU BACKEND:', updateData);
-
       const result = await updateProfile(updateData).unwrap();
-
-      console.log('📥 RÉPONSE DU BACKEND:', result);
-      console.log('🔍 numeroMembreOrdre dans la réponse:', result.user?.numeroMembreOrdre);
 
       // Mettre à jour l'utilisateur dans Redux
       if (result.user) {

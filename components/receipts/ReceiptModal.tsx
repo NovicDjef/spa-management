@@ -55,16 +55,12 @@ export function ReceiptModal({
   const availableDurations = selectedService?.durations || [];
   const selectedDurationData = availableDurations.find(d => d.duration === duration);
 
-  // Debug: Log des données reçues
+  // Gestion des erreurs de services
   useEffect(() => {
-    if (services) {
-      console.log('Services reçus:', services);
-      console.log('Nombre de services:', servicesList.length);
-    }
     if (servicesError) {
       console.error('Erreur lors du chargement des services:', servicesError);
     }
-  }, [services, servicesError]);
+  }, [servicesError]);
 
   // Initialiser la date d'aujourd'hui par défaut
   useEffect(() => {
@@ -88,7 +84,6 @@ export function ReceiptModal({
   useEffect(() => {
     return () => {
       if (pdfBlobUrl) {
-        console.log('🧹 Nettoyage de l\'URL Blob');
         URL.revokeObjectURL(pdfBlobUrl);
       }
     };
@@ -141,7 +136,6 @@ export function ReceiptModal({
 
     try {
       setError('');
-      console.log('📤 Envoi de la requête d\'aperçu...');
 
       // Vérifier que le prix est disponible
       if (!selectedDurationData) {
@@ -163,22 +157,8 @@ export function ReceiptModal({
         noteId: noteId || undefined,
       };
 
-      console.log('📋 Données du formulaire:', {
-        clientName,
-        clientEmail,
-        serviceName: selectedService.name,
-        duration,
-        price: selectedDurationData.price,
-        serviceDate: treatmentDate,
-        treatmentTime, // Gardé en log mais pas envoyé au backend
-      });
-
-      console.log('📦 Objet complet envoyé au backend:', requestData);
-
       // La réponse est maintenant directement un Blob (PDF binaire)
       const pdfBlob = await previewReceipt(requestData).unwrap();
-
-      console.log('📥 Blob PDF reçu, taille:', pdfBlob.size, 'bytes');
 
       // Nettoyer l'ancienne URL si elle existe
       if (pdfBlobUrl) {
@@ -189,8 +169,6 @@ export function ReceiptModal({
       const url = URL.createObjectURL(pdfBlob);
       setPdfBlobUrl(url);
       setStep('preview');
-
-      console.log('✅ URL du blob créée, passage à l\'étape preview');
     } catch (err: any) {
       console.error('❌ Erreur lors de la génération:', err);
       const errorMsg = extractErrorMessage(err, 'Erreur lors de la génération de l\'aperçu');
@@ -227,12 +205,7 @@ export function ReceiptModal({
         noteId: noteId || undefined,
       };
 
-      console.log('📧 Envoi du reçu au client par email...');
-      console.log('📦 Données envoyées:', sendData);
-
       const result = await sendReceipt(sendData).unwrap();
-
-      console.log('✅ Reçu envoyé avec succès:', result);
 
       setStep('success');
 

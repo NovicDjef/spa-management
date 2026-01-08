@@ -69,8 +69,8 @@ export default function ConnexionPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center p-4 py-8">
+      <div className="w-full max-w-md my-auto">
         {/* En-tête */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -191,7 +191,7 @@ export default function ConnexionPage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.4 }}
-          className="mt-8 text-center space-y-4"
+          className="mt-6 text-center space-y-3"
         >
           <div className="text-sm text-gray-600">
             Nouveau membre de l'équipe?{' '}
@@ -204,81 +204,6 @@ export default function ConnexionPage() {
           >
             ← Retour à l'accueil
           </a>
-        </motion.div>
-
-        {/* Comptes de test */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.6 }}
-          className="mt-12"
-        >
-          <div className="glass rounded-2xl p-6">
-            <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
-              <Lock className="w-4 h-4" />
-              Comptes de test disponibles
-            </h3>
-            <div className="space-y-3 text-xs">
-              <div className="p-3 bg-gray-50 rounded-lg">
-                <div className="font-medium text-gray-800 mb-1">Admin - Accès complet</div>
-                <div className="text-gray-600">admin@spa.com / admin123</div>
-              </div>
-              <div className="p-3 bg-spa-rose-50 rounded-lg">
-                <div className="font-medium text-gray-800 mb-1">Secrétaire - Gestion + Assignations</div>
-                <div className="text-gray-600">secretaire@spa.com / secretaire123</div>
-              </div>
-              <div className="p-3 bg-spa-menthe-50 rounded-lg">
-                <div className="font-medium text-gray-800 mb-1">Massothérapeute - Clients assignés</div>
-                <div className="text-gray-600">masso1@spa.com / masso123</div>
-              </div>
-              <div className="p-3 bg-spa-lavande-50 rounded-lg">
-                <div className="font-medium text-gray-800 mb-1">Esthéticienne - Clients assignés</div>
-                <div className="text-gray-600">esthetique1@spa.com / esthetique123</div>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Info rôles */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.8 }}
-          className="mt-8"
-        >
-          <div className="glass rounded-2xl p-6">
-            <h3 className="font-semibold text-gray-800 mb-4">Permissions par rôle</h3>
-            <div className="space-y-3 text-sm">
-              <div className="flex items-start gap-3">
-                <div className="w-2 h-2 bg-gray-800 rounded-full mt-1.5"></div>
-                <div>
-                  <span className="font-medium text-gray-800">Admin:</span>
-                  <span className="text-gray-600"> Tous les droits - Gestion complète</span>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="w-2 h-2 bg-spa-rose-500 rounded-full mt-1.5"></div>
-                <div>
-                  <span className="font-medium text-gray-800">Secrétaire:</span>
-                  <span className="text-gray-600"> Voir tous les clients, assigner aux professionnels</span>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="w-2 h-2 bg-spa-menthe-500 rounded-full mt-1.5"></div>
-                <div>
-                  <span className="font-medium text-gray-800">Massothérapeute:</span>
-                  <span className="text-gray-600"> Voir clients assignés, ajouter des notes</span>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="w-2 h-2 bg-spa-lavande-500 rounded-full mt-1.5"></div>
-                <div>
-                  <span className="font-medium text-gray-800">Esthéticienne:</span>
-                  <span className="text-gray-600"> Voir clients assignés, ajouter des notes</span>
-                </div>
-              </div>
-            </div>
-          </div>
         </motion.div>
       </div>
     </div>

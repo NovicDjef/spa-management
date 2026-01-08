@@ -127,34 +127,12 @@ export default function CalendarView({ userRole, userId }: CalendarViewProps) {
     (user) => user.role === 'MASSOTHERAPEUTE' || user.role === 'ESTHETICIENNE'
   );
 
-  // DEBUG: Log des réservations récupérées
-  console.log('📊 Réservations récupérées:', {
-    date: format(selectedDate, 'yyyy-MM-dd'),
-    count: bookings.length,
-    bookings: bookings.map(b => ({
-      id: b.id,
-      client: `${b.client.prenom} ${b.client.nom}`,
-      professional: b.professionalId,
-      start: b.startTime,
-      end: b.endTime,
-      status: b.status
-    }))
-  });
-
   // Récupérer les blocages et pauses pour tous les professionnels
   const professionalIds = professionals.map(p => p.id);
   const { blocks: allBlocks, breaks: allBreaks } = useAvailabilityData(
     professionalIds,
     format(selectedDate, 'yyyy-MM-dd')
   );
-
-  // DEBUG: Log des pauses récupérées
-  console.log('🔍 DEBUG Pauses récupérées:', {
-    date: format(selectedDate, 'yyyy-MM-dd'),
-    professionalIds,
-    breaks: allBreaks,
-    breaksCount: allBreaks.length,
-  });
 
   const [changeStatus] = useChangeBookingStatusMutation();
   const [deleteBooking] = useDeleteBookingMutation();
@@ -172,17 +150,6 @@ export default function CalendarView({ userRole, userId }: CalendarViewProps) {
         return clientName.includes(searchLower);
       })
     : bookings;
-
-  // DEBUG: Log pour vérifier le rôle et l'utilisateur
-  console.log('🔍 DEBUG CalendarView:', {
-    userRole,
-    userId,
-    currentUser,
-    isClientMounted,
-    isProfessional: userRole === 'MASSOTHERAPEUTE' || userRole === 'ESTHETICIENNE',
-    hasCurrentUser: !!currentUser,
-    bookingsCount: bookings.length,
-  });
 
   // Vérifier si on est un professionnel
   const isProfessionalView = userRole === 'MASSOTHERAPEUTE' || userRole === 'ESTHETICIENNE';

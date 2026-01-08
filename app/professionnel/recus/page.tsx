@@ -20,17 +20,6 @@ export default function ReceiptsPage() {
   const [selectedDate, setSelectedDate] = useState('');
   const [isMounted, setIsMounted] = useState(false);
 
-  // Debug: Log pour voir la structure des données
-  useEffect(() => {
-    if (receipts !== undefined) {
-      console.log('📊 Données reçues de l\'API:', receipts);
-      console.log('📊 Type de receipts:', typeof receipts);
-      console.log('📊 Is Array?', Array.isArray(receipts));
-      if (receipts && typeof receipts === 'object' && !Array.isArray(receipts)) {
-        console.log('📊 Clés de l\'objet:', Object.keys(receipts));
-      }
-    }
-  }, [receipts]);
 
   // Modal de visualisation
   const [selectedReceipt, setSelectedReceipt] = useState<{

@@ -20,6 +20,8 @@ import {
   FileText,
   AlertCircle,
   Edit,
+  Copy,
+  Check,
 } from 'lucide-react';
 import { useGetClientByIdQuery } from '@/lib/redux/services/api';
 import { useAppSelector } from '@/lib/redux/hooks';
@@ -97,8 +99,47 @@ export default function ClientDetailPage() {
   const [activeTab, setActiveTab] = useState<'info' | 'notes'>('info');
   const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [emailCopied, setEmailCopied] = useState(false);
 
   const [openReceiptDirectly, setOpenReceiptDirectly] = useState(false);
+
+  // Fonction pour copier l'email
+  const handleCopyEmail = () => {
+    if (!client?.courriel) return;
+
+    // Méthode moderne avec clipboard API
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(client.courriel).then(() => {
+        setEmailCopied(true);
+        setTimeout(() => setEmailCopied(false), 2000);
+      }).catch(() => {
+        // Fallback si clipboard API échoue
+        fallbackCopyEmail(client.courriel);
+      });
+    } else {
+      // Fallback pour les navigateurs qui ne supportent pas clipboard API
+      fallbackCopyEmail(client.courriel);
+    }
+  };
+
+  const fallbackCopyEmail = (email: string) => {
+    const textArea = document.createElement('textarea');
+    textArea.value = email;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try {
+      document.execCommand('copy');
+      setEmailCopied(true);
+      setTimeout(() => setEmailCopied(false), 2000);
+    } catch (err) {
+      alert('Impossible de copier l\'email');
+    }
+    document.body.removeChild(textArea);
+  };
 
   // Convertir les zones de douleur en IDs pour le BodyMap
   const bodyMapZones = client?.zonesDouleur ? labelsToIds(client.zonesDouleur) : [];
@@ -274,25 +315,27 @@ if (!client) {
               </div>
             )}
 
-            {/* Email - Masqué pour massothérapeutes et esthéticiennes */}
-            {currentUser?.role !== 'MASSOTHERAPEUTE' && currentUser?.role !== 'ESTHETICIENNE' ? (
-              <div className="flex items-center gap-3 text-gray-700">
+            {/* Email - Visible pour tous avec bouton copier */}
+            <div className="flex items-center justify-between gap-3 text-gray-700">
+              <div className="flex items-center gap-3">
                 <Mail className="w-5 h-5 text-spa-rose-500" />
                 <div>
                   <p className="text-sm text-gray-500">Courriel</p>
                   <p className="font-medium">{client.courriel}</p>
                 </div>
               </div>
-            ) : (
-              <div className="flex items-center gap-3 text-gray-400 pointer-events-none select-none cursor-not-allowed">
-                <Mail className="w-5 h-5 text-gray-400" />
-                <div>
-                  <p className="text-sm text-gray-400">Courriel</p>
-                  <p className="font-medium text-gray-400">*****@*****.***</p>
-                  <p className="text-xs text-gray-500 italic">Information confidentielle</p>
-                </div>
-              </div>
-            )}
+              <button
+                onClick={handleCopyEmail}
+                className="p-2 hover:bg-spa-rose-50 rounded-lg transition-colors group"
+                title="Copier l'adresse email"
+              >
+                {emailCopied ? (
+                  <Check className="w-5 h-5 text-green-600" />
+                ) : (
+                  <Copy className="w-5 h-5 text-gray-400 group-hover:text-spa-rose-600" />
+                )}
+              </button>
+            </div>
 
             {/* Adresse - Masquée pour massothérapeutes et esthéticiennes */}
             {currentUser?.role !== 'MASSOTHERAPEUTE' && currentUser?.role !== 'ESTHETICIENNE' ? (

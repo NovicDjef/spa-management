@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Header } from '@/components/layout/Header';
 import { SearchBar } from '@/components/clients/SearchBar';
 import { ClientCard } from '@/components/clients/ClientCard';
-import { Users, UserPlus, Loader2, X, Target, AlertCircle, Clock, UserCheck, User as UserIcon, ArrowRight, UserMinus, FileText, BarChart3, Calendar } from 'lucide-react';
+import { Users, UserPlus, Loader2, X, Target, AlertCircle, Clock, UserCheck, User as UserIcon, ArrowRight, UserMinus, FileText, BarChart3, Calendar, Copy, Check } from 'lucide-react';
 import { useGetClientsQuery, useGetAssignedClientsQuery, useGetUsersQuery, useAssignClientMutation, useUnassignClientMutation, useGetAssignmentHistoryQuery } from '@/lib/redux/services/api';
 import { useAppSelector } from '@/lib/redux/hooks';
 import { hasPermission, isAdminOrSecretary } from '@/lib/permissions';
@@ -104,13 +104,6 @@ export default function DashboardPage() {
       user.isActive === true  // ⭐ IMPORTANT: Exclure les professionnels bloqués
     );
 
-    // Log pour débogage en production
-    console.log('📊 Total users:', users.length);
-    console.log('📊 Active professionals:', activeProfessionals.length);
-    console.log('📊 Blocked professionals:', users.filter(u =>
-      (u.role === 'MASSOTHERAPEUTE' || u.role === 'ESTHETICIENNE') && !u.isActive
-    ).length);
-
     return activeProfessionals;
   }, [usersData]);
 
@@ -120,6 +113,7 @@ export default function DashboardPage() {
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [selectedProfessional, setSelectedProfessional] = useState('');
+  const [copiedEmailId, setCopiedEmailId] = useState<string | null>(null);
 
   useEffect(() => {
     filterClients();
@@ -158,20 +152,45 @@ export default function DashboardPage() {
     }
   };
 
+  const handleCopyEmail = (email: string, clientId: string) => {
+    // Méthode moderne avec clipboard API
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(email).then(() => {
+        setCopiedEmailId(clientId);
+        setTimeout(() => setCopiedEmailId(null), 2000);
+      }).catch(() => {
+        // Fallback si clipboard API échoue
+        fallbackCopyEmail(email, clientId);
+      });
+    } else {
+      // Fallback pour les navigateurs qui ne supportent pas clipboard API
+      fallbackCopyEmail(email, clientId);
+    }
+  };
+
+  const fallbackCopyEmail = (email: string, clientId: string) => {
+    const textArea = document.createElement('textarea');
+    textArea.value = email;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try {
+      document.execCommand('copy');
+      setCopiedEmailId(clientId);
+      setTimeout(() => setCopiedEmailId(null), 2000);
+    } catch (err) {
+      alert('Impossible de copier l\'email');
+    }
+    document.body.removeChild(textArea);
+  };
+
   const handleAssignSubmit = async () => {
     if (!selectedClient || !selectedProfessional) {
-      console.log('Assignation annulée - données manquantes:', {
-        selectedClient,
-        selectedProfessional
-      });
       return;
     }
-
-    console.log('Début de l\'assignation:', {
-      clientId: selectedClient.id,
-      clientNom: `${selectedClient.prenom} ${selectedClient.nom}`,
-      professionalId: selectedProfessional,
-    });
 
     try {
       const result = await assignClient({
@@ -179,13 +198,11 @@ export default function DashboardPage() {
         professionalId: selectedProfessional,
       }).unwrap();
 
-      console.log('Assignation réussie:', result);
       alert('Client assigné avec succès!');
       setShowAssignModal(false);
       setSelectedClient(null);
       setSelectedProfessional('');
     } catch (error: any) {
-      console.error('Erreur lors de l\'assignation:', error);
       const errorMsg = extractErrorMessage(error, 'Erreur lors de l\'assignation du client');
       alert(`Une erreur est survenue lors de l'assignation: ${errorMsg}`);
     }
@@ -213,7 +230,6 @@ export default function DashboardPage() {
       setSelectedClient(null);
       setSelectedProfessional('');
     } catch (error: any) {
-      console.error('Erreur lors du retrait de l\'assignation:', error);
       const errorMsg = extractErrorMessage(error, 'Erreur lors du retrait de l\'assignation');
       alert(`Une erreur est survenue: ${errorMsg}`);
     }
@@ -504,11 +520,24 @@ export default function DashboardPage() {
                                 )}
                               </div>
 
-                              {/* Informations masquées pour les techniciens */}
-                              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-sm text-gray-500 mb-3">
-                                <span className="truncate">***@***.***</span>
-                                <span className="hidden sm:inline text-gray-300">•</span>
-                                <span>***-***-****</span>
+                              {/* Email visible avec bouton de copie */}
+                              <div className="flex items-center gap-2 mb-3">
+                                <span className="text-sm text-gray-600 truncate">{client.courriel}</span>
+                                <button
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleCopyEmail(client.courriel, client.id);
+                                  }}
+                                  className="p-1.5 hover:bg-spa-turquoise-50 rounded-md transition-colors group flex-shrink-0"
+                                  title="Copier l'adresse email"
+                                >
+                                  {copiedEmailId === client.id ? (
+                                    <Check className="w-4 h-4 text-green-600" />
+                                  ) : (
+                                    <Copy className="w-4 h-4 text-gray-400 group-hover:text-spa-turquoise-600" />
+                                  )}
+                                </button>
                               </div>
 
                               {/* Compteur de notes et date */}
@@ -791,10 +820,7 @@ export default function DashboardPage() {
                 ) : (
                   <select
                     value={selectedProfessional}
-                    onChange={(e) => {
-                      console.log('Professional sélectionné:', e.target.value);
-                      setSelectedProfessional(e.target.value);
-                    }}
+                    onChange={(e) => setSelectedProfessional(e.target.value)}
                     className="input-spa"
                   >
                     <option value="">Choisir un professionnel...</option>
@@ -817,15 +843,11 @@ export default function DashboardPage() {
                           : p.role === 'ESTHETICIENNE';
                         return shouldInclude;
                       })
-                      .map((professional) => {
-                        const label = getProfessionalLabel(professional);
-                        console.log('Option ajoutée:', label, professional.id);
-                        return (
-                          <option key={professional.id} value={professional.id}>
-                            {label}
-                          </option>
-                        );
-                      })}
+                      .map((professional) => (
+                        <option key={professional.id} value={professional.id}>
+                          {getProfessionalLabel(professional)}
+                        </option>
+                      ))}
                   </select>
                 )}
                 {/* Messages d'erreur et d'avertissement */}

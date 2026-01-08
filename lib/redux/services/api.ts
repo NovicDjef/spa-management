@@ -892,8 +892,6 @@ export const api = createApi({
       // Ajouter le token d'authentification si disponible
       const token = (getState() as any).auth?.token;
       const user = (getState() as any).auth?.user;
-      console.log('prepareHeaders - token:', token ? 'présent' : 'absent');
-      console.log('prepareHeaders - user:', user);
       if (token) {
         headers.set('authorization', `Bearer ${token}`);
       }
@@ -943,21 +941,9 @@ export const api = createApi({
     getAssignedClients: builder.query<{ clients: Client[] }, void>({
       query: () => '/clients',
       transformResponse: (response: any) => {
-        console.log('getAssignedClients - Réponse brute:', response);
-        console.log('getAssignedClients - response.data:', response.data);
-
         // L'API retourne { success: true, data: { clients: [...] } }
         // On extrait juste { clients: [...] }
         const result = response.data || response;
-        console.log('getAssignedClients - Après transformation:', result);
-
-        // Log détaillé du premier client pour vérifier assignedAt et hasNoteAfterAssignment
-        if (result.clients && result.clients.length > 0) {
-          console.log('getAssignedClients - Premier client détaillé:', result.clients[0]);
-          console.log('getAssignedClients - assignedAt:', result.clients[0].assignedAt);
-          console.log('getAssignedClients - hasNoteAfterAssignment:', result.clients[0].hasNoteAfterAssignment);
-        }
-
         return result;
       },
       providesTags: ['Client', 'Assignment'],
@@ -1425,10 +1411,6 @@ export const api = createApi({
           const token = (getState() as any).auth?.token;
           const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 
-          console.log('🔍 Données envoyées au backend:', receiptData);
-          console.log('🔍 URL backend:', `${baseUrl}/receipts/preview`);
-          console.log('🔍 Token présent:', !!token);
-
           // Faire la requête fetch pour récupérer le PDF binaire
           const response = await fetch(`${baseUrl}/receipts/preview`, {
             method: 'POST',
@@ -1438,9 +1420,6 @@ export const api = createApi({
             },
             body: JSON.stringify(receiptData),
           });
-
-          console.log('📡 Réponse HTTP status:', response.status);
-          console.log('📡 Réponse headers:', Object.fromEntries(response.headers.entries()));
 
           // Si la réponse n'est pas OK, essayer de parser l'erreur en JSON
           if (!response.ok) {
@@ -1503,10 +1482,6 @@ export const api = createApi({
     getReceipts: builder.query<Receipt[], void>({
       query: () => '/receipts',
       transformResponse: (response: any) => {
-        console.log('🔍 Raw API response pour getReceipts:', response);
-        console.log('🔍 response.data:', response.data);
-        console.log('🔍 Is response.data an array?', Array.isArray(response.data));
-
         // Si la réponse a une structure { success, data }, retourner data
         if (response && response.data) {
           return Array.isArray(response.data) ? response.data : [];
@@ -1518,7 +1493,6 @@ export const api = createApi({
         }
 
         // Sinon retourner un tableau vide
-        console.warn('⚠️ Format de réponse inattendu pour getReceipts:', response);
         return [];
       },
       providesTags: ['Receipts'],

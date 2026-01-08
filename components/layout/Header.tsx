@@ -43,26 +43,20 @@ export function Header({ user: userProp }: HeaderProps) {
 
   const handleLogout = async () => {
     try {
-      console.log('🔓 Déconnexion en cours...');
-
       // Nettoyer le state Redux et localStorage
       dispatch(logout());
 
       // Nettoyer le cache RTK Query pour éviter les données résiduelles
       dispatch(api.util.resetApiState());
 
-      console.log('✅ State Redux et localStorage nettoyés');
-
       // Attendre un court instant pour que le state soit bien nettoyé
       await new Promise(resolve => setTimeout(resolve, 100));
-
-      console.log('🔄 Redirection vers la page de connexion...');
 
       // Utiliser window.location pour forcer un rechargement complet
       // Cela évite les problèmes de cache avec router.push
       window.location.href = '/professionnel/connexion';
     } catch (error) {
-      console.error('❌ Erreur lors de la déconnexion:', error);
+      console.error('Erreur lors de la déconnexion:', error);
       // Forcer la redirection même en cas d'erreur
       window.location.href = '/professionnel/connexion';
     }

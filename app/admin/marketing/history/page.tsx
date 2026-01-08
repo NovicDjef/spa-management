@@ -78,19 +78,6 @@ export default function MarketingHistoryPage() {
   const campaignFromApi = campaignDetailsResponse?.campaign;
   const campaignDetails = campaignFromApi || selectedCampaign;
 
-  // Debug détails de campagne
-  if (selectedCampaignId) {
-    console.log('🔍 Selected Campaign ID:', selectedCampaignId);
-    console.log('🔍 API Response:', campaignDetailsResponse);
-    console.log('🔍 Campaign from API:', campaignFromApi);
-    console.log('🔍 Selected Campaign (from list):', selectedCampaign);
-    console.log('🔍 Final Campaign Details:', campaignDetails);
-    console.log('🔍 Emails in Campaign:', campaignDetails?.emails);
-    console.log('🔍 Number of Emails:', campaignDetails?.emails?.length);
-    console.log('🔍 Type of emails:', typeof campaignDetails?.emails);
-    console.log('🔍 Is Array?:', Array.isArray(campaignDetails?.emails));
-  }
-
   // Mutation pour renvoyer les emails échoués
   const [resendFailedEmails, { isLoading: isResending }] = useResendFailedEmailsMutation();
 
@@ -117,15 +104,6 @@ export default function MarketingHistoryPage() {
       paginationData = (campaignsData as any).data.pagination;
     }
   }
-
-  // Debug: Voir ce que l'API retourne
-  console.log('📊 RAW Campaigns Data:', campaignsData);
-  console.log('📊 Campaigns Array:', campaigns);
-  console.log('📊 Campaigns Length:', campaigns.length);
-  console.log('📊 First Campaign:', campaigns[0]);
-  console.log('📊 First Campaign EMAILS:', campaigns[0]?.emails);
-  console.log('📊 Pagination:', paginationData);
-  console.log('📊 Is Loading:', isLoading);
 
   // Statistiques globales avec vérifications
   const totalCampaigns = paginationData?.total || 0;
