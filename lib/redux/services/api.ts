@@ -1576,8 +1576,10 @@ export const api = createApi({
 
         if (result.error) return { error: result.error };
 
-        const data = (result.data as any)?.data || result.data;
-        return { data };
+        // Le backend retourne { data: { user, photoUrl, message } }
+        const responseData = (result.data as any)?.data || result.data;
+
+        return { data: responseData };
       },
       invalidatesTags: ['User'],
     }),
@@ -1615,8 +1617,10 @@ export const api = createApi({
 
         if (result.error) return { error: result.error };
 
-        const data = (result.data as any)?.data || result.data;
-        return { data };
+        // Le backend retourne { data: { user, photoUrl, message } }
+        const responseData = (result.data as any)?.data || result.data;
+
+        return { data: responseData };
       },
       invalidatesTags: (result, error, { userId }) => [
         { type: 'User', id: userId },

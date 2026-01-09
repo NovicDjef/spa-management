@@ -7,6 +7,7 @@ import type { Booking } from '@/lib/redux/services/api';
 import DraggableBookingCard from './DraggableBookingCard';
 import DraggableBreakCard from './DraggableBreakCard';
 import { Clock, Ban, Coffee } from 'lucide-react';
+import { ProfilePhotoDisplay } from '@/components/profile/ProfilePhotoDisplay';
 
 interface HorizontalCalendarGridProps {
   date: Date;
@@ -288,27 +289,14 @@ export default function HorizontalCalendarGrid({
 
                 <div className="flex items-center gap-2 py-1">
                   {/* Photo du professionnel - Logo à côté du nom */}
-                  {prof.photoUrl ? (
-                    <img
-                      src={prof.photoUrl}
-                      alt={`${prof.prenom} ${prof.nom}`}
-                      className={`w-10 h-10 rounded-full object-cover border-2 flex-shrink-0 ${
-                        fullDayBlock ? 'border-red-400 opacity-60' : 'border-spa-turquoise-400'
-                      }`}
-                    />
-                  ) : (
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 flex-shrink-0 ${
-                      fullDayBlock
-                        ? 'bg-red-200 border-red-400 opacity-60'
-                        : 'bg-spa-turquoise-200 border-spa-turquoise-400'
-                    }`}>
-                      <span className={`font-bold text-sm ${
-                        fullDayBlock ? 'text-red-700' : 'text-spa-turquoise-700'
-                      }`}>
-                        {prof.prenom[0]}{prof.nom[0]}
-                      </span>
-                    </div>
-                  )}
+                  <ProfilePhotoDisplay
+                    photoUrl={prof.photoUrl || null}
+                    userName={`${prof.prenom} ${prof.nom}`}
+                    size="md"
+                    className={`border-2 flex-shrink-0 ${
+                      fullDayBlock ? 'border-red-400 opacity-60' : 'border-spa-turquoise-400'
+                    }`}
+                  />
 
                   {/* Nom du professionnel */}
                   <div className="flex-1 min-w-0">

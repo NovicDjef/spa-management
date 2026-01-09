@@ -8,6 +8,7 @@ import { fr } from 'date-fns/locale';
 import { generateTimeSlots, calculateBookingPosition, getStatusColor, getStatusLabel } from '@/lib/utils/calendar';
 import type { Booking } from '@/lib/redux/services/api';
 import clsx from 'clsx';
+import { ProfilePhotoDisplay } from '@/components/profile/ProfilePhotoDisplay';
 
 interface SingleColumnCalendarGridProps {
   date: Date;
@@ -120,18 +121,12 @@ export default function SingleColumnCalendarGrid({
         <div className="p-4">
           <div className="flex items-center gap-3">
             {/* Photo profil */}
-            {professional.photoUrl ? (
-              <img
-                src={professional.photoUrl}
-                alt={`${professional.prenom} ${professional.nom}`}
-                className="w-12 h-12 rounded-full object-cover shadow-md border-2 border-spa-turquoise-200"
-              />
-            ) : (
-              <div className="w-12 h-12 rounded-full bg-spa-turquoise-500 flex items-center justify-center text-white font-bold text-lg shadow-md border-2 border-spa-turquoise-200">
-                {professional.prenom?.[0]}
-                {professional.nom?.[0]}
-              </div>
-            )}
+            <ProfilePhotoDisplay
+              photoUrl={professional.photoUrl || null}
+              userName={`${professional.prenom} ${professional.nom}`}
+              size="lg"
+              className="shadow-md border-2 border-spa-turquoise-200"
+            />
 
             <div className="flex-1">
               <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">

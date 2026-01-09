@@ -19,7 +19,7 @@ export default function ProfilPage() {
   const dispatch = useDispatch();
 
   // Récupérer le profil depuis le backend
-  const { data: profileData, isLoading: isLoadingProfile, error: profileLoadError } = useGetMyProfileQuery();
+  const { data: profileData, isLoading: isLoadingProfile, error: profileLoadError, refetch: refetchProfile } = useGetMyProfileQuery();
 
   // Utiliser les données du backend si disponibles, sinon utiliser Redux
   const currentUser = profileData || reduxUser;
@@ -165,9 +165,15 @@ export default function ProfilPage() {
   const handlePhotoUpload = async (file: File) => {
     try {
       const result = await uploadPhoto(file).unwrap();
+
+      // Mettre à jour Redux avec les nouvelles données utilisateur
       if (result.user) {
         dispatch(setCredentials({ user: result.user }));
       }
+
+      // Forcer le rechargement du profil depuis le backend
+      await refetchProfile();
+
       const successMsg = extractSuccessMessage(result, 'Photo mise à jour !');
       setProfileSuccess(successMsg);
       setTimeout(() => setProfileSuccess(''), 3000);
@@ -180,9 +186,15 @@ export default function ProfilPage() {
   const handlePhotoDelete = async () => {
     try {
       const result = await deletePhoto().unwrap();
+
+      // Mettre à jour Redux avec les nouvelles données utilisateur
       if (result.user) {
         dispatch(setCredentials({ user: result.user }));
       }
+
+      // Forcer le rechargement du profil depuis le backend
+      await refetchProfile();
+
       const successMsg = extractSuccessMessage(result, 'Photo supprimée');
       setProfileSuccess(successMsg);
       setTimeout(() => setProfileSuccess(''), 3000);
@@ -238,12 +250,12 @@ export default function ProfilPage() {
           </button>
 
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-12 h-12 bg-gradient-to-br from-spa-turquoise-100 to-spa-turquoise-200 rounded-full flex items-center justify-center">
-              <User className="w-6 h-6 text-spa-turquoise-600" />
+            <div className="w-12 h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 bg-gradient-to-br from-spa-turquoise-100 to-spa-turquoise-200 rounded-full flex items-center justify-center">
+              <User className="w-6 h-6 md:w-7 md:h-7 lg:w-8 lg:h-8 text-spa-turquoise-600" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-800">Mon Profil</h1>
-              <p className="text-gray-600">Gérez vos informations personnelles</p>
+              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-800">Mon Profil</h1>
+              <p className="text-gray-600 md:text-lg">Gérez vos informations personnelles</p>
             </div>
           </div>
         </motion.div>
@@ -253,13 +265,13 @@ export default function ProfilPage() {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05 }}
-          className="card-spa p-6 mb-6"
+          className="card-spa p-6 md:p-8 mb-6"
         >
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-gradient-to-br from-spa-rose-100 to-spa-rose-200 rounded-full flex items-center justify-center">
-              <Camera className="w-5 h-5 text-spa-rose-600" />
+            <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-spa-rose-100 to-spa-rose-200 rounded-full flex items-center justify-center">
+              <Camera className="w-5 h-5 md:w-6 md:h-6 text-spa-rose-600" />
             </div>
-            <h2 className="text-xl font-bold text-gray-800">Photo de Profil</h2>
+            <h2 className="text-xl md:text-2xl font-bold text-gray-800">Photo de Profil</h2>
           </div>
 
           <ProfilePhotoUpload
@@ -279,13 +291,13 @@ export default function ProfilPage() {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.1 }}
-            className="card-spa p-6"
+            className="card-spa p-6 md:p-8"
           >
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 bg-gradient-to-br from-spa-menthe-100 to-spa-menthe-200 rounded-full flex items-center justify-center">
-                <User className="w-5 h-5 text-spa-menthe-600" />
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-spa-menthe-100 to-spa-menthe-200 rounded-full flex items-center justify-center">
+                <User className="w-5 h-5 md:w-6 md:h-6 text-spa-menthe-600" />
               </div>
-              <h2 className="text-xl font-bold text-gray-800">Informations Personnelles</h2>
+              <h2 className="text-xl md:text-2xl font-bold text-gray-800">Informations Personnelles</h2>
             </div>
 
             {profileError && (
@@ -471,13 +483,13 @@ export default function ProfilPage() {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2 }}
-            className="card-spa p-6"
+            className="card-spa p-6 md:p-8"
           >
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 bg-gradient-to-br from-spa-lavande-100 to-spa-lavande-200 rounded-full flex items-center justify-center">
-                <Lock className="w-5 h-5 text-spa-lavande-600" />
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-spa-lavande-100 to-spa-lavande-200 rounded-full flex items-center justify-center">
+                <Lock className="w-5 h-5 md:w-6 md:h-6 text-spa-lavande-600" />
               </div>
-              <h2 className="text-xl font-bold text-gray-800">Changer le mot de passe</h2>
+              <h2 className="text-xl md:text-2xl font-bold text-gray-800">Changer le mot de passe</h2>
             </div>
 
             {passwordError && (

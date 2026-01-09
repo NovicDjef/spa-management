@@ -9,7 +9,7 @@ import { useAppDispatch, useAppSelector } from '@/lib/redux/hooks';
 import { logout, setCredentials } from '@/lib/redux/slices/authSlice';
 import { ProfilePhotoDisplay } from '@/components/profile/ProfilePhotoDisplay';
 import { ProfilePhotoModal } from '@/components/profile/ProfilePhotoModal';
-import { useUploadMyPhotoMutation, useDeleteMyPhotoMutation, api } from '@/lib/redux/services/api';
+import { useUploadMyPhotoMutation, useDeleteMyPhotoMutation, useGetMyProfileQuery, api } from '@/lib/redux/services/api';
 
 interface HeaderProps {
   user?: {
@@ -31,6 +31,9 @@ export function Header({ user: userProp }: HeaderProps) {
   const [showPhotoModal, setShowPhotoModal] = useState(false);
   const [uploadPhoto, { isLoading: isUploadingPhoto }] = useUploadMyPhotoMutation();
   const [deletePhoto, { isLoading: isDeletingPhoto }] = useDeleteMyPhotoMutation();
+
+  // Query pour récupérer le profil et forcer le refetch après upload
+  const { refetch: refetchProfile } = useGetMyProfileQuery();
 
   // Utiliser l'utilisateur de Redux si disponible, sinon utiliser le prop
   const reduxUser = useAppSelector((state) => state.auth.user);
@@ -65,9 +68,15 @@ export function Header({ user: userProp }: HeaderProps) {
   const handlePhotoUpload = async (file: File) => {
     try {
       const result = await uploadPhoto(file).unwrap();
+
+      // Mettre à jour Redux avec les nouvelles données utilisateur
       if (result.user) {
         dispatch(setCredentials({ user: result.user }));
       }
+
+      // Forcer le rechargement du profil depuis le backend
+      await refetchProfile();
+
       setShowPhotoModal(false);
     } catch (err) {
       console.error('Erreur upload photo:', err);
@@ -77,9 +86,14 @@ export function Header({ user: userProp }: HeaderProps) {
   const handlePhotoDelete = async () => {
     try {
       const result = await deletePhoto().unwrap();
+
+      // Mettre à jour Redux avec les nouvelles données utilisateur
       if (result.user) {
         dispatch(setCredentials({ user: result.user }));
       }
+
+      // Forcer le rechargement du profil depuis le backend
+      await refetchProfile();
     } catch (err) {
       console.error('Erreur suppression photo:', err);
     }
@@ -105,6 +119,8 @@ export function Header({ user: userProp }: HeaderProps) {
     return '/professionnel/dashboard';
   };
 
+  
+
   return (
     <header className="sticky top-0 z-50 glass border-b border-white/20 backdrop-blur-lg">
       <div className="container-spa">
@@ -115,7 +131,7 @@ export function Header({ user: userProp }: HeaderProps) {
               whileHover={{ scale: 1.05 }}
               className="flex items-center gap-3 cursor-pointer"
             >
-              <div className="w-10 h-10 rounded-full overflow-hidden shadow-soft bg-white">
+              <div className="w-12 h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 rounded-full overflow-hidden shadow-soft bg-white">
                 <img
                   src="/logo_spa.svg"
                   alt="Spa Renaissance Logo"
@@ -123,8 +139,8 @@ export function Header({ user: userProp }: HeaderProps) {
                 />
               </div>
               <div className="hidden sm:block">
-                <h1 className="font-bold text-lg gradient-text">Spa Renaissance</h1>
-                <p className="text-xs text-gray-600">Gestion de spa</p>
+                <h1 className="font-bold text-lg md:text-xl lg:text-2xl gradient-text">Spa Renaissance</h1>
+                <p className="text-xs md:text-sm text-gray-600">Gestion de spa</p>
               </div>
             </motion.div>
           </Link>

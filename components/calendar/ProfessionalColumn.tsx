@@ -6,6 +6,7 @@ import clsx from 'clsx';
 import BookingCard from './BookingCard';
 import type { Booking } from '@/lib/redux/services/api';
 import { calculateBookingPosition } from '@/lib/utils/calendar';
+import { ProfilePhotoDisplay } from '@/components/profile/ProfilePhotoDisplay';
 
 interface ProfessionalColumnProps {
   professional: {
@@ -66,21 +67,14 @@ export default function ProfessionalColumn({
         }}
       >
         {/* Photo profil */}
-        {professional.photoUrl ? (
-          <img
-            src={professional.photoUrl}
-            alt={`${professional.prenom} ${professional.nom}`}
-            className="w-10 h-10 rounded-full mb-1 object-cover shadow-sm"
+        <div className="mb-1">
+          <ProfilePhotoDisplay
+            photoUrl={professional.photoUrl || null}
+            userName={`${professional.prenom} ${professional.nom}`}
+            size="md"
+            className="shadow-sm"
           />
-        ) : (
-          <div
-            className="w-10 h-10 rounded-full mb-1 flex items-center justify-center text-white font-semibold text-sm shadow-sm"
-            style={{ backgroundColor: professional.color || '#6B7280' }}
-          >
-            {professional.prenom?.[0]}
-            {professional.nom?.[0]}
-          </div>
-        )}
+        </div>
 
         {/* Nom */}
         <p className="text-sm font-semibold text-gray-900 text-center truncate w-full">

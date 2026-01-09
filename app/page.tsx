@@ -114,13 +114,13 @@ export default function HomePage() {
             <motion.div
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-full shadow-lg hover:shadow-xl transition-all cursor-pointer group"
+              className="inline-flex items-center gap-3 px-6 py-3 md:px-8 md:py-4 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-full shadow-lg hover:shadow-xl transition-all cursor-pointer group"
             >
-              <Star className="w-5 h-5 fill-white" />
-              <span className="font-medium">
+              <Star className="w-5 h-5 md:w-6 md:h-6 fill-white" />
+              <span className="font-medium text-base md:text-lg">
                 Partagez votre expérience
               </span>
-              <MessageSquare className="w-5 h-5" />
+              <MessageSquare className="w-5 h-5 md:w-6 md:h-6" />
             </motion.div>
           </Link>
         </div>
