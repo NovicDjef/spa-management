@@ -33,11 +33,11 @@ export function Header({ user: userProp }: HeaderProps) {
   const [deletePhoto, { isLoading: isDeletingPhoto }] = useDeleteMyPhotoMutation();
 
   // Query pour récupérer le profil et forcer le refetch après upload
-  const { refetch: refetchProfile } = useGetMyProfileQuery();
+  const { data: profileData, refetch: refetchProfile } = useGetMyProfileQuery();
 
-  // Utiliser l'utilisateur de Redux si disponible, sinon utiliser le prop
+  // Utiliser les données du backend en priorité, puis Redux, puis le prop
   const reduxUser = useAppSelector((state) => state.auth.user);
-  const user = reduxUser || userProp;
+  const user = profileData || reduxUser || userProp;
 
   // Éviter l'erreur d'hydration
   useEffect(() => {
