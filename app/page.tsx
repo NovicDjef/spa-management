@@ -109,7 +109,7 @@ export default function HomePage() {
         </div>
 
         {/* Lien vers les avis */}
-        <div className="flex justify-center">
+        {/* <div className="flex justify-center">
           <Link href="/avis">
             <motion.div
               whileHover={{ scale: 1.05 }}
@@ -123,7 +123,40 @@ export default function HomePage() {
               <MessageSquare className="w-5 h-5 md:w-6 md:h-6" />
             </motion.div>
           </Link>
-        </div>
+        </div> */}
+        <div className="flex justify-center">
+  <Link href="/avis">
+    <motion.div
+      whileTap={{ scale: 0.96 }} // OK sur mobile & tablette
+      className="
+        inline-flex items-center gap-3
+        px-6 py-3 md:px-8 md:py-4
+        bg-gradient-to-r from-yellow-400 to-orange-500
+        text-white
+        rounded-full
+        shadow-lg
+        transition-all
+        cursor-pointer
+        group
+
+        /* FIX iPad */
+        opacity-100
+        backdrop-opacity-100
+      "
+      // Hover uniquement desktop
+      whileHover={{
+        scale: typeof window !== 'undefined' && window.matchMedia('(hover: hover)').matches ? 1.05 : 1,
+      }}
+    >
+      <Star className="w-5 h-5 md:w-6 md:h-6 fill-white" />
+      <span className="font-medium text-base md:text-lg">
+        Partagez votre expérience
+      </span>
+      <MessageSquare className="w-5 h-5 md:w-6 md:h-6" />
+    </motion.div>
+  </Link>
+</div>
+
       </motion.div>
 
       </div>

@@ -20,7 +20,7 @@ export function Footer() {
           </div>
 
           {/* Développeur */}
-          <div className="text-center sm:text-right">
+          {/* <div className="text-center sm:text-right">
             <p className="text-sm text-gray-600 flex items-center gap-2 justify-center sm:justify-end">
               Développé par{' '}
               <a
@@ -33,7 +33,7 @@ export function Footer() {
                 <ExternalLink className="w-3 h-3 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
               </a>
             </p>
-          </div>
+          </div> */}
         </motion.div>
       </div>
     </footer>
