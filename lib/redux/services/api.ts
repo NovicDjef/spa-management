@@ -479,6 +479,7 @@ export interface MassageService {
 export interface ChangePasswordData {
   currentPassword: string;
   newPassword: string;
+  confirmPassword: string;
 }
 
 export interface UpdateProfileData {
@@ -891,11 +892,13 @@ export const api = createApi({
     prepareHeaders: (headers, { getState }) => {
       // Ajouter le token d'authentification si disponible
       const token = (getState() as any).auth?.token;
-      const user = (getState() as any).auth?.user;
       if (token) {
         headers.set('authorization', `Bearer ${token}`);
       }
+
+      // Définir Content-Type par défaut (sauf pour FormData qui est géré dans queryFn personnalisé)
       headers.set('Content-Type', 'application/json');
+
       return headers;
     },
   }),
@@ -1533,7 +1536,7 @@ export const api = createApi({
     changePassword: builder.mutation<{ message: string }, ChangePasswordData>({
       query: (passwordData) => ({
         url: '/users/me/change-password',
-        method: 'PUT',
+        method: 'POST',
         body: passwordData,
       }),
       transformResponse: (response: any) => response.data || response,
@@ -1555,21 +1558,28 @@ export const api = createApi({
       { user: User; photoUrl: string; message: string },
       File
     >({
-      query: (file) => {
+      queryFn: async (file, { getState }, _extraOptions, baseQuery) => {
         const formData = new FormData();
         formData.append('photo', file);
-        return {
+
+        const token = (getState() as any).auth?.token;
+
+        const result = await baseQuery({
           url: '/users/me/photo',
           method: 'POST',
           body: formData,
-          prepareHeaders: (headers: Headers) => {
-            headers.delete('Content-Type'); // Laisser le navigateur définir le boundary
-            return headers;
+          headers: {
+            'Authorization': token ? `Bearer ${token}` : '',
+            // Pas de Content-Type - laissé au navigateur pour FormData
           },
-        };
+        });
+
+        if (result.error) return { error: result.error };
+
+        const data = (result.data as any)?.data || result.data;
+        return { data };
       },
       invalidatesTags: ['User'],
-      transformResponse: (response: any) => response.data || response,
     }),
 
     // PHOTO - Suppression de sa propre photo de profil
@@ -1587,24 +1597,31 @@ export const api = createApi({
       { user: User; photoUrl: string; message: string },
       { userId: string; file: File }
     >({
-      query: ({ userId, file }) => {
+      queryFn: async ({ userId, file }, { getState }, _extraOptions, baseQuery) => {
         const formData = new FormData();
         formData.append('photo', file);
-        return {
+
+        const token = (getState() as any).auth?.token;
+
+        const result = await baseQuery({
           url: `/users/${userId}/photo`,
           method: 'POST',
           body: formData,
-          prepareHeaders: (headers: Headers) => {
-            headers.delete('Content-Type');
-            return headers;
+          headers: {
+            'Authorization': token ? `Bearer ${token}` : '',
+            // Pas de Content-Type - laissé au navigateur pour FormData
           },
-        };
+        });
+
+        if (result.error) return { error: result.error };
+
+        const data = (result.data as any)?.data || result.data;
+        return { data };
       },
       invalidatesTags: (result, error, { userId }) => [
         { type: 'User', id: userId },
         'User',
       ],
-      transformResponse: (response: any) => response.data || response,
     }),
 
     // PHOTO - Admin suppression photo d'un employé

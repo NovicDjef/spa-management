@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Header } from '@/components/layout/Header';
 import { SearchBar } from '@/components/clients/SearchBar';
 import { ClientCard } from '@/components/clients/ClientCard';
-import { Users, UserPlus, Loader2, X, Target, AlertCircle, Clock, UserCheck, User as UserIcon, ArrowRight, UserMinus, FileText, BarChart3, Calendar, Copy, Check } from 'lucide-react';
+import { Users, UserPlus, Loader2, X, Target, AlertCircle, Clock, UserCheck, User as UserIcon, ArrowRight, UserMinus, FileText, BarChart3, Calendar, Copy, Check, RefreshCw } from 'lucide-react';
 import { useGetClientsQuery, useGetAssignedClientsQuery, useGetUsersQuery, useAssignClientMutation, useUnassignClientMutation, useGetAssignmentHistoryQuery } from '@/lib/redux/services/api';
 import { useAppSelector } from '@/lib/redux/hooks';
 import { hasPermission, isAdminOrSecretary } from '@/lib/permissions';
@@ -54,12 +54,12 @@ export default function DashboardPage() {
   const isProfessional = currentUser?.role === 'MASSOTHERAPEUTE' || currentUser?.role === 'ESTHETICIENNE';
 
   // Pour les professionnels : récupérer uniquement leurs clients assignés
-  const { data: assignedClientsData, isLoading: isLoadingAssignedClients } = useGetAssignedClientsQuery(undefined, {
+  const { data: assignedClientsData, isLoading: isLoadingAssignedClients, refetch: refetchAssignedClients } = useGetAssignedClientsQuery(undefined, {
     skip: !isProfessional,
   });
 
   // Pour les admin/secrétaire : récupérer tous les clients
-  const { data: allClientsData, isLoading: isLoadingAllClients } = useGetClientsQuery({}, {
+  const { data: allClientsData, isLoading: isLoadingAllClients, refetch: refetchAllClients } = useGetClientsQuery({}, {
     skip: isProfessional,
   });
 
@@ -114,6 +114,7 @@ export default function DashboardPage() {
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [selectedProfessional, setSelectedProfessional] = useState('');
   const [copiedEmailId, setCopiedEmailId] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     filterClients();
@@ -185,6 +186,21 @@ export default function DashboardPage() {
       alert('Impossible de copier l\'email');
     }
     document.body.removeChild(textArea);
+  };
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      if (isProfessional) {
+        await refetchAssignedClients();
+      } else {
+        await refetchAllClients();
+      }
+    } catch (error) {
+      // Erreur silencieuse
+    } finally {
+      setTimeout(() => setIsRefreshing(false), 500);
+    }
   };
 
   const handleAssignSubmit = async () => {
@@ -292,6 +308,19 @@ export default function DashboardPage() {
                 </p>
               </div>
             </div>
+
+            {/* Bouton de rafraîchissement */}
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleRefresh}
+              disabled={isRefreshing || isLoading}
+              className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-spa-turquoise-50 border-2 border-spa-turquoise-200 text-spa-turquoise-700 rounded-xl shadow-sm hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Actualiser la liste des clients"
+            >
+              <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline font-medium">Actualiser</span>
+            </motion.button>
           </div>
 
           {/* Cartes d'accès rapide */}

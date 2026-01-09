@@ -80,10 +80,16 @@ export default function ProfilPage() {
       return;
     }
 
+    if (newPassword === currentPassword) {
+      setPasswordError('Le nouveau mot de passe doit être différent de l\'ancien');
+      return;
+    }
+
     try {
       const response = await changePassword({
         currentPassword,
         newPassword,
+        confirmPassword,
       }).unwrap();
 
       const successMsg = extractSuccessMessage(response, 'Mot de passe changé avec succès !');
@@ -97,7 +103,6 @@ export default function ProfilPage() {
     } catch (err: any) {
       const errorMsg = extractErrorMessage(err, 'Erreur lors du changement de mot de passe');
       setPasswordError(errorMsg);
-      console.error('Erreur changement de mot de passe:', err);
     }
   };
 

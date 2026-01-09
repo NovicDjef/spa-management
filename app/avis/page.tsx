@@ -4,10 +4,12 @@ import { motion } from 'framer-motion';
 import { Star, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { ReviewForm } from '@/components/reviews/ReviewForm';
+import { Footer } from '@/components/layout/Footer';
 
 export default function AvisPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-spa-beige-50 via-white to-spa-turquoise-50 p-4">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-spa-beige-50 via-white to-spa-turquoise-50">
+      <div className="flex-1 p-4">
       {/* Header simplifié */}
       <div className="container-spa py-6">
         <Link
@@ -53,15 +55,8 @@ export default function AvisPage() {
         <ReviewForm />
       </div>
 
-      {/* Footer */}
-      <motion.footer
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.3 }}
-        className="text-center py-6 text-sm text-gray-500"
-      >
-        <p>© 2024 Spa Renaissance - Tous droits réservés</p>
-      </motion.footer>
+      </div>
+      <Footer />
     </div>
   );
 }

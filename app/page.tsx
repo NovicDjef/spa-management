@@ -3,10 +3,12 @@
 import { motion } from 'framer-motion';
 import { User, Briefcase, Sparkles, Star, MessageSquare } from 'lucide-react';
 import Link from 'next/link';
+import { Footer } from '@/components/layout/Footer';
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen flex flex-col">
+      <div className="flex-1 flex flex-col items-center justify-center p-4">
       {/* Logo et titre */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -124,16 +126,8 @@ export default function HomePage() {
         </div>
       </motion.div>
 
-      {/* Footer */}
-      <motion.footer
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.6, delay: 0.8 }}
-        className="mt-16 text-center text-sm text-gray-500"
-      >
-        <p>© 2024 Gestion de Spa - Tous droits réservés</p>
-        <p className="mt-2">Système de gestion conforme aux normes de confidentialité</p>
-      </motion.footer>
+      </div>
+      <Footer />
     </div>
   );
 }
