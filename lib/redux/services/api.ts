@@ -955,7 +955,18 @@ export const api = createApi({
     }),
 
     // CLIENTS - Liste des clients (avec permissions)
-    getClients: builder.query<{ clients: Client[] }, { search?: string; serviceType?: string }>({
+    getClients: builder.query<
+      {
+        clients: Client[];
+        pagination?: {
+          page: number;
+          limit: number;
+          total: number;
+          totalPages: number;
+        };
+      },
+      { search?: string; serviceType?: string }
+    >({
       query: ({ search, serviceType }) => {
         const params = new URLSearchParams();
         if (search) params.append('search', search);
@@ -963,8 +974,8 @@ export const api = createApi({
         return `/clients?${params.toString()}`;
       },
       transformResponse: (response: any) => {
-        // L'API retourne { success: true, data: { clients: [...] } }
-        // On extrait juste { clients: [...] }
+        // L'API retourne { success: true, data: { clients: [...], pagination: {...} } }
+        // On extrait { clients: [...], pagination: {...} }
         return response.data || response;
       },
       providesTags: ['Client'],

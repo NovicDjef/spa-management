@@ -14,12 +14,40 @@ import {
   ArrowRight,
   MessageSquare,
   ArrowLeft,
+  Loader2,
 } from 'lucide-react';
 import Link from 'next/link';
+import { useGetUsersQuery, useGetAllReviewsQuery, useGetClientsQuery } from '@/lib/redux/services/api';
+import { useMemo } from 'react';
 
 export default function AdminDashboardPage() {
   const router = useRouter();
   const currentUser = useAppSelector((state) => state.auth.user);
+
+  // Fetch real statistics
+  const { data: usersData, isLoading: usersLoading } = useGetUsersQuery({});
+  const { data: reviewsData, isLoading: reviewsLoading } = useGetAllReviewsQuery({ limit: 1000 });
+  const { data: clientsData, isLoading: clientsLoading } = useGetClientsQuery({});
+
+  const isLoading = usersLoading || reviewsLoading || clientsLoading;
+
+  // Calculate real statistics
+  const stats = useMemo(() => {
+    const activeEmployees = usersData?.users?.filter(u => u.isActive).length || 0;
+    const totalReviews = reviewsData?.pagination?.totalCount || 0;
+    const avgRating = reviewsData?.reviews && reviewsData.reviews.length > 0
+      ? (reviewsData.reviews.reduce((sum, r) => sum + r.rating, 0) / reviewsData.reviews.length).toFixed(1)
+      : '0.0';
+    // Utiliser le total de la pagination au lieu du nombre de clients dans la page
+    const totalClients = clientsData?.pagination?.total || clientsData?.clients?.length || 0;
+
+    return {
+      activeEmployees,
+      totalReviews,
+      avgRating,
+      totalClients,
+    };
+  }, [usersData, reviewsData, clientsData]);
 
   const menuItems = [
     {
@@ -72,28 +100,28 @@ export default function AdminDashboardPage() {
   const quickStats = [
     {
       label: 'Employés Actifs',
-      value: '—',
+      value: isLoading ? '—' : stats.activeEmployees.toString(),
       icon: Users,
       color: 'text-spa-turquoise-600',
       bg: 'bg-spa-turquoise-50',
     },
     {
       label: 'Avis Clients',
-      value: '—',
+      value: isLoading ? '—' : stats.totalReviews.toString(),
       icon: Star,
       color: 'text-yellow-600',
       bg: 'bg-yellow-50',
     },
     {
       label: 'Note Moyenne',
-      value: '—',
+      value: isLoading ? '—' : `${stats.avgRating}/5`,
       icon: TrendingUp,
       color: 'text-spa-menthe-600',
       bg: 'bg-spa-menthe-50',
     },
     {
-      label: 'Clients Total',
-      value: '—',
+      label: 'Clients Inscrits',
+      value: isLoading ? '—' : stats.totalClients.toString(),
       icon: Calendar,
       color: 'text-spa-rose-600',
       bg: 'bg-spa-rose-50',

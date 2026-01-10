@@ -81,6 +81,11 @@ export default function DashboardPage() {
     ? (assignedClientsData?.clients || [])
     : (allClientsData?.clients || []);
 
+  // Nombre total de clients (utiliser pagination.total pour admin/secrétaire)
+  const totalClientsCount = isProfessional
+    ? clients.length  // Pour les professionnels : nombre de clients assignés
+    : (allClientsData?.pagination?.total || clients.length);  // Pour admin/secrétaire : total de la pagination
+
   const isLoading = isProfessional ? isLoadingAssignedClients : isLoadingAllClients;
 
   // Filtrer uniquement les professionnels (massothérapeutes et esthéticiennes)
@@ -296,15 +301,17 @@ export default function DashboardPage() {
                     : 'Gestion des Clients'}
                 </h1>
                 <p className="text-sm sm:text-base text-gray-600">
-                  {filteredClients.length} client{filteredClients.length !== 1 ? 's' : ''}
-                  {currentUser.role === 'MASSOTHERAPEUTE' || currentUser.role === 'ESTHETICIENNE'
-                    ? ' assigné'
-                    : ''}
-                  {filteredClients.length !== 1 && (currentUser.role === 'MASSOTHERAPEUTE' || currentUser.role === 'ESTHETICIENNE')
-                    ? 's'
-                    : ''}
-                  {searchQuery || selectedFilter !== 'ALL' ? ' trouvé' : ''}
-                  {filteredClients.length !== 1 && (searchQuery || selectedFilter !== 'ALL') ? 's' : ''}
+                  {searchQuery || selectedFilter !== 'ALL' ? (
+                    <>
+                      {filteredClients.length} client{filteredClients.length !== 1 ? 's' : ''} trouvé{filteredClients.length !== 1 ? 's' : ''}
+                      {!isProfessional && <span className="text-gray-500"> sur {totalClientsCount} total</span>}
+                    </>
+                  ) : (
+                    <>
+                      {totalClientsCount} client{totalClientsCount !== 1 ? 's' : ''}
+                      {isProfessional ? ' assigné' + (totalClientsCount !== 1 ? 's' : '') : ' inscrit' + (totalClientsCount !== 1 ? 's' : '')}
+                    </>
+                  )}
                 </p>
               </div>
             </div>

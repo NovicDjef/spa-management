@@ -37,7 +37,9 @@ export default function StatisticsPage() {
   const currentUser = useAppSelector((state) => state.auth.user);
 
   // Fetch data
-  const { data: usersData, isLoading: usersLoading } = useGetUsersQuery({});
+  const { data: usersData, isLoading: usersLoading } = useGetUsersQuery({
+    includeInactive: true, // Include inactive users in statistics
+  });
   const { data: reviewsData, isLoading: reviewsLoading } = useGetAllReviewsQuery({
     limit: 1000, // Get all reviews for statistics
   });
@@ -127,8 +129,8 @@ export default function StatisticsPage() {
 
     receiptsData.forEach((receipt) => {
       const therapistName = receipt.therapistName || 'Inconnu';
-      const receiptDate = new Date(receipt.sentAt || receipt.createdAt);
-      const amount = Number(receipt.total) || 0;
+      const receiptDate = new Date(receipt.emailSentAt || receipt.sentAt || receipt.createdAt);
+      const amount = Number(receipt.price) || Number(receipt.total) || 0;
 
       if (!therapistStats.has(therapistName)) {
         therapistStats.set(therapistName, {
