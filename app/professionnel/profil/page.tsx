@@ -126,10 +126,11 @@ export default function ProfilPage() {
         return;
       }
 
-      // Vérifier le format M-XXXX
-      const rmqPattern = /^M-\d{4}$/;
+      // Vérifier le format M-XXXX ou XX-XXXX
+      // Accepte: M-1234, M-5678, 25-1990, 12-3456, etc.
+      const rmqPattern = /^(M-\d{4}|\d{2}-\d{4})$/;
       if (!rmqPattern.test(numeroMembreOrdre)) {
-        setProfileError('Le numéro RMQ doit être au format M-XXXX (exemple: M-3444)');
+        setProfileError('Le numéro RMQ doit être au format M-XXXX ou XX-XXXX (exemples: M-3444, 25-1990)');
         return;
       }
     }
@@ -421,12 +422,12 @@ export default function ProfilPage() {
                     value={numeroMembreOrdre}
                     onChange={(e) => setnumeroMembreOrdre(e.target.value)}
                     className="input-spa"
-                    placeholder={currentUser.role === 'MASSOTHERAPEUTE' ? "M-3444" : "Votre numéro d'ordre"}
-                    maxLength={currentUser.role === 'MASSOTHERAPEUTE' ? 6 : undefined}
+                    placeholder={currentUser.role === 'MASSOTHERAPEUTE' ? "M-3444 ou 25-1990" : "Votre numéro d'ordre"}
+                    maxLength={currentUser.role === 'MASSOTHERAPEUTE' ? 7 : undefined}
                   />
                   <p className="text-xs text-gray-500 mt-1">
                     {currentUser.role === 'MASSOTHERAPEUTE'
-                      ? "⚠️ Requis pour l'envoi de reçus d'assurance. Format: M-XXXX (ex: M-3444)"
+                      ? "⚠️ Requis pour l'envoi de reçus d'assurance. Formats acceptés: M-XXXX (ex: M-3444) ou XX-XXXX (ex: 25-1990)"
                       : "Requis pour l'envoi de reçus d'assurance"}
                   </p>
                   {!numeroMembreOrdre && currentUser.role === 'MASSOTHERAPEUTE' && (

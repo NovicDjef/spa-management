@@ -10,7 +10,7 @@ interface ReceiptViewModalProps {
   isOpen: boolean;
   onClose: () => void;
   receiptId: string;
-  receiptNumber: number;
+  receiptNumber: string; // Format: "REC-2026-0006"
   clientName: string;
 }
 

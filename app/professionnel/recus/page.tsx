@@ -12,19 +12,37 @@ import { extractErrorMessage } from '@/lib/utils/errorHandler';
 
 export default function ReceiptsPage() {
   const router = useRouter();
-  const { data: receipts, isLoading, error } = useGetReceiptsQuery();
+  const { data: receipts, isLoading, error, refetch } = useGetReceiptsQuery();
   const currentUser = useAppSelector((state) => state.auth.user);
+  const token = useAppSelector((state) => state.auth.token);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMonth, setSelectedMonth] = useState('ALL');
   const [selectedDate, setSelectedDate] = useState('');
   const [isMounted, setIsMounted] = useState(false);
 
+  // Debug - Afficher les données dans la console
+  useEffect(() => {
+    console.log('=== 📊 RECEIPTS PAGE DEBUG ===');
+    console.log('📊 Receipts Data:', receipts);
+    console.log('📊 Receipts Type:', Array.isArray(receipts) ? 'Array' : typeof receipts);
+    console.log('📊 Receipts Length:', Array.isArray(receipts) ? receipts.length : 'N/A');
+    console.log('⏳ Is Loading:', isLoading);
+    console.log('❌ Error:', error);
+    console.log('👤 Current User:', currentUser);
+    console.log('👤 User Role:', currentUser?.role);
+    console.log('🔑 Token exists:', !!token);
+    console.log('🔑 Token (first 20 chars):', token ? token.substring(0, 20) + '...' : 'NO TOKEN');
+    console.log('🌐 API Base URL:', process.env.NEXT_PUBLIC_API_BASE_URL);
+    console.log('🌐 Full URL:', `${process.env.NEXT_PUBLIC_API_BASE_URL}/receipts`);
+    console.log('=== END DEBUG ===');
+  }, [receipts, isLoading, error, currentUser, token]);
+
 
   // Modal de visualisation
   const [selectedReceipt, setSelectedReceipt] = useState<{
     id: string;
-    receiptNumber: number;
+    receiptNumber: string;
     clientName: string;
   } | null>(null);
 
@@ -89,11 +107,11 @@ export default function ReceiptsPage() {
       : true;
 
     const matchesMonth = selectedMonth !== 'ALL'
-      ? (receipt.sentAt ? new Date(receipt.sentAt).getMonth() === parseInt(selectedMonth) : false)
+      ? (receipt.emailSentAt ? new Date(receipt.emailSentAt).getMonth() === parseInt(selectedMonth) : false)
       : true;
 
     const matchesDate = selectedDate
-      ? (receipt.treatmentDate ? formatDate(receipt.treatmentDate) === new Date(selectedDate).toLocaleDateString('fr-CA') : false)
+      ? (receipt.serviceDate ? formatDate(receipt.serviceDate) === new Date(selectedDate).toLocaleDateString('fr-CA') : false)
       : true;
 
     return matchesSearch && matchesMonth && matchesDate;
@@ -101,7 +119,7 @@ export default function ReceiptsPage() {
 
   // Statistiques avec gestion des valeurs manquantes
   const totalRevenue = isMounted
-    ? Number(filteredReceipts.reduce((sum, receipt) => sum + (Number(receipt.total) || 0), 0))
+    ? Number(filteredReceipts.reduce((sum, receipt) => sum + (Number(receipt.price) || 0), 0))
     : 0;
   const totalReceipts = filteredReceipts.length;
 
@@ -195,9 +213,9 @@ export default function ReceiptsPage() {
                   <p className="text-sm text-gray-600">Ce Mois</p>
                   <p className="text-2xl font-bold text-gray-800">
                     {receiptsArray.filter((r) => {
-                      if (!r?.sentAt) return false;
+                      if (!r?.emailSentAt) return false;
                       try {
-                        const receiptDate = new Date(r.sentAt);
+                        const receiptDate = new Date(r.emailSentAt);
                         const now = new Date();
                         return receiptDate.getMonth() === now.getMonth() &&
                                receiptDate.getFullYear() === now.getFullYear();
@@ -319,14 +337,35 @@ export default function ReceiptsPage() {
             <p className="text-gray-600 mb-4">
               {extractErrorMessage(error, 'Impossible de charger les reçus. Veuillez vérifier que le backend est démarré.')}
             </p>
-            <button
-              onClick={() => window.location.reload()}
-              className="btn-primary"
-            >
-              Réessayer
-            </button>
+            <div className="text-xs text-gray-500 mb-4 p-4 bg-gray-50 rounded-lg font-mono max-w-3xl mx-auto text-left overflow-auto max-h-64">
+              <p className="font-semibold mb-2 text-gray-700">🔍 Détails de l'erreur:</p>
+              <div className="space-y-1">
+                <p>• URL: {process.env.NEXT_PUBLIC_API_BASE_URL}/receipts</p>
+                <p>• Status: {(error as any)?.status || 'Inconnu'}</p>
+                <p>• Token présent: {token ? '✅ Oui' : '❌ Non'}</p>
+                <p>• User: {currentUser?.nom} {currentUser?.prenom} ({currentUser?.role})</p>
+                <p className="pt-2 font-semibold">Message complet:</p>
+                <pre className="bg-white p-2 rounded border border-gray-200 overflow-auto text-xs">
+{JSON.stringify(error, null, 2)}
+                </pre>
+              </div>
+            </div>
+            <div className="flex gap-3 justify-center">
+              <button
+                onClick={() => refetch()}
+                className="btn-primary"
+              >
+                Réessayer
+              </button>
+              <button
+                onClick={() => window.location.reload()}
+                className="btn-outline"
+              >
+                Recharger la page
+              </button>
+            </div>
           </motion.div>
-        ) : filteredReceipts.length === 0 ? (
+        ) : receiptsArray.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -336,13 +375,33 @@ export default function ReceiptsPage() {
               <FileText className="w-8 h-8 text-gray-400" />
             </div>
             <h3 className="text-xl font-semibold text-gray-800 mb-2">
-              {searchQuery || selectedMonth !== 'ALL' ? 'Aucun reçu trouvé' : 'Aucun reçu envoyé'}
+              {searchQuery || selectedMonth !== 'ALL' || selectedDate ? 'Aucun reçu trouvé' : 'Aucun reçu envoyé'}
             </h3>
-            <p className="text-gray-600">
-              {searchQuery || selectedMonth !== 'ALL'
+            <p className="text-gray-600 mb-4">
+              {searchQuery || selectedMonth !== 'ALL' || selectedDate
                 ? 'Essayez de modifier vos critères de recherche'
+                : currentUser?.role === 'ADMIN'
+                ? 'Aucun thérapeute n\'a encore envoyé de reçu'
                 : 'Les reçus que vous enverrez apparaîtront ici'}
             </p>
+            <div className="text-xs text-gray-500 p-3 bg-gray-50 rounded-lg max-w-2xl mx-auto font-mono">
+              <p className="font-semibold mb-2 text-gray-700">📌 Informations de diagnostic:</p>
+              <div className="space-y-1">
+                <p>• Connecté: {currentUser?.nom} {currentUser?.prenom}</p>
+                <p>• Rôle: {currentUser?.role || 'N/A'}</p>
+                <p>• Token présent: {token ? '✅ Oui' : '❌ Non'}</p>
+                <p>• Backend URL: {process.env.NEXT_PUBLIC_API_BASE_URL}/receipts</p>
+                <p>• Nombre de reçus reçus: {receiptsArray.length}</p>
+                <p>• Type de données: {Array.isArray(receipts) ? 'Array' : typeof receipts}</p>
+                <p className="pt-2 text-gray-600">💡 Vérifiez la console du navigateur (F12) pour plus de détails</p>
+              </div>
+            </div>
+            <button
+              onClick={() => refetch()}
+              className="btn-outline mt-4"
+            >
+              Actualiser
+            </button>
           </motion.div>
         ) : (
           <motion.div
@@ -398,7 +457,7 @@ export default function ReceiptsPage() {
                             <FileText className="w-4 h-4 text-spa-turquoise-600" />
                           </div>
                           <span className="font-mono font-semibold text-gray-900">
-                            #{(receipt.receiptNumber || 0).toString().padStart(4, '0')}
+                            {receipt.receiptNumber || 'N/A'}
                           </span>
                         </div>
                       </td>
@@ -407,10 +466,10 @@ export default function ReceiptsPage() {
                           <Calendar className="w-4 h-4 text-gray-400" />
                           <div className="text-sm">
                             <div className="font-medium text-gray-900">
-                              {formatDate(receipt.sentAt)}
+                              {formatDate(receipt.emailSentAt)}
                             </div>
                             <div className="text-gray-500">
-                              {formatTime(receipt.sentAt)}
+                              {formatTime(receipt.emailSentAt)}
                             </div>
                           </div>
                         </div>
@@ -429,9 +488,9 @@ export default function ReceiptsPage() {
                             <div className="font-medium text-spa-turquoise-600">
                               {receipt.therapistName || 'Thérapeute inconnu'}
                             </div>
-                            {receipt.therapistOrderNumber && (
+                            {(receipt.memberNumber || receipt.therapist?.numeroMembreOrdre) && (
                               <div className="text-xs text-gray-500">
-                                N° {receipt.therapistOrderNumber}
+                                N° {receipt.memberNumber || receipt.therapist?.numeroMembreOrdre}
                               </div>
                             )}
                           </div>
@@ -450,20 +509,20 @@ export default function ReceiptsPage() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm">
                           <div className="font-medium text-gray-900">
-                            {formatDate(receipt.treatmentDate)}
+                            {formatDate(receipt.serviceDate)}
                           </div>
                           <div className="text-gray-500">
-                            {receipt.treatmentTime || '--:--'}
+                            {formatTime(receipt.serviceDate)}
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm">
                           <div className="font-bold text-green-600 text-lg">
-                            {formatCurrency(receipt.total)}$
+                            {formatCurrency(Number(receipt.price))}$
                           </div>
                           <div className="text-gray-500 text-xs">
-                            + taxes
+                            {receipt.duration} min
                           </div>
                         </div>
                       </td>

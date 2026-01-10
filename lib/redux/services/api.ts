@@ -419,21 +419,47 @@ export interface PreviewReceiptResponse {
 // Types pour l'historique des reçus
 export interface Receipt {
   id: string;
-  receiptNumber: number;
+  receiptNumber: string; // "REC-2026-0006"
+  therapistId: string;
+  therapistName: string;
+  memberNumber: string;
+  clientId: string | null;
   clientName: string;
   clientEmail?: string;
-  therapistName: string;
-  therapistOrderNumber?: string;
+  clientPhone?: string;
+  clientAddress?: string;
   serviceName: string;
   duration: number;
-  treatmentDate: string; // Format: "YYYY-MM-DD"
-  treatmentTime: string; // Format: "HH:mm"
-  subtotal: number;
-  taxTPS: number;
-  taxTVQ: number;
-  total: number;
-  sentAt: string; // Date d'envoi du reçu
+  price: string;
+  serviceDate: string; // Date du traitement (ISO string)
+  referenceNumber?: string;
+  pdfUrl?: string;
+  emailSent: boolean;
+  emailSentAt: string; // Date d'envoi du reçu (ISO string)
+  emailCount: number;
   createdAt: string;
+  updatedAt: string;
+  // Objets imbriqués (optionnels)
+  therapist?: {
+    id: string;
+    nom: string;
+    prenom: string;
+    numeroMembreOrdre: string;
+  };
+  client?: {
+    id: string;
+    nom: string;
+    prenom: string;
+  } | null;
+  // Compatibilité avec l'ancien format (pour ne pas casser le code existant)
+  therapistOrderNumber?: string;
+  treatmentDate?: string;
+  treatmentTime?: string;
+  subtotal?: number;
+  taxTPS?: number;
+  taxTVQ?: number;
+  total?: number;
+  sentAt?: string;
 }
 
 export interface ReceiptsListResponse {
@@ -1485,17 +1511,27 @@ export const api = createApi({
     getReceipts: builder.query<Receipt[], void>({
       query: () => '/receipts',
       transformResponse: (response: any) => {
-        // Si la réponse a une structure { success, data }, retourner data
-        if (response && response.data) {
-          return Array.isArray(response.data) ? response.data : [];
+        console.log('🔍 Raw API Response:', response);
+
+        // Le backend retourne: { success: true, data: { receipts: [...], pagination: {...} } }
+        if (response && response.data && response.data.receipts) {
+          console.log('✅ Extracted receipts:', response.data.receipts);
+          return Array.isArray(response.data.receipts) ? response.data.receipts : [];
+        }
+
+        // Si la réponse a une structure { success, data } avec data comme tableau
+        if (response && response.data && Array.isArray(response.data)) {
+          console.log('✅ Direct data array:', response.data);
+          return response.data;
         }
 
         // Si la réponse est déjà un tableau
         if (Array.isArray(response)) {
+          console.log('✅ Direct array response:', response);
           return response;
         }
 
-        // Sinon retourner un tableau vide
+        console.warn('⚠️ Unexpected response format, returning empty array');
         return [];
       },
       providesTags: ['Receipts'],

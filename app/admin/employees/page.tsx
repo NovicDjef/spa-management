@@ -108,9 +108,10 @@ export default function EmployeesPage() {
 
     // Validation du numéro RMQ pour les massothérapeutes
     if (formData.role === 'MASSOTHERAPEUTE' && formData.numeroMembreOrdre) {
-      const rmqPattern = /^M-\d{4}$/;
+      // Accepte: M-1234, M-5678, 25-1990, 12-3456, etc.
+      const rmqPattern = /^(M-\d{4}|\d{2}-\d{4})$/;
       if (!rmqPattern.test(formData.numeroMembreOrdre)) {
-        setErrors({ numeroMembreOrdre: 'Le numéro RMQ doit être au format M-XXXX (exemple: M-3444)' });
+        setErrors({ numeroMembreOrdre: 'Le numéro RMQ doit être au format M-XXXX ou XX-XXXX (exemples: M-3444, 25-1990)' });
         return;
       }
     }
@@ -144,9 +145,10 @@ export default function EmployeesPage() {
 
     // Validation du numéro RMQ pour les massothérapeutes
     if (formData.role === 'MASSOTHERAPEUTE' && formData.numeroMembreOrdre) {
-      const rmqPattern = /^M-\d{4}$/;
+      // Accepte: M-1234, M-5678, 25-1990, 12-3456, etc.
+      const rmqPattern = /^(M-\d{4}|\d{2}-\d{4})$/;
       if (!rmqPattern.test(formData.numeroMembreOrdre)) {
-        setErrors({ numeroMembreOrdre: 'Le numéro RMQ doit être au format M-XXXX (exemple: M-3444)' });
+        setErrors({ numeroMembreOrdre: 'Le numéro RMQ doit être au format M-XXXX ou XX-XXXX (exemples: M-3444, 25-1990)' });
         return;
       }
     }
@@ -663,16 +665,16 @@ const handleToggleStatus = async (user: any) => {
                       value={formData.numeroMembreOrdre}
                       onChange={(e) => setFormData({ ...formData, numeroMembreOrdre: e.target.value })}
                       className={`input-spa ${errors.numeroMembreOrdre ? 'border-red-500' : ''}`}
-                      placeholder="M-3444"
-                      pattern="M-\d{4}"
-                      title="Format requis: M-XXXX (ex: M-3444)"
-                      maxLength={6}
+                      placeholder="M-3444 ou 25-1234"
+                      pattern="(M-\d{4}|\d{2}-\d{4})"
+                      title="Formats requis: M-XXXX (ex: M-3444) ou XX-XXXX (ex: 25-1234)"
+                      maxLength={7}
                     />
                     {errors.numeroMembreOrdre ? (
                       <p className="text-xs text-red-600 mt-1">{errors.numeroMembreOrdre}</p>
                     ) : (
                       <p className="text-xs text-gray-500 mt-1">
-                        Format: M-XXXX (exemple: M-3444)
+                        Formats acceptés: M-XXXX (ex: M-3444) ou XX-XXXX (ex: 25-1234)
                       </p>
                     )}
                   </div>
