@@ -4,10 +4,11 @@ import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/layout/Header';
-import { FileText, Loader2, Calendar, DollarSign, User, Clock, Eye, Search, ArrowLeft, AlertCircle } from 'lucide-react';
-import { useGetReceiptsQuery } from '@/lib/redux/services/api';
+import { FileText, Loader2, Calendar, DollarSign, User, Clock, Eye, Search, ArrowLeft, AlertCircle, Edit } from 'lucide-react';
+import { useGetReceiptsQuery, type Receipt } from '@/lib/redux/services/api';
 import { useAppSelector } from '@/lib/redux/hooks';
 import { ReceiptViewModal } from '@/components/receipts/ReceiptViewModal';
+import { ReceiptEditModal } from '@/components/receipts/ReceiptEditModal';
 import { extractErrorMessage } from '@/lib/utils/errorHandler';
 
 export default function ReceiptsPage() {
@@ -45,6 +46,9 @@ export default function ReceiptsPage() {
     receiptNumber: string;
     clientName: string;
   } | null>(null);
+
+  // Modal d'édition
+  const [selectedReceiptForEdit, setSelectedReceiptForEdit] = useState<Receipt | null>(null);
 
   // Éviter l'erreur d'hydration en s'assurant que le composant est monté côté client
   useEffect(() => {
@@ -528,6 +532,13 @@ export default function ReceiptsPage() {
                           >
                             <Eye className="w-5 h-5" />
                           </button>
+                          <button
+                            onClick={() => setSelectedReceiptForEdit(receipt)}
+                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            title="Modifier le reçu"
+                          >
+                            <Edit className="w-5 h-5" />
+                          </button>
                         </div>
                       </td>
                     </motion.tr>
@@ -564,6 +575,15 @@ export default function ReceiptsPage() {
             receiptId={selectedReceipt.id}
             receiptNumber={selectedReceipt.receiptNumber}
             clientName={selectedReceipt.clientName}
+          />
+        )}
+
+        {/* Modal d'édition du reçu */}
+        {selectedReceiptForEdit && (
+          <ReceiptEditModal
+            isOpen={!!selectedReceiptForEdit}
+            onClose={() => setSelectedReceiptForEdit(null)}
+            receipt={selectedReceiptForEdit}
           />
         )}
       </div>

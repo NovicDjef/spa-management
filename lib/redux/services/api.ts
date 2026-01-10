@@ -401,7 +401,12 @@ export interface SendReceiptData {
   clientId?: string; // ⚠️ ID du client (optionnel, pour référence)
   noteId?: string; // ⚠️ ID de la note (optionnel)
   serviceId?: string; // ⚠️ ID du service (optionnel)
+  clientPhone?: string; // Téléphone du client (optionnel)
+  clientAddress?: string; // Adresse du client (optionnel)
 }
+
+// Type pour la modification d'un reçu (même structure que SendReceiptData)
+export interface UpdateReceiptData extends SendReceiptData {}
 
 export interface PreviewReceiptResponse {
   success: boolean;
@@ -1561,6 +1566,34 @@ export const api = createApi({
       invalidatesTags: (result, error, receiptId) => [{ type: 'Receipts', id: receiptId }],
     }),
 
+    // RECEIPTS - Modifier et renvoyer un reçu existant
+    updateReceipt: builder.mutation<
+      Receipt,
+      { id: string; data: UpdateReceiptData }
+    >({
+      query: ({ id, data }) => {
+        console.log('📤 updateReceipt - Envoi de la requête:', {
+          url: `/receipts/${id}`,
+          method: 'PUT',
+          body: data,
+          fullUrl: `${process.env.NEXT_PUBLIC_API_BASE_URL}/receipts/${id}`
+        });
+        return {
+          url: `/receipts/${id}`,
+          method: 'PUT',
+          body: data,
+        };
+      },
+      transformResponse: (response: any) => {
+        console.log('📥 updateReceipt - Réponse reçue:', response);
+        return response.data || response;
+      },
+      invalidatesTags: (result, error, { id }) => [
+        { type: 'Receipts', id },
+        'Receipts',
+      ],
+    }),
+
     // PROFILE - Récupérer son propre profil
     getMyProfile: builder.query<User, void>({
       query: () => '/users/me',
@@ -2034,6 +2067,7 @@ export const {
   useGetReceiptsQuery,
   useGetReceiptByIdQuery,
   useResendReceiptMutation,
+  useUpdateReceiptMutation,
   // Profile hooks
   useGetMyProfileQuery,
   useChangePasswordMutation,
