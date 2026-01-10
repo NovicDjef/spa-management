@@ -384,18 +384,7 @@ export default function ReceiptsPage() {
                 ? 'Aucun thérapeute n\'a encore envoyé de reçu'
                 : 'Les reçus que vous enverrez apparaîtront ici'}
             </p>
-            <div className="text-xs text-gray-500 p-3 bg-gray-50 rounded-lg max-w-2xl mx-auto font-mono">
-              <p className="font-semibold mb-2 text-gray-700">📌 Informations de diagnostic:</p>
-              <div className="space-y-1">
-                <p>• Connecté: {currentUser?.nom} {currentUser?.prenom}</p>
-                <p>• Rôle: {currentUser?.role || 'N/A'}</p>
-                <p>• Token présent: {token ? '✅ Oui' : '❌ Non'}</p>
-                <p>• Backend URL: {process.env.NEXT_PUBLIC_API_BASE_URL}/receipts</p>
-                <p>• Nombre de reçus reçus: {receiptsArray.length}</p>
-                <p>• Type de données: {Array.isArray(receipts) ? 'Array' : typeof receipts}</p>
-                <p className="pt-2 text-gray-600">💡 Vérifiez la console du navigateur (F12) pour plus de détails</p>
-              </div>
-            </div>
+           
             <button
               onClick={() => refetch()}
               className="btn-outline mt-4"
