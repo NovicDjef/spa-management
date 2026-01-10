@@ -1,7 +1,7 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, FileText, Send, Loader2, CheckCircle, AlertTriangle, Download } from 'lucide-react';
 import { useGetReceiptByIdQuery, useResendReceiptMutation } from '@/lib/redux/services/api';
 import { extractErrorMessage } from '@/lib/utils/errorHandler';
@@ -28,6 +28,13 @@ export function ReceiptViewModal({
   const [resendReceipt, { isLoading: isResending }] = useResendReceiptMutation();
   const [resendSuccess, setResendSuccess] = useState(false);
   const [resendError, setResendError] = useState<string | null>(null);
+
+  // Détecter si l'utilisateur est sur Android
+  const [isAndroid, setIsAndroid] = useState(false);
+  useEffect(() => {
+    const userAgent = navigator.userAgent.toLowerCase();
+    setIsAndroid(userAgent.includes('android'));
+  }, []);
 
   const handleResend = async () => {
     try {
@@ -141,17 +148,77 @@ export function ReceiptViewModal({
               <>
                 {/* Aperçu du PDF */}
                 <div className="mb-6">
-                  <div className="border-2 border-gray-200 rounded-xl overflow-hidden bg-gray-50 shadow-inner">
-                    <embed
-                      src={`data:application/pdf;base64,${receiptData.pdf}`}
-                      type="application/pdf"
-                      className="w-full h-[500px] sm:h-[600px] md:h-[700px]"
-                      aria-label="Aperçu du reçu PDF"
-                    />
-                  </div>
-                  <p className="text-xs sm:text-sm text-gray-500 mt-2 text-center">
-                    Ce reçu a été envoyé au client par email
-                  </p>
+                  {/* Affichage spécial pour Android */}
+                  {isAndroid ? (
+                    <div className="border-2 border-spa-turquoise-200 rounded-xl bg-gradient-to-br from-spa-turquoise-50 to-white p-6 sm:p-8">
+                      <div className="text-center mb-6">
+                        <div className="w-16 h-16 bg-spa-turquoise-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                          <FileText className="w-8 h-8 text-spa-turquoise-600" />
+                        </div>
+                        <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-2">
+                          Reçu #{receiptNumber}
+                        </h3>
+                        <p className="text-sm sm:text-base text-gray-600 mb-4">
+                          Pour {clientName}
+                        </p>
+                      </div>
+
+                      {/* Instructions pour Android */}
+                      <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 mb-6">
+                        <p className="text-xs sm:text-sm text-blue-800">
+                          📱 <strong>Sur Android</strong> : Les aperçus PDF ne sont pas supportés par votre navigateur.
+                          Téléchargez le reçu pour le visualiser.
+                        </p>
+                      </div>
+
+                      {/* Bouton de téléchargement mis en évidence */}
+                      <button
+                        onClick={handleDownload}
+                        className="btn-primary w-full flex items-center justify-center gap-3 py-4 text-base sm:text-lg mb-3"
+                      >
+                        <Download className="w-5 h-5 sm:w-6 sm:h-6" />
+                        <span>Télécharger le reçu</span>
+                      </button>
+
+                      <p className="text-xs text-gray-500 text-center leading-relaxed">
+                        Ce reçu a été envoyé au client par email
+                      </p>
+                    </div>
+                  ) : (
+                    /* Affichage standard pour iOS/Desktop */
+                    <div className="border-2 border-gray-200 rounded-xl overflow-hidden bg-gray-50 shadow-inner">
+                      <object
+                        data={`data:application/pdf;base64,${receiptData.pdf}`}
+                        type="application/pdf"
+                        className="w-full h-[500px] sm:h-[600px] md:h-[700px]"
+                        aria-label="Aperçu du reçu PDF"
+                      >
+                        {/* Fallback si le navigateur ne peut pas afficher le PDF */}
+                        <div className="flex flex-col items-center justify-center min-h-[500px] p-6 sm:p-8">
+                          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                            <FileText className="w-8 h-8 text-gray-400" />
+                          </div>
+                          <p className="text-gray-700 font-medium mb-2 text-base sm:text-lg text-center">
+                            Impossible d'afficher l'aperçu PDF
+                          </p>
+                          <p className="text-gray-500 text-sm sm:text-base mb-6 text-center max-w-md">
+                            Votre navigateur ne supporte pas l'affichage de PDFs intégrés.
+                            Téléchargez le reçu pour le visualiser.
+                          </p>
+                          <button
+                            onClick={handleDownload}
+                            className="btn-primary flex items-center gap-2"
+                          >
+                            <Download className="w-4 h-4 sm:w-5 sm:h-5" />
+                            <span>Télécharger le reçu</span>
+                          </button>
+                        </div>
+                      </object>
+                      <p className="text-xs sm:text-sm text-gray-500 mt-2 text-center">
+                        Ce reçu a été envoyé au client par email
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Boutons d'action */}

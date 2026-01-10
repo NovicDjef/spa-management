@@ -1543,9 +1543,71 @@ export const api = createApi({
     }),
 
     // RECEIPTS - Détail d'un reçu spécifique avec PDF
-    getReceiptById: builder.query<ReceiptDetailResponse['data'], string>({
-      query: (id) => `/receipts/${id}/pdf`,
-      transformResponse: (response: ReceiptDetailResponse) => response.data,
+    getReceiptById: builder.query<{ pdf: string }, string>({
+      queryFn: async (receiptId, { getState }) => {
+        try {
+          console.log('📥 getReceiptById - Récupération du reçu:', receiptId);
+
+          const token = (getState() as any).auth?.token;
+          const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || '';
+          const url = `${baseUrl}/receipts/${receiptId}/pdf`;
+
+          console.log('🌐 URL complète:', url);
+
+          // Faire la requête pour récupérer le PDF
+          const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+              'Authorization': token ? `Bearer ${token}` : '',
+            },
+          });
+
+          console.log('📊 Réponse status:', response.status);
+          console.log('📊 Content-Type:', response.headers.get('content-type'));
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('❌ Erreur backend:', errorText);
+
+            return {
+              error: {
+                status: response.status,
+                data: { message: errorText || `Erreur ${response.status}` }
+              } as any
+            };
+          }
+
+          // Récupérer le PDF en tant que blob
+          const blob = await response.blob();
+          console.log('✅ Blob reçu, taille:', blob.size, 'bytes');
+
+          // Convertir le blob en base64 pour l'affichage
+          return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              const base64 = reader.result as string;
+              // Extraire seulement la partie base64 (après "data:application/pdf;base64,")
+              const base64Data = base64.split(',')[1];
+              console.log('✅ PDF converti en base64, longueur:', base64Data.length);
+
+              resolve({
+                data: {
+                  pdf: base64Data
+                }
+              });
+            };
+            reader.readAsDataURL(blob);
+          });
+        } catch (error: any) {
+          console.error('❌ Erreur lors de la récupération du reçu:', error);
+          return {
+            error: {
+              status: 'FETCH_ERROR',
+              data: { message: error.message || 'Erreur réseau' }
+            } as any
+          };
+        }
+      },
       providesTags: (result, error, id) => [{ type: 'Receipts', id }],
     }),
 

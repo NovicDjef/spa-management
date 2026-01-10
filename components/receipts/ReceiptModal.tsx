@@ -49,6 +49,13 @@ export function ReceiptModal({
   const [error, setError] = useState('');
   const [showErrorModal, setShowErrorModal] = useState(false);
 
+  // Détecter si l'utilisateur est sur Android
+  const [isAndroid, setIsAndroid] = useState(false);
+  useEffect(() => {
+    const userAgent = navigator.userAgent.toLowerCase();
+    setIsAndroid(userAgent.includes('android'));
+  }, []);
+
   // Services disponibles (data est déjà un tableau après transformResponse)
   const servicesList = services || [];
   const selectedService = servicesList.find(s => s.id === selectedServiceId);
@@ -526,48 +533,144 @@ export function ReceiptModal({
 
                 {/* Affichage du PDF */}
                 <div className="mb-6">
-                  <div className="border-2 border-gray-200 rounded-xl overflow-hidden bg-white shadow-inner">
-                    {pdfBlobUrl ? (
-                      <>
-                        <object
-                          data={pdfBlobUrl}
-                          type="application/pdf"
-                          className="w-full h-[700px]"
-                          aria-label="Aperçu du reçu PDF"
-                        >
-                          {/* Fallback si le navigateur ne peut pas afficher le PDF */}
-                          <div className="flex flex-col items-center justify-center h-[700px] p-8">
-                            <FileText className="w-16 h-16 text-gray-400 mb-4" />
-                            <p className="text-gray-700 font-medium mb-2">
-                              Impossible d'afficher l'aperçu PDF dans ce navigateur
-                            </p>
-                            <p className="text-gray-500 text-sm mb-4 text-center">
-                              Veuillez cliquer sur le bouton ci-dessous pour télécharger et visualiser le reçu
-                            </p>
-                            <a
-                              href={pdfBlobUrl}
-                              download={`recu-${clientName.replace(/\s+/g, '-')}.pdf`}
-                              className="btn-outline flex items-center gap-2"
-                            >
-                              <FileText className="w-4 h-4" />
-                              Télécharger le PDF
-                            </a>
-                          </div>
-                        </object>
-                        {/* Debug info (à retirer en production) */}
-                        <p className="text-xs text-gray-400 mt-1 px-2">
-                          PDF chargé: {pdfBlobUrl.substring(0, 30)}...
+                  {/* Affichage spécial pour Android */}
+                  {isAndroid && pdfBlobUrl ? (
+                    <div className="border-2 border-spa-turquoise-200 rounded-xl bg-gradient-to-br from-spa-turquoise-50 to-white p-6 sm:p-8">
+                      <div className="text-center mb-6">
+                        <div className="w-16 h-16 bg-spa-turquoise-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                          <FileText className="w-8 h-8 text-spa-turquoise-600" />
+                        </div>
+                        <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-2">
+                          Reçu généré avec succès
+                        </h3>
+                        <p className="text-sm sm:text-base text-gray-600 mb-4">
+                          Le reçu a été créé pour {clientName}
                         </p>
-                      </>
-                    ) : (
-                      <div className="flex flex-col items-center justify-center h-[700px]">
-                        <Loader2 className="w-12 h-12 text-spa-turquoise-500 animate-spin mb-4" />
-                        <p className="text-gray-600">Génération de l'aperçu du reçu...</p>
                       </div>
-                    )}
-                  </div>
-                  <p className="text-xs text-gray-500 mt-2 text-center">
-                    Aperçu du reçu qui sera envoyé au client par email
+
+                      {/* Résumé du reçu */}
+                      <div className="bg-white rounded-xl p-4 sm:p-5 mb-6 shadow-sm border border-gray-200">
+                        <h4 className="font-semibold text-gray-800 mb-3 text-sm sm:text-base">Détails du traitement :</h4>
+                        <div className="space-y-2 text-xs sm:text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Service :</span>
+                            <span className="font-medium text-gray-800">{selectedService?.name}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Durée :</span>
+                            <span className="font-medium text-gray-800">{duration} minutes</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Date :</span>
+                            <span className="font-medium text-gray-800">
+                              {new Date(treatmentDate).toLocaleDateString('fr-CA')}
+                            </span>
+                          </div>
+                          {selectedDurationData && (
+                            <div className="flex justify-between pt-2 border-t border-gray-200">
+                              <span className="text-gray-600">Prix (avant taxes) :</span>
+                              <span className="font-bold text-spa-turquoise-700 text-base">
+                                {selectedDurationData.price.toFixed(2)}$ CAD
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Instructions pour Android */}
+                      <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 mb-6">
+                        <p className="text-xs sm:text-sm text-blue-800 mb-3">
+                          📱 <strong>Sur Android</strong> : Les aperçus PDF ne sont pas supportés par votre navigateur.
+                          Téléchargez le reçu pour le visualiser avant l'envoi.
+                        </p>
+                      </div>
+
+                      {/* Bouton de téléchargement mis en évidence */}
+                      <a
+                        href={pdfBlobUrl}
+                        download={`recu-${clientName.replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`}
+                        className="btn-primary w-full flex items-center justify-center gap-3 py-4 text-base sm:text-lg"
+                      >
+                        <FileText className="w-5 h-5 sm:w-6 sm:h-6" />
+                        <span>Télécharger et visualiser le reçu</span>
+                      </a>
+
+                      <p className="text-xs text-gray-500 mt-3 text-center leading-relaxed">
+                        Ouvrez le fichier téléchargé pour vérifier toutes les informations avant d'envoyer
+                      </p>
+                    </div>
+                  ) : (
+                    /* Affichage standard pour iOS/Desktop */
+                    <div className="border-2 border-gray-200 rounded-xl overflow-hidden bg-white shadow-inner">
+                      {pdfBlobUrl ? (
+                        <>
+                          <object
+                            data={pdfBlobUrl}
+                            type="application/pdf"
+                            className="w-full h-[600px] sm:h-[700px]"
+                            aria-label="Aperçu du reçu PDF"
+                          >
+                            {/* Fallback si le navigateur ne peut pas afficher le PDF */}
+                            <div className="flex flex-col items-center justify-center min-h-[500px] p-6 sm:p-8">
+                              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                                <FileText className="w-8 h-8 text-gray-400" />
+                              </div>
+                              <p className="text-gray-700 font-medium mb-2 text-base sm:text-lg text-center">
+                                Impossible d'afficher l'aperçu PDF
+                              </p>
+                              <p className="text-gray-500 text-sm sm:text-base mb-6 text-center max-w-md">
+                                Votre navigateur ne supporte pas l'affichage de PDFs intégrés.
+                                Téléchargez le reçu pour le visualiser avant l'envoi.
+                              </p>
+
+                              {/* Résumé du reçu dans le fallback */}
+                              <div className="bg-spa-turquoise-50 rounded-xl p-4 mb-6 max-w-sm w-full">
+                                <h4 className="font-semibold text-gray-800 mb-3 text-sm">Résumé :</h4>
+                                <div className="space-y-2 text-xs">
+                                  <div className="flex justify-between">
+                                    <span className="text-gray-600">Service :</span>
+                                    <span className="font-medium text-gray-800">{selectedService?.name}</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-gray-600">Durée :</span>
+                                    <span className="font-medium text-gray-800">{duration} min</span>
+                                  </div>
+                                  {selectedDurationData && (
+                                    <div className="flex justify-between pt-2 border-t border-gray-300">
+                                      <span className="text-gray-600">Prix :</span>
+                                      <span className="font-bold text-spa-turquoise-700">
+                                        {selectedDurationData.price.toFixed(2)}$
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+
+                              <a
+                                href={pdfBlobUrl}
+                                download={`recu-${clientName.replace(/\s+/g, '-')}.pdf`}
+                                className="btn-primary flex items-center gap-2"
+                              >
+                                <FileText className="w-4 h-4 sm:w-5 sm:h-5" />
+                                <span>Télécharger le reçu</span>
+                              </a>
+                            </div>
+                          </object>
+                        </>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center h-[600px] sm:h-[700px]">
+                          <Loader2 className="w-10 h-10 sm:w-12 sm:h-12 text-spa-turquoise-500 animate-spin mb-4" />
+                          <p className="text-gray-600 text-sm sm:text-base">Génération de l'aperçu du reçu...</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <p className="text-xs sm:text-sm text-gray-500 mt-3 text-center leading-relaxed">
+                    {isAndroid
+                      ? "Vérifiez le reçu téléchargé avant de l'envoyer au client"
+                      : "Aperçu du reçu qui sera envoyé au client par email"
+                    }
                   </p>
                 </div>
 
