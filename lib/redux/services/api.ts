@@ -965,12 +965,14 @@ export const api = createApi({
           totalPages: number;
         };
       },
-      { search?: string; serviceType?: string }
+      { search?: string; serviceType?: string; limit?: number }
     >({
-      query: ({ search, serviceType }) => {
+      query: ({ search, serviceType, limit }) => {
         const params = new URLSearchParams();
         if (search) params.append('search', search);
         if (serviceType && serviceType !== 'ALL') params.append('serviceType', serviceType);
+        // Utiliser une limite élevée pour récupérer tous les clients lors d'une recherche
+        if (limit) params.append('limit', limit.toString());
         return `/clients?${params.toString()}`;
       },
       transformResponse: (response: any) => {

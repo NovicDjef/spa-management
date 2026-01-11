@@ -66,6 +66,7 @@ export default function DashboardPage() {
   const { data: allClientsData, isLoading: isLoadingAllClients, refetch: refetchAllClients } = useGetClientsQuery({
     search: searchQuery || undefined,
     serviceType: selectedFilter !== 'ALL' ? selectedFilter : undefined,
+    limit: 10000, // Limite élevée pour récupérer TOUS les clients (recherche dans toute la base)
   }, {
     skip: isProfessional,
   });
