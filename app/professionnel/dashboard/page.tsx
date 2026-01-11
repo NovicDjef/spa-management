@@ -291,6 +291,11 @@ export default function DashboardPage() {
     );
   }
 
+  // Log pour déboguer l'affichage
+  console.log('📋 Dashboard - Rôle utilisateur:', currentUser.role);
+  console.log('📋 Dashboard - isProfessional:', isProfessional);
+  console.log('📋 Dashboard - Affichage:', (currentUser.role === 'ADMIN' || currentUser.role === 'SECRETAIRE') ? 'GRILLE (Admin/Secrétaire)' : 'LISTE (Techniciens)');
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-spa-beige-50 via-white to-spa-turquoise-50">
       <Header user={currentUser ?? undefined} />
