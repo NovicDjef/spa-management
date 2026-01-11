@@ -53,13 +53,20 @@ export default function DashboardPage() {
   // Utiliser la bonne requête selon le rôle
   const isProfessional = currentUser?.role === 'MASSOTHERAPEUTE' || currentUser?.role === 'ESTHETICIENNE';
 
+  // États de recherche et filtres (doivent être déclarés AVANT les queries qui les utilisent)
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedFilter, setSelectedFilter] = useState('ALL');
+
   // Pour les professionnels : récupérer uniquement leurs clients assignés
   const { data: assignedClientsData, isLoading: isLoadingAssignedClients, refetch: refetchAssignedClients } = useGetAssignedClientsQuery(undefined, {
     skip: !isProfessional,
   });
 
-  // Pour les admin/secrétaire : récupérer tous les clients
-  const { data: allClientsData, isLoading: isLoadingAllClients, refetch: refetchAllClients } = useGetClientsQuery({}, {
+  // Pour les admin/secrétaire : récupérer tous les clients avec recherche et filtres
+  const { data: allClientsData, isLoading: isLoadingAllClients, refetch: refetchAllClients } = useGetClientsQuery({
+    search: searchQuery || undefined,
+    serviceType: selectedFilter !== 'ALL' ? selectedFilter : undefined,
+  }, {
     skip: isProfessional,
   });
 
@@ -113,8 +120,6 @@ export default function DashboardPage() {
   }, [usersData]);
 
   const [filteredClients, setFilteredClients] = useState<Client[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedFilter, setSelectedFilter] = useState('ALL');
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [selectedProfessional, setSelectedProfessional] = useState('');
@@ -126,9 +131,16 @@ export default function DashboardPage() {
   }, [clients, searchQuery, selectedFilter]);
 
   const filterClients = () => {
-    let filtered = [...clients];
+    // Pour admin/secrétaire : l'API fait la recherche côté serveur, on utilise les résultats directement
+    // Pour professionnels : on fait la recherche côté client (car assignedClients ne supporte pas la recherche serveur)
+    if (!isProfessional) {
+      // Admin/Secrétaire : utiliser les résultats de l'API directement (déjà filtrés par le backend)
+      setFilteredClients(clients);
+      return;
+    }
 
-    // Pas besoin de filtrer par assignation, l'API le fait déjà pour les professionnels
+    // Professionnels : filtrage côté client
+    let filtered = [...clients];
 
     // Filter by search query
     if (searchQuery) {
