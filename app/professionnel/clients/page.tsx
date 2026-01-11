@@ -35,7 +35,7 @@ export default function ClientsPage() {
 
   // Rediriger si l'utilisateur n'a pas accès
   useEffect(() => {
-    if (currentUser && (currentUser.role === 'SECRETAIRE' || currentUser.role === 'ADMIN')) {
+    if (currentUser && (currentUser.role === 'RECEPTIONISTE' || currentUser.role === 'ADMIN')) {
       router.push('/professionnel/dashboard');
     }
   }, [currentUser, router]);

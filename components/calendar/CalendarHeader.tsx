@@ -14,7 +14,7 @@ interface CalendarHeaderProps {
   onToday: () => void;
   onNewBooking: () => void;
   onGenerateSchedule?: () => void; // Nouveau callback pour générer les horaires
-  userRole?: 'ADMIN' | 'SECRETAIRE' | 'MASSOTHERAPEUTE' | 'ESTHETICIENNE';
+  userRole?: 'ADMIN' | 'RECEPTIONISTE' | 'MASSOTHERAPEUTE' | 'ESTHETICIENNE';
   searchQuery?: string;
   onSearchChange?: (query: string) => void;
 }
@@ -35,7 +35,7 @@ export default function CalendarHeader({
   onSearchChange,
 }: CalendarHeaderProps) {
   // Seuls les ADMIN et SECRETAIRE peuvent créer des réservations
-  const canCreateBooking = userRole === 'ADMIN' || userRole === 'SECRETAIRE';
+  const canCreateBooking = userRole === 'ADMIN' || userRole === 'RECEPTIONISTE';
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
   const dateInputRef = useRef<HTMLInputElement>(null);

@@ -446,8 +446,8 @@ export default function ProfilPage() {
                   value={
                     currentUser.role === 'ADMIN'
                       ? 'Administrateur'
-                      : currentUser.role === 'SECRETAIRE'
-                      ? 'Secrétaire'
+                      : currentUser.role === 'RECEPTIONISTE'
+                      ? 'Réceptionniste'
                       : currentUser.role === 'MASSOTHERAPEUTE'
                       ? 'Massothérapeute'
                       : currentUser.role === 'ESTHETICIENNE'

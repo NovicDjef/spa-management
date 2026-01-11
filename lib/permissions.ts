@@ -1,27 +1,27 @@
 // Système de gestion des permissions basé sur les rôles
 
-export type Role = 'ADMIN' | 'SECRETAIRE' | 'MASSOTHERAPEUTE' | 'ESTHETICIENNE' | 'CLIENT';
+export type Role = 'ADMIN' | 'RECEPTIONISTE' | 'MASSOTHERAPEUTE' | 'ESTHETICIENNE' | 'CLIENT';
 
 export const PERMISSIONS = {
   // Permissions liées aux clients
-  VIEW_ALL_CLIENTS: ['ADMIN', 'SECRETAIRE'],
-  VIEW_ASSIGNED_CLIENTS: ['ADMIN', 'SECRETAIRE', 'MASSOTHERAPEUTE', 'ESTHETICIENNE'],
+  VIEW_ALL_CLIENTS: ['ADMIN', 'RECEPTIONISTE'],
+  VIEW_ASSIGNED_CLIENTS: ['ADMIN', 'RECEPTIONISTE', 'MASSOTHERAPEUTE', 'ESTHETICIENNE'],
   CREATE_CLIENT: ['PUBLIC'], // PUBLIC signifie que n'importe qui peut créer un client
   EDIT_CLIENT: ['ADMIN'], // Seul l'admin peut modifier les clients
   DELETE_CLIENT: ['ADMIN'], // Seul l'admin peut supprimer les clients
 
   // Permissions liées aux assignations
-  ASSIGN_CLIENTS: ['ADMIN', 'SECRETAIRE'],
-  VIEW_ASSIGNMENTS: ['ADMIN', 'SECRETAIRE'],
+  ASSIGN_CLIENTS: ['ADMIN', 'RECEPTIONISTE'],
+  VIEW_ASSIGNMENTS: ['ADMIN', 'RECEPTIONISTE'],
 
   // Permissions liées aux notes
-  ADD_NOTE: ['ADMIN', 'MASSOTHERAPEUTE', 'ESTHETICIENNE'], // SECRETAIRE RETIRÉ
-  VIEW_NOTES: ['ADMIN', 'SECRETAIRE', 'MASSOTHERAPEUTE', 'ESTHETICIENNE'],
+  ADD_NOTE: ['ADMIN', 'MASSOTHERAPEUTE', 'ESTHETICIENNE'], // RECEPTIONISTE RETIRÉ
+  VIEW_NOTES: ['ADMIN', 'RECEPTIONISTE', 'MASSOTHERAPEUTE', 'ESTHETICIENNE'],
   EDIT_OWN_NOTE: ['ADMIN', 'MASSOTHERAPEUTE', 'ESTHETICIENNE'], // Peuvent éditer leurs propres notes
   DELETE_NOTE: ['ADMIN'], // Seul l'admin peut supprimer les notes
 
   // Permissions liées aux professionnels
-  VIEW_PROFESSIONALS: ['ADMIN', 'SECRETAIRE'],
+  VIEW_PROFESSIONALS: ['ADMIN', 'RECEPTIONISTE'],
   MANAGE_PROFESSIONALS: ['ADMIN'],
 
   // Permissions liées aux employés (NOUVEAU)
@@ -59,10 +59,10 @@ export function isAdmin(userRole: Role | string | undefined | null): boolean {
 }
 
 /**
- * Vérifie si l'utilisateur est admin ou secrétaire
+ * Vérifie si l'utilisateur est admin ou réceptionniste
  */
 export function isAdminOrSecretary(userRole: Role | string | undefined | null): boolean {
-  return userRole === 'ADMIN' || userRole === 'SECRETAIRE';
+  return userRole === 'ADMIN' || userRole === 'RECEPTIONISTE';
 }
 
 /**
@@ -74,13 +74,13 @@ export function isProfessional(userRole: Role | string | undefined | null): bool
 
 /**
  * Vérifie si un utilisateur peut voir un client spécifique
- * Les admins et secrétaires peuvent voir tous les clients
+ * Les admins et réceptionnistes peuvent voir tous les clients
  * Les professionnels peuvent voir uniquement leurs clients assignés
  */
 export function canViewClient(userRole: Role | string | undefined | null, isAssigned: boolean = false): boolean {
   if (!userRole) return false;
 
-  // Admin et secrétaire peuvent voir tous les clients
+  // Admin et réceptionniste peuvent voir tous les clients
   if (isAdminOrSecretary(userRole)) return true;
 
   // Les professionnels peuvent voir uniquement leurs clients assignés
@@ -95,7 +95,7 @@ export function canViewClient(userRole: Role | string | undefined | null, isAssi
 export function canAddNote(userRole: Role | string | undefined | null, isAssigned: boolean = false): boolean {
   if (!userRole) return false;
 
-  // Admin et secrétaire peuvent ajouter des notes à tous les clients
+  // Admin et réceptionniste peuvent ajouter des notes à tous les clients
   if (isAdminOrSecretary(userRole)) return true;
 
   // Les professionnels peuvent ajouter des notes uniquement à leurs clients assignés
@@ -124,8 +124,8 @@ export function getRoleLabel(role: Role | string): string {
   switch (role) {
     case 'ADMIN':
       return 'Administrateur';
-    case 'SECRETAIRE':
-      return 'Secrétaire';
+    case 'RECEPTIONISTE':
+      return 'Réceptionniste';
     case 'MASSOTHERAPEUTE':
       return 'Massothérapeute';
     case 'ESTHETICIENNE':
@@ -144,7 +144,7 @@ export function getRoleColor(role: Role | string): string {
   switch (role) {
     case 'ADMIN':
       return 'gray-800';
-    case 'SECRETAIRE':
+    case 'RECEPTIONISTE':
       return 'spa-turquoise-500';
     case 'MASSOTHERAPEUTE':
       return 'spa-menthe-500';

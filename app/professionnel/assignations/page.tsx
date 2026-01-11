@@ -21,7 +21,7 @@ export default function AssignationsPage() {
   console.log('assignmentsData', assignmentsData);
   // Rediriger si l'utilisateur n'a pas accès
   useEffect(() => {
-    if (currentUser && currentUser.role !== 'SECRETAIRE' && currentUser.role !== 'ADMIN') {
+    if (currentUser && currentUser.role !== 'RECEPTIONISTE' && currentUser.role !== 'ADMIN') {
       router.push('/professionnel/dashboard');
     }
   }, [currentUser, router]);
@@ -53,7 +53,7 @@ export default function AssignationsPage() {
     }
   };
 
-  if (!currentUser || (currentUser.role !== 'SECRETAIRE' && currentUser.role !== 'ADMIN')) {
+  if (!currentUser || (currentUser.role !== 'RECEPTIONISTE' && currentUser.role !== 'ADMIN')) {
     return null;
   }
 
@@ -218,7 +218,7 @@ export default function AssignationsPage() {
                                   {assignment.assignedBy.prenom} {assignment.assignedBy.nom}
                                 </div>
                                 <div className="text-gray-500 text-xs">
-                                  {assignment.assignedBy.role === 'ADMIN' ? 'Admin' : 'Secrétaire'}
+                                  {assignment.assignedBy.role === 'ADMIN' ? 'Admin' : 'Réceptionniste'}
                                 </div>
                               </div>
                             </div>

@@ -21,7 +21,7 @@ interface ClientCardProps {
       id: string;
       nom: string;
       prenom: string;
-      role: 'ADMIN' | 'SECRETAIRE';
+      role: 'ADMIN' | 'RECEPTIONISTE';
     } | null;
     assignedTo?: {
       id: string;
@@ -41,7 +41,7 @@ interface ClientCardProps {
     numeroMembreOrdre?: string;
   };
   showTherapistActions?: boolean; // Afficher les actions pour les massothérapeutes
-  disableLink?: boolean; // Désactiver le lien vers le dossier du client (pour les secrétaires)
+  disableLink?: boolean; // Désactiver le lien vers le dossier du client (pour les réceptionnistes)
 }
 
 export function ClientCard({
@@ -167,7 +167,7 @@ export function ClientCard({
                       <span>
                         Par: <span className="font-medium">{client.assignedBy.prenom} {client.assignedBy.nom}</span>
                         <span className="text-gray-500 ml-1">
-                          ({client.assignedBy.role === 'ADMIN' ? 'Admin' : 'Secrétaire'})
+                          ({client.assignedBy.role === 'ADMIN' ? 'Admin' : 'Réceptionniste'})
                         </span>
                       </span>
                     </div>
@@ -187,7 +187,7 @@ export function ClientCard({
           </div>
         )}
 
-        {/* Actions pour Admin/Secrétaire */}
+        {/* Actions pour Admin/Réceptionniste */}
         {showActions && (
           <div className="mt-4 pt-4 border-t border-gray-200">
             <button

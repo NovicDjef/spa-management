@@ -27,7 +27,7 @@ export interface AssignedByInfo {
   id: string;
   nom: string;
   prenom: string;
-  role: 'ADMIN' | 'SECRETAIRE';
+  role: 'ADMIN' | 'RECEPTIONISTE';
 }
 
 export interface AssignedToInfo {
@@ -170,7 +170,7 @@ export interface AssignmentDetails {
     nom: string;
     prenom: string;
     email: string;
-    role: 'ADMIN' | 'SECRETAIRE';
+    role: 'ADMIN' | 'RECEPTIONISTE';
   };
 }
 
@@ -186,7 +186,7 @@ export interface User {
   telephone: string;
   nom: string;
   prenom: string;
-  role: 'ADMIN' | 'SECRETAIRE' | 'MASSOTHERAPEUTE' | 'ESTHETICIENNE';
+  role: 'ADMIN' | 'RECEPTIONISTE' | 'MASSOTHERAPEUTE' | 'ESTHETICIENNE';
   isActive: boolean;
   numeroMembreOrdre?: string; // Numéro d'ordre professionnel pour les thérapeutes
   adresse?: string; // Adresse de l'employé
@@ -205,7 +205,7 @@ export interface CreateUserData {
   email: string;
   telephone: string;
   password: string;
-  role: 'ADMIN' | 'SECRETAIRE' | 'MASSOTHERAPEUTE' | 'ESTHETICIENNE';
+  role: 'ADMIN' | 'RECEPTIONISTE' | 'MASSOTHERAPEUTE' | 'ESTHETICIENNE';
   nom: string;
   prenom: string;
   adresse?: string;
@@ -217,7 +217,7 @@ export interface UpdateUserData {
   telephone?: string;
   nom?: string;
   prenom?: string;
-  role?: 'ADMIN' | 'SECRETAIRE' | 'MASSOTHERAPEUTE' | 'ESTHETICIENNE';
+  role?: 'ADMIN' | 'RECEPTIONISTE' | 'MASSOTHERAPEUTE' | 'ESTHETICIENNE';
   password?: string;
   adresse?: string;
   numeroMembreOrdre?: string;

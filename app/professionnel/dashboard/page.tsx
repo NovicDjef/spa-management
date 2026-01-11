@@ -29,7 +29,7 @@ interface Client {
     id: string;
     nom: string;
     prenom: string;
-    role: 'ADMIN' | 'SECRETAIRE';
+    role: 'ADMIN' | 'RECEPTIONISTE';
   } | null;
   assignedTo?: {
     id: string;
@@ -62,7 +62,7 @@ export default function DashboardPage() {
     skip: !isProfessional,
   });
 
-  // Pour les admin/secrétaire : récupérer tous les clients avec recherche et filtres
+  // Pour les admin/réceptionniste : récupérer tous les clients avec recherche et filtres
   const { data: allClientsData, isLoading: isLoadingAllClients, refetch: refetchAllClients } = useGetClientsQuery({
     search: searchQuery || undefined,
     serviceType: selectedFilter !== 'ALL' ? selectedFilter : undefined,
@@ -89,10 +89,10 @@ export default function DashboardPage() {
     ? (assignedClientsData?.clients || [])
     : (allClientsData?.clients || []);
 
-  // Nombre total de clients (utiliser pagination.total pour admin/secrétaire)
+  // Nombre total de clients (utiliser pagination.total pour admin/réceptionniste)
   const totalClientsCount = isProfessional
     ? clients.length  // Pour les professionnels : nombre de clients assignés
-    : (allClientsData?.pagination?.total || clients.length);  // Pour admin/secrétaire : total de la pagination
+    : (allClientsData?.pagination?.total || clients.length);  // Pour admin/réceptionniste : total de la pagination
 
   const isLoading = isProfessional ? isLoadingAssignedClients : isLoadingAllClients;
 
@@ -132,10 +132,10 @@ export default function DashboardPage() {
   }, [clients, searchQuery, selectedFilter]);
 
   const filterClients = () => {
-    // Pour admin/secrétaire : l'API fait la recherche côté serveur, on utilise les résultats directement
+    // Pour admin/réceptionniste : l'API fait la recherche côté serveur, on utilise les résultats directement
     // Pour professionnels : on fait la recherche côté client (car assignedClients ne supporte pas la recherche serveur)
     if (!isProfessional) {
-      // Admin/Secrétaire : utiliser les résultats de l'API directement (déjà filtrés par le backend)
+      // Admin/Réceptionniste : utiliser les résultats de l'API directement (déjà filtrés par le backend)
       setFilteredClients(clients);
       return;
     }
@@ -294,7 +294,7 @@ export default function DashboardPage() {
   // Log pour déboguer l'affichage
   console.log('📋 Dashboard - Rôle utilisateur:', currentUser.role);
   console.log('📋 Dashboard - isProfessional:', isProfessional);
-  console.log('📋 Dashboard - Affichage:', (currentUser.role === 'ADMIN' || currentUser.role === 'SECRETAIRE') ? 'GRILLE (Admin/Secrétaire)' : 'LISTE (Techniciens)');
+  console.log('📋 Dashboard - Affichage:', (currentUser.role === 'ADMIN' || currentUser.role === 'RECEPTIONISTE') ? 'GRILLE (Admin/Réceptionniste)' : 'LISTE (Techniciens)');
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-spa-beige-50 via-white to-spa-turquoise-50">
@@ -349,7 +349,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Cartes d'accès rapide */}
-          {(currentUser.role === 'ADMIN' || currentUser.role === 'SECRETAIRE' || currentUser.role === 'MASSOTHERAPEUTE' || currentUser.role === 'ESTHETICIENNE') && (
+          {(currentUser.role === 'ADMIN' || currentUser.role === 'RECEPTIONISTE' || currentUser.role === 'MASSOTHERAPEUTE' || currentUser.role === 'ESTHETICIENNE') && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -357,7 +357,7 @@ export default function DashboardPage() {
               className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6"
             >
               {/* Assignations */}
-              {(currentUser.role === 'ADMIN' || currentUser.role === 'SECRETAIRE') && (
+              {(currentUser.role === 'ADMIN' || currentUser.role === 'RECEPTIONISTE') && (
                 <Link href="/professionnel/assignations">
                   <motion.div
                     whileHover={{ scale: 1.02, y: -4 }}
@@ -493,8 +493,8 @@ export default function DashboardPage() {
           </motion.div>
         ) : (
           <>
-            {/* Affichage pour ADMIN et SECRETAIRE : Format grille avec toutes les infos */}
-            {(currentUser.role === 'ADMIN' || currentUser.role === 'SECRETAIRE') ? (
+            {/* Affichage pour ADMIN et RECEPTIONISTE : Format grille avec toutes les infos */}
+            {(currentUser.role === 'ADMIN' || currentUser.role === 'RECEPTIONISTE') ? (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -510,11 +510,11 @@ export default function DashboardPage() {
                   >
                     <ClientCard
                       client={client}
-                      showActions={currentUser.role === 'ADMIN' || currentUser.role === 'SECRETAIRE'}
+                      showActions={currentUser.role === 'ADMIN' || currentUser.role === 'RECEPTIONISTE'}
                       onAssign={hasPermission(currentUser.role, 'ASSIGN_CLIENTS') ? handleAssignClient : undefined}
                       currentUser={currentUser}
                       showTherapistActions={false}
-                      disableLink={currentUser.role === 'SECRETAIRE'}
+                      disableLink={currentUser.role === 'RECEPTIONISTE'}
                     />
                   </motion.div>
                 ))}
@@ -750,7 +750,7 @@ export default function DashboardPage() {
                                 {assignment.assignedBy.prenom} {assignment.assignedBy.nom}
                               </div>
                               <div className="text-gray-500 text-xs">
-                                {assignment.assignedBy.role === 'ADMIN' ? 'Admin' : 'Secrétaire'}
+                                {assignment.assignedBy.role === 'ADMIN' ? 'Admin' : 'Réceptionniste'}
                               </div>
                             </div>
                           </div>
@@ -819,7 +819,7 @@ export default function DashboardPage() {
                           <p>
                             <strong>Par:</strong> {selectedClient.assignedBy.prenom} {selectedClient.assignedBy.nom}
                             <span className="text-amber-700 ml-1">
-                              ({selectedClient.assignedBy.role === 'ADMIN' ? 'Admin' : 'Secrétaire'})
+                              ({selectedClient.assignedBy.role === 'ADMIN' ? 'Admin' : 'Réceptionniste'})
                             </span>
                           </p>
                         )}

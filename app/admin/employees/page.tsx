@@ -41,7 +41,7 @@ import { getRoleLabel, getRoleColor } from '@/lib/permissions';
 import { ReviewsModal } from '@/components/reviews/ReviewsModal';
 import Link from 'next/link';
 
-type UserRole = 'ADMIN' | 'SECRETAIRE' | 'MASSOTHERAPEUTE' | 'ESTHETICIENNE';
+type UserRole = 'ADMIN' | 'RECEPTIONISTE' | 'MASSOTHERAPEUTE' | 'ESTHETICIENNE';
 
 export default function EmployeesPage() {
   const currentUser = useAppSelector((state) => state.auth.user);
@@ -93,7 +93,7 @@ export default function EmployeesPage() {
     email: '',
     telephone: '',
     password: '',
-    role: 'SECRETAIRE' as UserRole,
+    role: 'RECEPTIONISTE' as UserRole,
     nom: '',
     prenom: '',
     adresse: '',
@@ -126,7 +126,7 @@ export default function EmployeesPage() {
         email: '',
         telephone: '',
         password: '',
-        role: 'SECRETAIRE',
+        role: 'RECEPTIONISTE',
         nom: '',
         prenom: '',
         adresse: '',
@@ -380,7 +380,7 @@ const handleToggleStatus = async (user: any) => {
                 >
                   <option value="ALL">Tous les rôles</option>
                   <option value="ADMIN">Administrateur</option>
-                  <option value="SECRETAIRE">Secrétaire</option>
+                  <option value="SECRETAIRE">Réceptionniste</option>
                   <option value="MASSOTHERAPEUTE">Massothérapeute</option>
                   <option value="ESTHETICIENNE">Esthéticienne</option>
                 </select>
@@ -633,7 +633,7 @@ const handleToggleStatus = async (user: any) => {
                     onChange={(e) => setFormData({ ...formData, role: e.target.value as UserRole })}
                     className="input-spa"
                   >
-                    <option value="SECRETAIRE">Secrétaire</option>
+                    <option value="SECRETAIRE">Réceptionniste</option>
                     <option value="MASSOTHERAPEUTE">Massothérapeute</option>
                     <option value="ESTHETICIENNE">Esthéticienne</option>
                     <option value="ADMIN">Administrateur</option>
@@ -870,7 +870,7 @@ const handleToggleStatus = async (user: any) => {
               onChange={(e) => setFormData({ ...formData, role: e.target.value as UserRole })}
               className="input-spa"
             >
-              <option value="SECRETAIRE">Secrétaire</option>
+              <option value="SECRETAIRE">Réceptionniste</option>
               <option value="MASSOTHERAPEUTE">Massothérapeute</option>
               <option value="ESTHETICIENNE">Esthéticienne</option>
               <option value="ADMIN">Administrateur</option>

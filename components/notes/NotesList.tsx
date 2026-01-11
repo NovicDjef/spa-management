@@ -108,8 +108,8 @@ export function NotesList({ notes, isLoading = false, currentUserId, currentUser
         return 'Massothérapeute';
       case 'ESTHETICIENNE':
         return 'Esthéticienne';
-      case 'SECRETAIRE':
-        return 'Secrétaire';
+      case 'RECEPTIONISTE':
+        return 'Réceptionniste';
       case 'ADMIN':
         return 'Administrateur';
       default:
@@ -123,7 +123,7 @@ export function NotesList({ notes, isLoading = false, currentUserId, currentUser
         return 'bg-spa-menthe-100 text-spa-menthe-700';
       case 'ESTHETICIENNE':
         return 'bg-spa-lavande-100 text-spa-lavande-700';
-      case 'SECRETAIRE':
+      case 'RECEPTIONISTE':
         return 'bg-spa-rose-100 text-spa-rose-700';
       case 'ADMIN':
         return 'bg-gray-100 text-gray-700';

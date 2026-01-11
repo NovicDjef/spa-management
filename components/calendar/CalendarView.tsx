@@ -35,7 +35,7 @@ import { Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface CalendarViewProps {
-  userRole: 'ADMIN' | 'SECRETAIRE' | 'MASSOTHERAPEUTE' | 'ESTHETICIENNE';
+  userRole: 'ADMIN' | 'RECEPTIONISTE' | 'MASSOTHERAPEUTE' | 'ESTHETICIENNE';
   userId?: string;
 }
 
@@ -203,7 +203,7 @@ export default function CalendarView({ userRole, userId }: CalendarViewProps) {
   };
 
   // Vérifier si l'utilisateur peut créer des réservations
-  const canCreateBooking = userRole === 'ADMIN' || userRole === 'SECRETAIRE';
+  const canCreateBooking = userRole === 'ADMIN' || userRole === 'RECEPTIONISTE';
 
   // Handlers
   const handleSlotClick = (professionalId: string, date: Date, timeSlot: string) => {
@@ -700,7 +700,7 @@ export default function CalendarView({ userRole, userId }: CalendarViewProps) {
             </>
           ) : (
             <>
-              {console.log('✅ Affichage HorizontalCalendarGrid (admin/secrétaire)')}
+              {console.log('✅ Affichage HorizontalCalendarGrid (admin/réceptionniste)')}
               <HorizontalCalendarGrid
                 date={selectedDate}
                 professionals={professionals}

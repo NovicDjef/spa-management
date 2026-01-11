@@ -8,7 +8,7 @@ import CalendarView from '@/components/calendar/CalendarView';
 import { useAppSelector } from '@/lib/redux/hooks';
 
 /**
- * Page calendrier pour les admins et secrétaires
+ * Page calendrier pour les admins et réceptionnistes
  */
 export default function AdminCalendarPage() {
   const currentUser = useAppSelector((state) => state.auth.user);

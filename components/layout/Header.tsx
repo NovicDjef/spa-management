@@ -101,8 +101,8 @@ export function Header({ user: userProp }: HeaderProps) {
 
   const getRoleLabel = (role: string) => {
     switch (role) {
-      case 'SECRETAIRE':
-        return 'Secrétaire';
+      case 'RECEPTIONISTE':
+        return 'Réceptionniste';
       case 'MASSOTHERAPEUTE':
         return 'Massothérapeute';
       case 'ESTHETICIENNE':
@@ -148,8 +148,8 @@ export function Header({ user: userProp }: HeaderProps) {
           {/* User info & actions - Desktop */}
           {user && (
             <div className="hidden md:flex items-center gap-3">
-              {/* Bouton "Calendrier" pour admin et secrétaire */}
-              {/* {(user.role === 'ADMIN' || user.role === 'SECRETAIRE') && (
+              {/* Bouton "Calendrier" pour admin et réceptionniste */}
+              {/* {(user.role === 'ADMIN' || user.role === 'RECEPTIONISTE') && (
                 <Link href="/admin/calendar">
                   <motion.button
                     whileHover={{ scale: 1.05, y: -2 }}
@@ -224,8 +224,8 @@ export function Header({ user: userProp }: HeaderProps) {
               </div>
             </div>
             <div className="space-y-2">
-              {/* Bouton "Calendrier" pour admin et secrétaire */}
-              {/* {(user.role === 'ADMIN' || user.role === 'SECRETAIRE') && (
+              {/* Bouton "Calendrier" pour admin et réceptionniste */}
+              {/* {(user.role === 'ADMIN' || user.role === 'RECEPTIONISTE') && (
                 <Link
                   href="/admin/calendar"
                   onClick={() => setShowMenu(false)}
