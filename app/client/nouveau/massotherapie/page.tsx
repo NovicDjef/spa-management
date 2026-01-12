@@ -1079,7 +1079,7 @@ export default function MassotherapieFormPage() {
       )}
     </button>
   )}
-</div>
+          </div>
 
         </div>
 

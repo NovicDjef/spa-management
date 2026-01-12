@@ -765,7 +765,7 @@ export default function EsthetiqueFormPage() {
           </AnimatePresence>
 
           {/* Boutons de navigation */}
-          <div className="flex justify-between gap-4 mt-8 pt-6 border-t border-gray-200">
+          {/* <div className="flex justify-between gap-4 mt-8 pt-6 border-t border-gray-200">
             <button
               onClick={prevStep}
               disabled={currentStep === 1}
@@ -801,7 +801,97 @@ export default function EsthetiqueFormPage() {
                 )}
               </button>
             )}
-          </div>
+          </div> */}
+
+          <div className="flex justify-between gap-4 mt-8 pt-6 border-t border-gray-200">
+            {/* Bouton Précédent */}
+            <button
+              onClick={prevStep}
+              disabled={currentStep === 1}
+              className="
+                btn-outline
+                flex items-center gap-2
+                text-sm md:text-base
+                px-4 md:px-6 py-2 md:py-3
+          
+                /* FIX iPad */
+                opacity-100
+                bg-transparent
+                text-primary
+          
+                disabled:opacity-50
+                disabled:cursor-not-allowed
+          
+                /* Hover uniquement desktop */
+                md:hover:bg-primary/10
+              "
+            >
+              <ChevronLeft className="w-5 h-5 md:w-6 md:h-6" />
+              <span className="hidden sm:inline">Précédent</span>
+            </button>
+          
+            {currentStep < totalSteps ? (
+              /* Bouton Suivant */
+              <button
+                onClick={nextStep}
+                className="
+                  btn-primary
+                  flex items-center gap-2
+                  text-sm md:text-base
+                  px-4 md:px-6 py-2 md:py-3
+          
+                  /* FIX iPad */
+                  opacity-100
+                  bg-primary
+                  text-white
+          
+                  /* Hover uniquement desktop */
+                  md:hover:bg-primary/90
+                  md:hover:opacity-100
+                "
+              >
+                <span className="hidden sm:inline">Suivant</span>
+                <span className="sm:hidden">Suivant</span>
+                <ChevronRight className="w-5 h-5 md:w-6 md:h-6" />
+              </button>
+            ) : (
+              /* Bouton Soumettre */
+              <button
+                onClick={handleSubmit}
+                disabled={isLoading}
+                className="
+                  btn-primary
+                  flex items-center gap-2
+                  text-sm md:text-base
+                  px-4 md:px-6 py-2 md:py-3
+          
+                  /* FIX iPad */
+                  opacity-100
+                  bg-primary
+                  text-white
+          
+                  disabled:opacity-60
+                  disabled:cursor-not-allowed
+          
+                  /* Hover uniquement desktop */
+                  md:hover:bg-primary/90
+                "
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 md:w-6 md:h-6 animate-spin" />
+                    <span className="hidden sm:inline">Enregistrement...</span>
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-5 h-5 md:w-6 md:h-6" />
+                    <span className="hidden sm:inline">Soumettre</span>
+                    <span className="sm:hidden">OK</span>
+                  </>
+                )}
+              </button>
+            )}
+                    </div>
         </div>
 
         {/* Bouton retour */}
