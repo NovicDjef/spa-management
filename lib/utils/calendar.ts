@@ -80,9 +80,18 @@ export function getStatusLabel(status: BookingStatus): string {
 
 // Formater plage horaire
 export function formatTimeRange(startTime: string, endTime: string): string {
-  const start = parseISO(startTime);
-  const end = parseISO(endTime);
-  return `${format(start, 'HH:mm', { locale: fr })} - ${format(end, 'HH:mm', { locale: fr })}`;
+  // Si c'est déjà un format ISO complet (ex: "2026-01-14T08:30:00.000Z"), parser normalement
+  // Sinon, si c'est juste une heure (ex: "08:30"), retourner directement
+
+  if (startTime.includes('T')) {
+    // Format ISO complet
+    const start = parseISO(startTime);
+    const end = parseISO(endTime);
+    return `${format(start, 'HH:mm', { locale: fr })} - ${format(end, 'HH:mm', { locale: fr })}`;
+  } else {
+    // Format simple "HH:mm"
+    return `${startTime} - ${endTime}`;
+  }
 }
 
 // Vérifier disponibilité d'un créneau
