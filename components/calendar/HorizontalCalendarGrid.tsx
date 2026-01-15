@@ -131,14 +131,31 @@ export default function HorizontalCalendarGrid({
   const getBookingPosition = (booking: Booking, professionalId: string) => {
     if (booking.professionalId !== professionalId) return null;
 
+    // Utiliser startDateTime et endDateTime si disponibles (nouveau format)
+    // Sinon fallback vers l'ancien format avec startTime/endTime
+    const startDateTimeStr = (booking as any).startDateTime || booking.bookingDate;
+    const endDateTimeStr = (booking as any).endDateTime || booking.bookingDate;
+
     // Parser les dates ISO correctement
-    const startTime = parseISO(booking.startTime);
-    const endTime = parseISO(booking.endTime);
+    const startTime = parseISO(startDateTimeStr);
+    const endTime = parseISO(endDateTimeStr);
+
+    // Si on utilise l'ancien format (bookingDate seulement), ajouter l'heure manuellement
+    if (!(booking as any).startDateTime && booking.startTime) {
+      const [startHour, startMin] = booking.startTime.split(':').map(Number);
+      startTime.setHours(startHour, startMin, 0, 0);
+    }
+    if (!(booking as any).endDateTime && booking.endTime) {
+      const [endHour, endMin] = booking.endTime.split(':').map(Number);
+      endTime.setHours(endHour, endMin, 0, 0);
+    }
 
     // Vérifier que les dates sont valides
     if (isNaN(startTime.getTime()) || isNaN(endTime.getTime())) {
       console.error('❌ Dates invalides pour booking:', {
         bookingId: booking.id,
+        startDateTime: (booking as any).startDateTime,
+        endDateTime: (booking as any).endDateTime,
         startTime: booking.startTime,
         endTime: booking.endTime,
         parsedStart: startTime,
