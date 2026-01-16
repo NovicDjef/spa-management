@@ -114,8 +114,8 @@ export default function BookingSidebar({
           // Si le service a des variations, ajouter chaque variation
           if (service.variations && service.variations.length > 0) {
             service.variations.forEach((variation: any) => {
-              // Ignorer les variations sans ID pour éviter les clés dupliquées
-              if (variation.id) {
+              // Ignorer les variations sans ID ou avec ID vide
+              if (variation.id && variation.id.trim() !== '') {
                 variations.push({
                   id: variation.id, // serviceVariationId
                   serviceId: service.id,
@@ -127,8 +127,8 @@ export default function BookingSidebar({
                 });
               }
             });
-          } else if (service.id) {
-            // Sinon, ajouter le service de base seulement s'il a un ID
+          } else if (service.id && service.id.trim() !== '') {
+            // Sinon, ajouter le service de base seulement s'il a un ID valide
             variations.push({
               id: service.id,
               serviceId: service.id,
@@ -477,8 +477,8 @@ const handleSubmit = async (e: React.FormEvent) => {
                     required
                   >
                     <option value="">Sélectionnez un service</option>
-                    {availableServices.map((variation) => (
-                      <option key={variation.id} value={variation.id}>
+                    {availableServices.map((variation, index) => (
+                      <option key={`${variation.serviceId}-${variation.id}-${index}`} value={variation.id}>
                         {variation.displayName}
                       </option>
                     ))}
