@@ -211,35 +211,47 @@ export default function ProfessionalWeeklyCalendarGrid({
 
   // Calculer la position des réservations
   const getBookingPosition = (booking: Booking) => {
-    // Utiliser startDateTime et endDateTime si disponibles (nouveau format)
-    const startDateTimeStr = (booking as any).startDateTime || booking.bookingDate;
-    const endDateTimeStr = (booking as any).endDateTime || booking.bookingDate;
-
-    // Parser les dates ISO
     let bookingStartDate: Date;
     let bookingEndDate: Date;
 
     try {
-      bookingStartDate = new Date(startDateTimeStr);
-      bookingEndDate = new Date(endDateTimeStr);
+      // Construire les dates complètes à partir de bookingDate + startTime/endTime
+      const bookingDateObj = new Date(booking.bookingDate);
+      const [startHour, startMin] = booking.startTime.split(':').map(Number);
+      const [endHour, endMin] = booking.endTime.split(':').map(Number);
 
-      // Si on utilise l'ancien format (bookingDate seulement), ajouter l'heure manuellement
-      if (!(booking as any).startDateTime && booking.startTime) {
-        const [startHour, startMin] = booking.startTime.split(':').map(Number);
-        bookingStartDate.setHours(startHour, startMin, 0, 0);
-      }
-      if (!(booking as any).endDateTime && booking.endTime) {
-        const [endHour, endMin] = booking.endTime.split(':').map(Number);
-        bookingEndDate.setHours(endHour, endMin, 0, 0);
-      }
+      // Créer les dates avec les heures locales
+      bookingStartDate = new Date(
+        bookingDateObj.getFullYear(),
+        bookingDateObj.getMonth(),
+        bookingDateObj.getDate(),
+        startHour,
+        startMin,
+        0,
+        0
+      );
+
+      bookingEndDate = new Date(
+        bookingDateObj.getFullYear(),
+        bookingDateObj.getMonth(),
+        bookingDateObj.getDate(),
+        endHour,
+        endMin,
+        0,
+        0
+      );
     } catch (error) {
-      console.error('❌ Erreur parsing dates:', error);
+      if (typeof window !== 'undefined') {
+        console.error('❌ Erreur parsing dates:', error, booking);
+      }
       return null;
     }
 
     // Vérifier que les dates sont valides
     if (isNaN(bookingStartDate.getTime()) || isNaN(bookingEndDate.getTime())) {
-      console.error('❌ Dates invalides pour booking:', booking.id);
+      if (typeof window !== 'undefined') {
+        console.error('❌ Dates invalides pour booking:', booking.id);
+      }
       return null;
     }
 
@@ -425,30 +437,34 @@ export default function ProfessionalWeeklyCalendarGrid({
             {/* Réservations pour ce jour */}
             {professionalBookings
               .filter(booking => {
-                // Log seulement côté client pour déboguer
-                if (typeof window !== 'undefined') {
-                  console.log('🔍 Réservation brute:', {
-                    'booking.startTime': booking.startTime,
-                    'booking.endTime': booking.endTime,
-                    'booking.bookingDate': booking.bookingDate,
-                    'client': booking.client?.prenom,
-                  });
-                }
-
-                // Vérifier que startTime existe
-                if (!booking.startTime) {
+                // Vérifier que les données nécessaires existent
+                if (!booking.bookingDate || !booking.startTime) {
                   if (typeof window !== 'undefined') {
-                    console.error('❌ booking.startTime est undefined/null pour:', booking.id);
+                    console.error('❌ Données manquantes:', booking.id);
                   }
                   return false;
                 }
 
-                const bookingDate = new Date(booking.startTime);
+                // Construire la date complète en combinant bookingDate + startTime
+                const bookingDateObj = new Date(booking.bookingDate);
+                const [startHour, startMinute] = booking.startTime.split(':').map(Number);
+
+                // Créer une date en utilisant les composants locaux
+                const bookingDate = new Date(
+                  bookingDateObj.getFullYear(),
+                  bookingDateObj.getMonth(),
+                  bookingDateObj.getDate(),
+                  startHour,
+                  startMinute
+                );
 
                 // Vérifier que la date est valide
                 if (isNaN(bookingDate.getTime())) {
                   if (typeof window !== 'undefined') {
-                    console.error('❌ Date invalide pour booking.startTime:', booking.startTime);
+                    console.error('❌ Date invalide après construction:', {
+                      bookingDate: booking.bookingDate,
+                      startTime: booking.startTime,
+                    });
                   }
                   return false;
                 }
@@ -459,14 +475,10 @@ export default function ProfessionalWeeklyCalendarGrid({
                 if (typeof window !== 'undefined') {
                   console.log('🔍 Comparaison dates:', {
                     'day (calendrier)': format(day, 'yyyy-MM-dd'),
-                    'bookingDate (réservation)': format(bookingDate, 'yyyy-MM-dd'),
+                    'bookingDate construite': format(bookingDate, 'yyyy-MM-dd HH:mm'),
                     'isSameDay': result,
                     'client': booking.client.prenom,
                   });
-
-                  if (!result) {
-                    console.log('❌ Réservation filtrée (date différente)');
-                  }
                 }
                 return result;
               })
