@@ -144,13 +144,19 @@ export default function ProfessionalWeeklyCalendarGrid({
 
   // Filtrer les réservations pour ce professionnel uniquement
   const professionalBookings = useMemo(() => {
-    return bookings.filter(booking => booking.professionalId === professional.id);
-  }, [bookings, professional.id]);
+    const filtered = bookings.filter(booking => booking.professionalId === professional.id);
+    if (typeof window !== 'undefined') {
+      console.log('🔍 Réservations du professionnel:', filtered.length, 'réservations pour', professional.prenom);
+    }
+    return filtered;
+  }, [bookings, professional.id, professional.prenom]);
 
   // Filtrer les pauses pour ce professionnel uniquement
   const professionalBreaks = useMemo(() => {
     const filteredBreaks = breaks.filter(breakItem => breakItem.professionalId === professional.id);
-    console.log('🔍 Pauses pour ce professionnel:', filteredBreaks.length, 'pauses');
+    if (typeof window !== 'undefined') {
+      console.log('🔍 Pauses pour ce professionnel:', filteredBreaks.length, 'pauses');
+    }
     return filteredBreaks;
   }, [breaks, professional.id]);
 
@@ -165,7 +171,9 @@ export default function ProfessionalWeeklyCalendarGrid({
       !block.startTime && !block.endTime
     );
     if (fullDayBlock) {
-      console.log('✅ Blocage journée complète trouvé:', fullDayBlock);
+      if (typeof window !== 'undefined') {
+        console.log('✅ Blocage journée complète trouvé:', fullDayBlock);
+      }
       return true;
     }
 
@@ -175,11 +183,13 @@ export default function ProfessionalWeeklyCalendarGrid({
       if (!block.startTime || !block.endTime) return false;
       return timeSlot >= block.startTime && timeSlot < block.endTime;
     });
-    
+
     if (periodBlock) {
-      console.log('✅ Blocage période trouvé:', periodBlock);
+      if (typeof window !== 'undefined') {
+        console.log('✅ Blocage période trouvé:', periodBlock);
+      }
     }
-    
+
     return !!periodBlock;
   };
 
@@ -236,16 +246,21 @@ export default function ProfessionalWeeklyCalendarGrid({
     // Calculer le jour de la semaine (0-6)
     const dayOffset = Math.floor((bookingStartDate.getTime() - weekDays[0].getTime()) / (1000 * 60 * 60 * 24));
 
-    console.log('📊 Calcul dayOffset:', {
-      'bookingStartDate': bookingStartDate.toISOString(),
-      'weekDays[0]': weekDays[0].toISOString(),
-      'diff (ms)': bookingStartDate.getTime() - weekDays[0].getTime(),
-      'dayOffset calculé': dayOffset,
-      'client': booking.client?.prenom,
-    });
+    // Log seulement côté client pour éviter les problèmes d'hydratation
+    if (typeof window !== 'undefined') {
+      console.log('📊 Calcul dayOffset:', {
+        'bookingStartDate': bookingStartDate.toISOString(),
+        'weekDays[0]': weekDays[0].toISOString(),
+        'diff (ms)': bookingStartDate.getTime() - weekDays[0].getTime(),
+        'dayOffset calculé': dayOffset,
+        'client': booking.client?.prenom,
+      });
+    }
 
     if (dayOffset < 0 || dayOffset >= 7) {
-      console.log('❌ dayOffset hors limites:', dayOffset);
+      if (typeof window !== 'undefined') {
+        console.log('❌ dayOffset hors limites:', dayOffset);
+      }
       return null;
     }
 
@@ -408,28 +423,34 @@ export default function ProfessionalWeeklyCalendarGrid({
             })}
 
             {/* Réservations pour ce jour */}
-            {console.log('🔍 Réservations pour ce jour:', professionalBookings.length, 'réservations totales')}
             {professionalBookings
               .filter(booking => {
                 const bookingDate = new Date(booking.startTime);
                 const result = isSameDay(bookingDate, day);
 
-                console.log('🔍 Comparaison dates:', {
-                  'day (calendrier)': format(day, 'yyyy-MM-dd'),
-                  'bookingDate (réservation)': format(bookingDate, 'yyyy-MM-dd'),
-                  'booking.startTime': booking.startTime,
-                  'isSameDay': result,
-                  'client': booking.client.prenom,
-                });
+                // Log seulement la première fois pour éviter les problèmes d'hydratation
+                if (typeof window !== 'undefined') {
+                  console.log('🔍 Comparaison dates:', {
+                    'day (calendrier)': format(day, 'yyyy-MM-dd'),
+                    'bookingDate (réservation)': format(bookingDate, 'yyyy-MM-dd'),
+                    'booking.startTime': booking.startTime,
+                    'isSameDay': result,
+                    'client': booking.client.prenom,
+                  });
 
-                if (!result) {
-                  console.log('❌ Réservation filtrée (date différente)');
+                  if (!result) {
+                    console.log('❌ Réservation filtrée (date différente)');
+                  }
                 }
                 return result;
               })
               .map((booking) => {
-                console.log('📅 Réservation affichée:', booking.client.prenom, booking.client.nom, booking.startTime, booking.endTime);
                 const position = getBookingPosition(booking);
+
+                // Log seulement côté client
+                if (typeof window !== 'undefined' && position) {
+                  console.log('📅 Réservation affichée:', booking.client.prenom, booking.client.nom, booking.startTime, booking.endTime);
+                }
                 if (!position || position.dayOffset !== dayOffset) return null;
 
                 const colors = getStatusColors(booking.status);
