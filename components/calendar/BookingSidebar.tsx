@@ -85,8 +85,10 @@ export default function BookingSidebar({
   // Filtrage des clients en fonction de la recherche
   const filteredClients = useMemo(() => {
     if (!clientsData?.clients) return [];
-    if (!clientSearch) return clientsData.clients.slice(0, 5);
-    return clientsData.clients.filter(client => 
+    // Filtrer les clients qui ont un ID valide
+    const validClients = clientsData.clients.filter(c => c.id && c.id.trim() !== '');
+    if (!clientSearch) return validClients.slice(0, 5);
+    return validClients.filter(client =>
       `${client.prenom} ${client.nom}`.toLowerCase().includes(clientSearch.toLowerCase()) ||
       client.telCellulaire?.includes(clientSearch)
     ).slice(0, 5);
