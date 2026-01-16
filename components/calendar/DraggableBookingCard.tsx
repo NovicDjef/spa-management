@@ -145,7 +145,7 @@ export default function DraggableBookingCard({
         draggable
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
-        className={`absolute inset-0 ${colors.bg} border-l-4 ${colors.border} rounded shadow-md px-2 py-1.5 cursor-move ${colors.hover} hover:shadow-lg transition-all group overflow-hidden`}
+        className={`absolute inset-0 ${colors.bg} border-l-4 ${colors.border} rounded-md shadow-md px-2 py-1 cursor-move ${colors.hover} hover:shadow-xl transition-all group overflow-hidden`}
         onClick={(e) => {
           e.stopPropagation();
           onEdit(booking);

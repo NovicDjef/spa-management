@@ -114,18 +114,21 @@ export default function BookingSidebar({
           // Si le service a des variations, ajouter chaque variation
           if (service.variations && service.variations.length > 0) {
             service.variations.forEach((variation: any) => {
-              variations.push({
-                id: variation.id, // serviceVariationId
-                serviceId: service.id,
-                serviceName: service.name,
-                variationName: variation.name,
-                duration: variation.duration,
-                price: variation.price,
-                displayName: `${service.name} - ${variation.name} (${variation.duration} min)`,
-              });
+              // Ignorer les variations sans ID pour éviter les clés dupliquées
+              if (variation.id) {
+                variations.push({
+                  id: variation.id, // serviceVariationId
+                  serviceId: service.id,
+                  serviceName: service.name,
+                  variationName: variation.name,
+                  duration: variation.duration,
+                  price: variation.price,
+                  displayName: `${service.name} - ${variation.name} (${variation.duration} min)`,
+                });
+              }
             });
-          } else {
-            // Sinon, ajouter le service de base
+          } else if (service.id) {
+            // Sinon, ajouter le service de base seulement s'il a un ID
             variations.push({
               id: service.id,
               serviceId: service.id,

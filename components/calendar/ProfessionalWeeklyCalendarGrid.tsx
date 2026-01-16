@@ -416,12 +416,12 @@ export default function ProfessionalWeeklyCalendarGrid({
                 return (
                   <div
                     key={booking.id}
-                    className={`absolute ${colors.bg} border-l-4 ${colors.border} rounded-lg shadow-lg p-2 cursor-pointer ${colors.hover} hover:shadow-xl transition-all`}
+                    className={`absolute ${colors.bg} border-l-4 ${colors.border} rounded-lg shadow-lg p-2 cursor-pointer ${colors.hover} hover:shadow-xl transition-all overflow-hidden`}
                     style={{
                       top: `${position.top}px`,
                       height: `${position.height}px`,
-                      left: '2px',
-                      right: '2px',
+                      left: '1px',
+                      right: '1px',
                     }}
                     onClick={(e) => {
                       e.stopPropagation();
@@ -464,12 +464,12 @@ export default function ProfessionalWeeklyCalendarGrid({
               .map((position, index) => (
                 <div
                   key={`break-${dayOffset}-${position.startTime}-${index}`}
-                  className="absolute bg-orange-500 border-l-4 border-orange-700 rounded-lg shadow-lg p-2"
+                  className="absolute bg-orange-500 border-l-4 border-orange-700 rounded-lg shadow-lg p-2 overflow-hidden"
                   style={{
                     top: `${position.top}px`,
                     height: `${position.height}px`,
-                    left: '2px',
-                    right: '2px',
+                    left: '1px',
+                    right: '1px',
                   }}
                 >
                   <div className="flex flex-col h-full justify-center items-center text-white text-xs">

@@ -458,7 +458,7 @@ export default function HorizontalCalendarGrid({
                       return (
                         <div
                           key={breakItem.id}
-                          className="absolute left-2 right-2 pointer-events-auto"
+                          className="absolute left-0.5 right-0.5 pointer-events-auto"
                           style={{
                             top: `${position.top}px`,
                             height: `${position.height}px`,
@@ -508,7 +508,7 @@ export default function HorizontalCalendarGrid({
                     return (
                       <div
                         key={booking.id}
-                        className="absolute left-2 right-2 pointer-events-auto"
+                        className="absolute left-0.5 right-0.5 pointer-events-auto"
                         style={{
                           top: `${position.top}px`,
                           height: `${position.height}px`,
