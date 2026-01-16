@@ -145,42 +145,42 @@ export default function DraggableBookingCard({
         draggable
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
-        className={`absolute inset-0 ${colors.bg} border-l-4 ${colors.border} rounded-md shadow-md px-2 py-1 cursor-move ${colors.hover} hover:shadow-xl transition-all group overflow-hidden`}
+        className={`absolute inset-0 ${colors.bg} border-l-4 ${colors.border} rounded-lg shadow-lg p-2 cursor-move ${colors.hover} hover:shadow-xl transition-all group`}
         onClick={(e) => {
           e.stopPropagation();
           onEdit(booking);
         }}
         onContextMenu={handleContextMenu}
+        style={{
+          minHeight: '40px',
+        }}
       >
         {/* Grip indicator */}
         <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <GripVertical className="w-3 h-3 text-white" />
+          <GripVertical className="w-4 h-4 text-white" />
         </div>
 
-        <div className="flex flex-col h-full justify-between text-white py-0.5">
-          {/* Section haute - Client et Service */}
+        <div className="flex flex-col h-full justify-between text-white text-xs">
+          {/* Partie haute - Client + Service */}
           <div className="flex-shrink-0">
-            {/* Informations client - toujours visible */}
-            <div className="flex items-center gap-1 mb-0.5">
+            <div className="flex items-center gap-1 mb-1">
               <User2 className="w-3 h-3 flex-shrink-0" />
-              <p className="font-bold truncate text-xs leading-tight">
+              <p className="font-bold truncate text-sm">
                 {booking.client.prenom} {booking.client.nom}
               </p>
             </div>
-
-            {/* Service - toujours visible */}
             {booking.service && (
-              <p className="text-white text-xs truncate ml-4 opacity-90 leading-tight">
+              <p className="text-white text-xs truncate font-medium">
                 {booking.service.name}
               </p>
             )}
           </div>
 
-          {/* Section centrale - Espace flexible avec statut paiement centré pour grandes réservations */}
+          {/* Partie centrale - Statut paiement (pour grandes réservations) */}
           {position.height > 100 && booking.payment && (
             <div className="flex-1 flex items-center justify-center">
-              <div className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full">
-                <p className="text-xs font-semibold text-white">
+              <div className="bg-white/20 backdrop-blur-sm px-2 py-1 rounded-full">
+                <p className="text-xs font-bold text-white">
                   {booking.payment.status === 'PAID' ? '✓ Payé' :
                    booking.payment.status === 'PENDING' ? '⏱ En attente' :
                    booking.payment.status === 'PARTIAL' ? '◐ Partiel' :
@@ -191,31 +191,24 @@ export default function DraggableBookingCard({
             </div>
           )}
 
-          {/* Section basse - Horaire et Durée (TOUJOURS affichée) */}
-          <div className="flex-shrink-0">
-            {/* Horaire - toujours visible */}
-            <div className="flex items-center gap-1 text-white font-medium">
-              <Clock className="w-3 h-3" />
-              <span className="text-xs leading-tight">
-                {formatTimeRange(booking.startTime, booking.endTime)}
-              </span>
-            </div>
-
-            {/* Durée + Statut paiement (petites réservations) */}
-            {position.height <= 100 && (
-              <div className="flex items-center justify-between mt-0.5">
-                {booking.service && position.height > 70 && (
-                  <span className="text-white/80 text-xs ml-4">{booking.service.duration} min</span>
-                )}
-                {booking.payment && (
-                  <span className="text-[10px] font-bold text-white/90 ml-auto">
-                    {booking.payment.status === 'PAID' ? '✓' :
-                     booking.payment.status === 'PENDING' ? '⏱' :
-                     booking.payment.status === 'PARTIAL' ? '◐' : '✗'}
-                  </span>
-                )}
+          {/* Partie basse - Horaire + Paiement */}
+          <div className="flex-shrink-0 mt-auto">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1">
+                <Clock className="w-3 h-3" />
+                <span className="text-xs font-medium">
+                  {formatTimeRange(booking.startTime, booking.endTime)}
+                </span>
               </div>
-            )}
+              {/* Statut paiement compact pour petites réservations */}
+              {position.height <= 100 && booking.payment && (
+                <span className="text-xs font-bold text-white ml-2">
+                  {booking.payment.status === 'PAID' ? '✓' :
+                   booking.payment.status === 'PENDING' ? '⏱' :
+                   booking.payment.status === 'PARTIAL' ? '◐' : '✗'}
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </div>
