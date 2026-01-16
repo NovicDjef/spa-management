@@ -18,7 +18,8 @@ export function middleware(request: NextRequest) {
   console.log(`🌐 Middleware - Host: ${hostname}, Path: ${pathname}`);
 
   // Site marketing principal (dospa.ca ou www.dospa.ca)
-  if (hostname === 'dospa.ca' || hostname === 'www.dospa.ca' || hostname === 'localhost:3000') {
+  // En développement local (localhost), on autorise toutes les routes
+  if ((hostname === 'dospa.ca' || hostname === 'www.dospa.ca') && !hostname.includes('localhost')) {
     // Routes publiques du site marketing
     if (pathname === '/' || pathname.startsWith('/marketing') || pathname.startsWith('/signup')) {
       return NextResponse.next();
