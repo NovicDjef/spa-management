@@ -235,7 +235,19 @@ export default function ProfessionalWeeklyCalendarGrid({
 
     // Calculer le jour de la semaine (0-6)
     const dayOffset = Math.floor((bookingStartDate.getTime() - weekDays[0].getTime()) / (1000 * 60 * 60 * 24));
-    if (dayOffset < 0 || dayOffset >= 7) return null;
+
+    console.log('📊 Calcul dayOffset:', {
+      'bookingStartDate': bookingStartDate.toISOString(),
+      'weekDays[0]': weekDays[0].toISOString(),
+      'diff (ms)': bookingStartDate.getTime() - weekDays[0].getTime(),
+      'dayOffset calculé': dayOffset,
+      'client': booking.client?.prenom,
+    });
+
+    if (dayOffset < 0 || dayOffset >= 7) {
+      console.log('❌ dayOffset hors limites:', dayOffset);
+      return null;
+    }
 
     // Extraire heures et minutes
     const startHours = bookingStartDate.getHours();
@@ -401,8 +413,17 @@ export default function ProfessionalWeeklyCalendarGrid({
               .filter(booking => {
                 const bookingDate = new Date(booking.startTime);
                 const result = isSameDay(bookingDate, day);
+
+                console.log('🔍 Comparaison dates:', {
+                  'day (calendrier)': format(day, 'yyyy-MM-dd'),
+                  'bookingDate (réservation)': format(bookingDate, 'yyyy-MM-dd'),
+                  'booking.startTime': booking.startTime,
+                  'isSameDay': result,
+                  'client': booking.client.prenom,
+                });
+
                 if (!result) {
-                  console.log('❌ Réservation filtrée (date différente):', booking.client.prenom, booking.startTime);
+                  console.log('❌ Réservation filtrée (date différente)');
                 }
                 return result;
               })

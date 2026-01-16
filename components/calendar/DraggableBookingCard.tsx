@@ -49,9 +49,9 @@ function getStatusColors(status: string) {
       };
     case 'COMPLETED':
       return {
-        bg: 'bg-gray-500',
+        bg: 'bg-gray-400',
         border: 'border-gray-700',
-        hover: 'hover:bg-gray-600',
+        hover: 'hover:bg-gray-500',
         label: 'Terminé'
       };
     case 'NO_SHOW':
