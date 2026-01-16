@@ -113,10 +113,10 @@ export default function ProfessionalWeeklyCalendarGrid({
 }: ProfessionalWeeklyCalendarGridProps) {
   const [hoveredSlot, setHoveredSlot] = useState<{ timeSlot: string; dayOffset: number } | null>(null);
 
-  // Générer les jours de la semaine (Lundi → Dimanche)
+  // Générer les jours de la semaine (Lundi → Samedi, sans dimanche pour les professionnels)
   const weekDays = useMemo(() => {
     const start = startOfWeek(currentDate, { weekStartsOn: 1 }); // Lundi
-    return eachDayOfInterval({ start, end: addDays(start, 6) }); // Lundi → Dimanche
+    return eachDayOfInterval({ start, end: addDays(start, 5) }); // Lundi → Samedi (sans dimanche)
   }, [currentDate]);
 
   // Générer les créneaux horaires (par heure avec demi-heure pour les lignes pointillées)
@@ -405,8 +405,11 @@ export default function ProfessionalWeeklyCalendarGrid({
                   onClick={() => onSlotClick(timeSlot, dayOffset)}
                   onContextMenu={(e) => {
                     e.preventDefault();
-                    if (onSlotContextMenu) {
-                      onSlotContextMenu(timeSlot, dayOffset, { x: e.clientX, y: e.clientY });
+                    // Désactiver le clic droit pour les professionnels (seuls ADMIN et RECEPTIONISTE peuvent utiliser le menu contextuel)
+                    if (userRole === 'ADMIN' || userRole === 'RECEPTIONISTE') {
+                      if (onSlotContextMenu) {
+                        onSlotContextMenu(timeSlot, dayOffset, { x: e.clientX, y: e.clientY });
+                      }
                     }
                   }}
                   onMouseEnter={() => setHoveredSlot({ timeSlot, dayOffset })}
@@ -510,7 +513,10 @@ export default function ProfessionalWeeklyCalendarGrid({
                     onContextMenu={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      onBookingContextMenu(booking, { x: e.clientX, y: e.clientY });
+                      // Les professionnels (MASSOTHERAPEUTE, ESTHETICIENNE) ne peuvent pas effectuer d'actions via le clic droit
+                      if (professional.role !== 'MASSOTHERAPEUTE' && professional.role !== 'ESTHETICIENNE') {
+                        onBookingContextMenu(booking, { x: e.clientX, y: e.clientY });
+                      }
                     }}
                   >
                     <div className="flex flex-col h-full justify-between text-white">
