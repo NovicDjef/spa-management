@@ -177,6 +177,18 @@ export default function HorizontalCalendarGrid({
     const height = (endSlot - startSlot) * 60; // 60px par slot de 30min
     const top = startSlot * 60;
 
+    // LOG pour débugger
+    console.log('📏 Calcul hauteur réservation:', {
+      client: `${booking.client?.prenom || ''} ${booking.client?.nom || ''}`,
+      startTime: `${startHours}:${startMinutes.toString().padStart(2, '0')}`,
+      endTime: `${endHours}:${endMinutes.toString().padStart(2, '0')}`,
+      startSlot,
+      endSlot,
+      'durée (slots)': endSlot - startSlot,
+      'height (px)': height,
+      'top (px)': top
+    });
+
     return { top, height };
   };
 

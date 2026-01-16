@@ -151,9 +151,6 @@ export default function DraggableBookingCard({
           onEdit(booking);
         }}
         onContextMenu={handleContextMenu}
-        style={{
-          minHeight: '40px',
-        }}
       >
         {/* Grip indicator */}
         <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">

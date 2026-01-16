@@ -422,7 +422,6 @@ export default function ProfessionalWeeklyCalendarGrid({
                       height: `${position.height}px`,
                       left: '1px',
                       right: '1px',
-                      minHeight: '40px',
                     }}
                     onClick={(e) => {
                       e.stopPropagation();
