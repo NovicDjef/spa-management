@@ -449,13 +449,38 @@ export default function ProfessionalWeeklyCalendarGrid({
                         )}
                       </div>
 
-                      {/* Section basse - Horaire */}
+                      {/* Section centrale - Statut paiement pour grandes réservations */}
+                      {position.height > 100 && booking.payment && (
+                        <div className="flex-1 flex items-center justify-center">
+                          <div className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full">
+                            <p className="text-xs font-semibold text-white">
+                              {booking.payment.status === 'PAID' ? '✓ Payé' :
+                               booking.payment.status === 'PENDING' ? '⏱ En attente' :
+                               booking.payment.status === 'PARTIAL' ? '◐ Partiel' :
+                               booking.payment.status === 'FAILED' ? '✗ Échoué' :
+                               booking.payment.status}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Section basse - Horaire + Statut */}
                       <div className="flex-shrink-0">
-                        <div className="flex items-center gap-1 text-white font-medium">
-                          <Clock className="w-3 h-3" />
-                          <span className="text-xs leading-tight">
-                            {position.startTime} - {position.endTime}
-                          </span>
+                        <div className="flex items-center justify-between text-white font-medium">
+                          <div className="flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            <span className="text-xs leading-tight">
+                              {position.startTime} - {position.endTime}
+                            </span>
+                          </div>
+                          {/* Statut paiement compact pour petites réservations */}
+                          {position.height <= 100 && booking.payment && (
+                            <span className="text-[10px] font-bold text-white/90 ml-2">
+                              {booking.payment.status === 'PAID' ? '✓' :
+                               booking.payment.status === 'PENDING' ? '⏱' :
+                               booking.payment.status === 'PARTIAL' ? '◐' : '✗'}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>

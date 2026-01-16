@@ -176,22 +176,44 @@ export default function DraggableBookingCard({
             )}
           </div>
 
-          {/* Section basse - Horaire et Durée */}
-          <div className="flex-shrink-0">
-            {/* Horaire - affiché si hauteur suffisante */}
-            {position.height > 50 && (
-              <div className="flex items-center gap-1 text-white font-medium">
-                <Clock className="w-3 h-3" />
-                <span className="text-xs leading-tight">
-                  {formatTimeRange(booking.startTime, booking.endTime)}
-                </span>
+          {/* Section centrale - Espace flexible avec statut paiement centré pour grandes réservations */}
+          {position.height > 100 && booking.payment && (
+            <div className="flex-1 flex items-center justify-center">
+              <div className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full">
+                <p className="text-xs font-semibold text-white">
+                  {booking.payment.status === 'PAID' ? '✓ Payé' :
+                   booking.payment.status === 'PENDING' ? '⏱ En attente' :
+                   booking.payment.status === 'PARTIAL' ? '◐ Partiel' :
+                   booking.payment.status === 'FAILED' ? '✗ Échoué' :
+                   booking.payment.status}
+                </p>
               </div>
-            )}
+            </div>
+          )}
 
-            {/* Durée - affichée si hauteur très suffisante */}
-            {position.height > 80 && booking.service && (
-              <div className="flex items-center gap-1 mt-0.5 text-white/80 text-xs">
-                <span className="ml-4">{booking.service.duration} min</span>
+          {/* Section basse - Horaire et Durée (TOUJOURS affichée) */}
+          <div className="flex-shrink-0">
+            {/* Horaire - toujours visible */}
+            <div className="flex items-center gap-1 text-white font-medium">
+              <Clock className="w-3 h-3" />
+              <span className="text-xs leading-tight">
+                {formatTimeRange(booking.startTime, booking.endTime)}
+              </span>
+            </div>
+
+            {/* Durée + Statut paiement (petites réservations) */}
+            {position.height <= 100 && (
+              <div className="flex items-center justify-between mt-0.5">
+                {booking.service && position.height > 70 && (
+                  <span className="text-white/80 text-xs ml-4">{booking.service.duration} min</span>
+                )}
+                {booking.payment && (
+                  <span className="text-[10px] font-bold text-white/90 ml-auto">
+                    {booking.payment.status === 'PAID' ? '✓' :
+                     booking.payment.status === 'PENDING' ? '⏱' :
+                     booking.payment.status === 'PARTIAL' ? '◐' : '✗'}
+                  </span>
+                )}
               </div>
             )}
           </div>
