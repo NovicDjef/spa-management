@@ -425,15 +425,41 @@ export default function ProfessionalWeeklyCalendarGrid({
             {/* Réservations pour ce jour */}
             {professionalBookings
               .filter(booking => {
+                // Log seulement côté client pour déboguer
+                if (typeof window !== 'undefined') {
+                  console.log('🔍 Réservation brute:', {
+                    'booking.startTime': booking.startTime,
+                    'booking.endTime': booking.endTime,
+                    'booking.bookingDate': booking.bookingDate,
+                    'client': booking.client?.prenom,
+                  });
+                }
+
+                // Vérifier que startTime existe
+                if (!booking.startTime) {
+                  if (typeof window !== 'undefined') {
+                    console.error('❌ booking.startTime est undefined/null pour:', booking.id);
+                  }
+                  return false;
+                }
+
                 const bookingDate = new Date(booking.startTime);
+
+                // Vérifier que la date est valide
+                if (isNaN(bookingDate.getTime())) {
+                  if (typeof window !== 'undefined') {
+                    console.error('❌ Date invalide pour booking.startTime:', booking.startTime);
+                  }
+                  return false;
+                }
+
                 const result = isSameDay(bookingDate, day);
 
-                // Log seulement la première fois pour éviter les problèmes d'hydratation
+                // Log détaillé pour comprendre la comparaison
                 if (typeof window !== 'undefined') {
                   console.log('🔍 Comparaison dates:', {
                     'day (calendrier)': format(day, 'yyyy-MM-dd'),
                     'bookingDate (réservation)': format(bookingDate, 'yyyy-MM-dd'),
-                    'booking.startTime': booking.startTime,
                     'isSameDay': result,
                     'client': booking.client.prenom,
                   });
