@@ -433,25 +433,30 @@ export default function ProfessionalWeeklyCalendarGrid({
                       onBookingContextMenu(booking, { x: e.clientX, y: e.clientY });
                     }}
                   >
-                    <div className="flex flex-col h-full justify-between text-white text-xs">
-                      <div className="flex-1 min-h-0">
-                        <div className="flex items-start gap-1 mb-1">
-                          <User className="w-3 h-3 flex-shrink-0 mt-0.5" />
-                          <p className="font-bold truncate flex-1">
+                    <div className="flex flex-col h-full justify-between text-white text-xs py-0.5">
+                      {/* Section haute - Client et Service */}
+                      <div className="flex-shrink-0">
+                        <div className="flex items-center gap-1 mb-0.5">
+                          <User className="w-3 h-3 flex-shrink-0" />
+                          <p className="font-bold truncate text-xs leading-tight">
                             {booking.client.prenom} {booking.client.nom}
                           </p>
                         </div>
                         {booking.service && (
-                          <p className="text-white text-xs truncate ml-4 opacity-90">
+                          <p className="text-white text-xs truncate ml-4 opacity-90 leading-tight">
                             {booking.service.name}
                           </p>
                         )}
                       </div>
-                      <div className="flex items-center gap-1 mt-1 text-white font-medium">
-                        <Clock className="w-3 h-3" />
-                        <span className="text-xs">
-                          {position.startTime} - {position.endTime}
-                        </span>
+
+                      {/* Section basse - Horaire */}
+                      <div className="flex-shrink-0">
+                        <div className="flex items-center gap-1 text-white font-medium">
+                          <Clock className="w-3 h-3" />
+                          <span className="text-xs leading-tight">
+                            {position.startTime} - {position.endTime}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>

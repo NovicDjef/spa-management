@@ -157,38 +157,44 @@ export default function DraggableBookingCard({
           <GripVertical className="w-3 h-3 text-white" />
         </div>
 
-        <div className="flex flex-col h-full justify-start text-white">
-          {/* Informations client - toujours visible */}
-          <div className="flex items-center gap-1 mb-0.5">
-            <User2 className="w-3 h-3 flex-shrink-0" />
-            <p className="font-bold truncate text-xs leading-tight">
-              {booking.client.prenom} {booking.client.nom}
-            </p>
+        <div className="flex flex-col h-full justify-between text-white py-0.5">
+          {/* Section haute - Client et Service */}
+          <div className="flex-shrink-0">
+            {/* Informations client - toujours visible */}
+            <div className="flex items-center gap-1 mb-0.5">
+              <User2 className="w-3 h-3 flex-shrink-0" />
+              <p className="font-bold truncate text-xs leading-tight">
+                {booking.client.prenom} {booking.client.nom}
+              </p>
+            </div>
+
+            {/* Service - toujours visible */}
+            {booking.service && (
+              <p className="text-white text-xs truncate ml-4 opacity-90 leading-tight">
+                {booking.service.name}
+              </p>
+            )}
           </div>
 
-          {/* Service - toujours visible */}
-          {booking.service && (
-            <p className="text-white text-xs truncate ml-4 opacity-90 leading-tight">
-              {booking.service.name}
-            </p>
-          )}
+          {/* Section basse - Horaire et Durée */}
+          <div className="flex-shrink-0">
+            {/* Horaire - affiché si hauteur suffisante */}
+            {position.height > 50 && (
+              <div className="flex items-center gap-1 text-white font-medium">
+                <Clock className="w-3 h-3" />
+                <span className="text-xs leading-tight">
+                  {formatTimeRange(booking.startTime, booking.endTime)}
+                </span>
+              </div>
+            )}
 
-          {/* Horaire - affiché si hauteur suffisante */}
-          {position.height > 50 && (
-            <div className="flex items-center gap-1 mt-1 text-white font-medium">
-              <Clock className="w-3 h-3" />
-              <span className="text-xs leading-tight">
-                {formatTimeRange(booking.startTime, booking.endTime)}
-              </span>
-            </div>
-          )}
-
-          {/* Durée - affichée si hauteur très suffisante */}
-          {position.height > 80 && booking.service && (
-            <div className="flex items-center gap-1 mt-0.5 text-white/80 text-xs">
-              <span className="ml-4">{booking.service.duration} min</span>
-            </div>
-          )}
+            {/* Durée - affichée si hauteur très suffisante */}
+            {position.height > 80 && booking.service && (
+              <div className="flex items-center gap-1 mt-0.5 text-white/80 text-xs">
+                <span className="ml-4">{booking.service.duration} min</span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
