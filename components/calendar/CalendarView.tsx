@@ -757,6 +757,7 @@ export default function CalendarView({ userRole, userId }: CalendarViewProps) {
             setTimeout(() => setSelectedDate(currentDate), 100);
           }}
           mode={sidebarMode}
+          readOnly={userRole === 'MASSOTHERAPEUTE' || userRole === 'ESTHETICIENNE'}
         />
       </div>
 

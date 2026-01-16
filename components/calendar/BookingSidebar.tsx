@@ -30,6 +30,7 @@ interface BookingSidebarProps {
   booking?: Booking | null;
   onSuccess: () => void;
   mode?: 'booking' | 'break';
+  readOnly?: boolean; // Mode lecture seule pour les professionnels (MASSOTHERAPEUTE, ESTHETICIENNE)
 }
 
 /**
@@ -42,6 +43,7 @@ export default function BookingSidebar({
   booking,
   onSuccess,
   mode = 'booking',
+  readOnly = false,
 }: BookingSidebarProps) {
   // États du formulaire
   const [clientId, setClientId] = useState('');
@@ -436,12 +438,14 @@ const handleSubmit = async (e: React.FormEvent) => {
               <h2 className="text-lg font-bold text-gray-900">
                 {mode === 'break'
                   ? 'Ajouter une pause'
+                  : readOnly
+                  ? 'Détails de la réservation'
                   : isEditMode
                   ? 'Modifier la réservation'
                   : 'Nouvelle réservation'}
               </h2>
               <p className="text-xs text-gray-500">
-                {isEditMode ? 'Modifiez les détails' : 'Remplissez les informations'}
+                {readOnly ? 'Consultation en lecture seule' : isEditMode ? 'Modifiez les détails' : 'Remplissez les informations'}
               </p>
             </div>
           </div>
@@ -477,6 +481,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                     onChange={(e) => setSelectedService(e.target.value)}
                     className="input-spa text-sm"
                     required
+                    disabled={readOnly}
                   >
                     <option value="">Sélectionnez un service</option>
                     {availableServices.map((variation, index) => (
@@ -522,6 +527,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                   onChange={(e) => setProfessionalId(e.target.value)}
                   className="input-spa text-sm"
                   required
+                  disabled={readOnly}
                 >
                   <option key="empty-professional" value="">Sélectionner un professionnel</option>
                   {professionals.map((prof) => (
@@ -542,6 +548,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                     onChange={(e) => setDate(e.target.value)}
                     className="input-spa text-sm"
                     required
+                    disabled={readOnly}
                   />
                 </div>
                 <div>
@@ -552,6 +559,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                     onChange={(e) => setStartTime(e.target.value)}
                     className="input-spa text-sm"
                     required
+                    disabled={readOnly}
                   />
                 </div>
               </div>
@@ -591,6 +599,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                       className="input-spa text-sm pr-10 w-full"
                       placeholder="Nom, prénom ou téléphone"
                       required={!isNewClient}
+                      disabled={readOnly}
                     />
                     <Search className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 transform -translate-y-1/2" />
                   </div>
@@ -710,6 +719,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                       checked={smsReminder}
                       onChange={(e) => setSmsReminder(e.target.checked)}
                       className="h-4 w-4 text-spa-turquoise-600 focus:ring-spa-turquoise-500 border-gray-300 rounded"
+                      disabled={readOnly}
                     />
                     <label htmlFor="smsReminder" className="ml-2 block text-xs text-gray-700">
                       <Smartphone className="w-3 h-3 inline mr-1" />
@@ -725,6 +735,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                         checked={emailReminder}
                         onChange={(e) => setEmailReminder(e.target.checked)}
                         className="h-4 w-4 text-spa-turquoise-600 focus:ring-spa-turquoise-500 border-gray-300 rounded"
+                        disabled={readOnly}
                       />
                       <label htmlFor="emailReminder" className="ml-2 block text-xs text-gray-700">
                         <Mail className="w-3 h-3 inline mr-1" />
@@ -744,6 +755,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                   rows={2}
                   className="input-spa text-sm"
                   placeholder="Notes spéciales, allergies, préférences..."
+                  disabled={readOnly}
                 />
               </div>
             </>
@@ -821,37 +833,51 @@ const handleSubmit = async (e: React.FormEvent) => {
 
         {/* Footer Actions */}
         <div className="flex items-center gap-3 p-4 sm:p-6 border-t border-gray-200 bg-gray-50">
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex-1 btn-outline text-sm"
-            disabled={isLoading}
-          >
-            Annuler
-          </button>
-          <button
-            type="submit"
-            form="booking-form"
-            className="w-full btn-primary flex items-center justify-center gap-2 text-sm"
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Enregistrement en cours...</span>
-              </>
-            ) : isEditMode ? (
-              <>
-                <Calendar className="w-4 h-4" />
-                <span>Mettre à jour la réservation</span>
-              </>
-            ) : (
-              <>
-                <Calendar className="w-4 h-4" />
-                <span>Confirmer la réservation</span>
-              </>
-            )}
-          </button>
+          {readOnly ? (
+            // Mode lecture seule : seulement le bouton Fermer
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-full btn-primary text-sm"
+            >
+              Fermer
+            </button>
+          ) : (
+            // Mode normal : boutons Annuler et Soumettre
+            <>
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 btn-outline text-sm"
+                disabled={isLoading}
+              >
+                Annuler
+              </button>
+              <button
+                type="submit"
+                form="booking-form"
+                className="w-full btn-primary flex items-center justify-center gap-2 text-sm"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Enregistrement en cours...</span>
+                  </>
+                ) : isEditMode ? (
+                  <>
+                    <Calendar className="w-4 h-4" />
+                    <span>Mettre à jour la réservation</span>
+                  </>
+                ) : (
+                  <>
+                    <Calendar className="w-4 h-4" />
+                    <span>Confirmer la réservation</span>
+                  </>
+                )}
+              </button>
+            </>
+          )}
         </div>
       </motion.div>
 
