@@ -36,6 +36,7 @@ export function calculateBookingPosition(
   const start = parseISO(booking.startTime);
   const end = parseISO(booking.endTime);
 
+  // Calculer en minutes totales pour une position précise
   const startMinutes = start.getHours() * 60 + start.getMinutes();
   const endMinutes = end.getHours() * 60 + end.getMinutes();
   const duration = endMinutes - startMinutes;

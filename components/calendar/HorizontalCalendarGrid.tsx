@@ -170,8 +170,9 @@ export default function HorizontalCalendarGrid({
     const endMinutes = endTime.getMinutes();
 
     // Calculer la position en slots (30 min = 1 slot)
-    const startSlot = (startHours - startHour) * 2 + (startMinutes >= 30 ? 1 : 0);
-    const endSlot = (endHours - startHour) * 2 + (endMinutes >= 30 ? 1 : 0);
+    // Utiliser division exacte pour position précise (pas d'arrondi)
+    const startSlot = (startHours - startHour) * 2 + (startMinutes / 30);
+    const endSlot = (endHours - startHour) * 2 + (endMinutes / 30);
 
     const height = (endSlot - startSlot) * 60; // 60px par slot de 30min
     const top = startSlot * 60;
@@ -194,8 +195,9 @@ export default function HorizontalCalendarGrid({
     const [endHours, endMinutes] = breakItem.endTime.split(':').map(Number);
 
     // Calculer la position en slots (30 min = 1 slot)
-    const startSlot = (startHours - startHour) * 2 + (startMinutes >= 30 ? 1 : 0);
-    const endSlot = (endHours - startHour) * 2 + (endMinutes >= 30 ? 1 : 0);
+    // Utiliser division exacte pour position précise (pas d'arrondi)
+    const startSlot = (startHours - startHour) * 2 + (startMinutes / 30);
+    const endSlot = (endHours - startHour) * 2 + (endMinutes / 30);
 
     const height = (endSlot - startSlot) * 60; // 60px par slot de 30min
     const top = startSlot * 60;
