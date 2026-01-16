@@ -416,7 +416,7 @@ export default function ProfessionalWeeklyCalendarGrid({
                 return (
                   <div
                     key={booking.id}
-                    className={`absolute ${colors.bg} border-l-4 ${colors.border} rounded-lg shadow-lg p-2 cursor-pointer ${colors.hover} hover:shadow-xl transition-all`}
+                    className={`absolute ${colors.bg} border-l-4 ${colors.border} rounded-md shadow-md p-2 cursor-pointer ${colors.hover} hover:shadow-lg transition-all overflow-hidden`}
                     style={{
                       top: `${position.top}px`,
                       height: `${position.height}px`,
@@ -433,17 +433,17 @@ export default function ProfessionalWeeklyCalendarGrid({
                       onBookingContextMenu(booking, { x: e.clientX, y: e.clientY });
                     }}
                   >
-                    <div className="flex flex-col h-full justify-between text-white text-xs">
+                    <div className="flex flex-col h-full justify-between text-white">
                       {/* Partie haute - Client + Service */}
                       <div className="flex-shrink-0">
-                        <div className="flex items-center gap-1 mb-1">
+                        <div className="flex items-center gap-1 mb-0.5">
                           <User className="w-3 h-3 flex-shrink-0" />
-                          <p className="font-bold truncate text-sm">
+                          <p className="font-bold truncate text-sm leading-tight">
                             {booking.client.prenom} {booking.client.nom}
                           </p>
                         </div>
                         {booking.service && (
-                          <p className="text-white text-xs truncate font-medium">
+                          <p className="text-white/95 text-xs truncate font-medium leading-tight">
                             {booking.service.name}
                           </p>
                         )}
@@ -451,9 +451,9 @@ export default function ProfessionalWeeklyCalendarGrid({
 
                       {/* Partie centrale - Statut paiement (pour grandes réservations) */}
                       {position.height > 100 && booking.payment && (
-                        <div className="flex-1 flex items-center justify-center">
-                          <div className="bg-white/20 backdrop-blur-sm px-2 py-1 rounded-full">
-                            <p className="text-xs font-bold text-white">
+                        <div className="flex-1 flex items-center justify-center my-1">
+                          <div className="bg-white/25 backdrop-blur-sm px-2 py-1 rounded-full">
+                            <p className="text-xs font-semibold text-white">
                               {booking.payment.status === 'PAID' ? '✓ Payé' :
                                booking.payment.status === 'PENDING' ? '⏱ En attente' :
                                booking.payment.status === 'PARTIAL' ? '◐ Partiel' :
@@ -466,10 +466,10 @@ export default function ProfessionalWeeklyCalendarGrid({
 
                       {/* Partie basse - Horaire + Paiement */}
                       <div className="flex-shrink-0 mt-auto">
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between gap-1">
                           <div className="flex items-center gap-1">
                             <Clock className="w-3 h-3" />
-                            <span className="text-xs font-medium">
+                            <span className="text-xs font-medium leading-tight">
                               {position.startTime} - {position.endTime}
                             </span>
                           </div>

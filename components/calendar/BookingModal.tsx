@@ -206,12 +206,12 @@ export default function BookingModal({
         bookingData.isNewClient = true;
         bookingData.clientName = newClientName.trim();
         bookingData.clientPhone = newClientPhone.trim().replace(/\s+/g, '');
-        bookingData.clientEmail = newClientEmail.trim();
+        bookingData.clientEmail = newClientEmail.trim() || '';
       } else {
         bookingData.clientId = clientId;
         bookingData.clientName = `${selectedClient.prenom} ${selectedClient.nom}`.trim();
         bookingData.clientPhone = selectedClient.telCellulaire.replace(/\s+/g, '');
-        bookingData.clientEmail = selectedClient.courriel || '';
+        bookingData.clientEmail = selectedClient.courriel ? selectedClient.courriel.toString() : '';
       }
 
       await createBooking(bookingData).unwrap();

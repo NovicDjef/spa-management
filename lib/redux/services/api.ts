@@ -406,7 +406,7 @@ export interface SendReceiptData {
 }
 
 // Type pour la modification d'un reçu (même structure que SendReceiptData)
-export interface UpdateReceiptData extends SendReceiptData {}
+export interface UpdateReceiptData extends SendReceiptData { }
 
 export interface PreviewReceiptResponse {
   success: boolean;
@@ -915,16 +915,151 @@ export interface AvailableProfessional {
 
 // ==== END SERVICE TYPES ====
 
+// ==========================================
+// NOUVEAUX TYPES
+// ==========================================
+
+export interface Organization {
+  id: string;
+  name: string;
+  slug: string;
+  customDomain?: string;
+  customDomainVerified: boolean;
+  logoUrl?: string;
+  primaryColor: string;
+  status: 'TRIAL' | 'ACTIVE' | 'PAST_DUE' | 'SUSPENDED' | 'CANCELLED' | 'EXPIRED';
+  trialEndsAt?: string;
+  maxUsers: number;
+  maxClients: number;
+  timezone: string;
+  language: string;
+  createdAt: string;
+}
+
+export interface SubscriptionPlan {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  basePrice: number;
+  perUserPrice: number;
+  currency: string;
+  maxUsers: number;
+  maxClients: number;
+  maxBookingsPerMonth?: number;
+  features: string[];  // ["calendar", "marketing", "reports", "api"]
+  isPopular: boolean;
+}
+
+export interface Subscription {
+  id: string;
+  organizationId: string;
+  plan: SubscriptionPlan;
+  stripeSubscriptionId?: string;
+  stripeStatus?: string;
+  currentPeriodStart: string;
+  currentPeriodEnd: string;
+  baseAmount: number;
+  additionalUsersCount: number;
+  additionalUsersAmount: number;
+  totalAmount: number;
+  status: 'TRIAL' | 'ACTIVE' | 'PAST_DUE' | 'CANCELLED' | 'SUSPENDED';
+  cancelAtPeriodEnd: boolean;
+  trialStart?: string;
+  trialEnd?: string;
+  currentUsers: number;
+  currentClients: number;
+  currentBookings: number;
+}
+
+export interface SubscriptionInvoice {
+  id: string;
+  invoiceNumber: string;
+  subscriptionId: string;
+  stripeInvoiceId?: string;
+  subtotal: number;
+  tax: number;
+  taxRate: number;
+  total: number;
+  currency: string;
+  periodStart: string;
+  periodEnd: string;
+  status: 'PENDING' | 'PAID' | 'PAST_DUE' | 'VOID';
+  paidAt?: string;
+  dueDate: string;
+  pdfUrl?: string;
+  hostedInvoiceUrl?: string;
+  items: InvoiceItem[];
+  createdAt: string;
+}
+
+export interface InvoiceItem {
+  id: string;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  amount: number;
+}
+
+export interface CheckoutSession {
+  sessionId: string;
+  url: string;
+}
+
+export interface DomainVerification {
+  customDomain: string;
+  verificationToken: string;
+  instructions: {
+    step1: string;
+    step2: string;
+    step3: string;
+    step4: string;
+  };
+}
+
+export interface UsageMetrics {
+  users: {
+    current: number;
+    limit: number;
+    percentage: number;
+  };
+  clients: {
+    current: number;
+    limit: number;
+    percentage: number;
+  };
+  bookings: {
+    current: number;
+    limit: number;
+    percentage: number;
+  };
+}
+
 // API Service avec RTK Query
 export const api = createApi({
   reducerPath: 'api',
   baseQuery: fetchBaseQuery({
     baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL,
     prepareHeaders: (headers, { getState }) => {
-      // Ajouter le token d'authentification si disponible
+      // 1. Token JWT
       const token = (getState() as any).auth?.token;
       if (token) {
         headers.set('authorization', `Bearer ${token}`);
+      }
+
+      // 2. Tenant context (hostname pour identification)
+      if (typeof window !== 'undefined') {
+        const hostname = window.location.hostname;
+        headers.set('X-Tenant-Host', hostname);
+
+        // En développement, utiliser query param ?tenant=
+        if (hostname.includes('localhost')) {
+          const urlParams = new URLSearchParams(window.location.search);
+          const tenant = urlParams.get('tenant');
+          if (tenant) {
+            headers.set('X-Organization-Id', tenant);  // Pour testing
+          }
+        }
       }
 
       // Définir Content-Type par défaut (sauf pour FormData qui est géré dans queryFn personnalisé)
@@ -933,7 +1068,12 @@ export const api = createApi({
       return headers;
     },
   }),
-  tagTypes: ['Client', 'Note', 'Assignment', 'User', 'Receipts', 'EmailLog', 'Campaign', 'Booking', 'Service', 'Package', 'Availability', 'Break'],
+  tagTypes: [
+    'Client', 'Note', 'Assignment', 'User', 'Receipts', 'EmailLog', 'Campaign', 'Booking', 'Service', 'Package', 'Availability', 'Break',
+    'Organization',
+    'Subscription',
+    'Invoice',
+  ],
   endpoints: (builder) => ({
     // AUTH - Connexion employé
     login: builder.mutation<AuthResponse, LoginCredentials>({
@@ -1180,16 +1320,16 @@ export const api = createApi({
       invalidatesTags: (result, error, { id }) => [{ type: 'User', id }],
     }),
 
-   toggleUserStatus: builder.mutation<
-  { data: User; message: string },
-  { id: string; isActive: boolean }
->({
-  query: ({ id, isActive }) => ({
-    url: `/users/${id}/toggle-status`,
-    method: 'PATCH',
-    body: { isActive }, // ⭐⭐ INDISPENSABLE
-  }),
-}),
+    toggleUserStatus: builder.mutation<
+      { data: User; message: string },
+      { id: string; isActive: boolean }
+    >({
+      query: ({ id, isActive }) => ({
+        url: `/users/${id}/toggle-status`,
+        method: 'PATCH',
+        body: { isActive }, // ⭐⭐ INDISPENSABLE
+      }),
+    }),
 
 
 
@@ -1801,6 +1941,15 @@ export const api = createApi({
       providesTags: ['Booking'],
     }),
 
+    getBookings: builder.query<
+      { bookings: Booking[] },
+      void
+    >({
+      query: () => '/bookings',
+      transformResponse: (response: any) => response.data || response,
+      providesTags: ['Booking'],
+    }), 
+
     // CREATE booking
     createBooking: builder.mutation<
       { booking: Booking; message: string },
@@ -2079,6 +2228,80 @@ export const api = createApi({
     }),
 
     // ==== END SERVICE ENDPOINTS ====
+
+    // ==========================================
+    // NOUVEAUX ENDPOINTS - ORGANISATION
+    // ==========================================
+
+    getOrganizationSettings: builder.query<Organization, void>({
+      query: () => '/organizations/settings',
+      providesTags: ['Organization'],
+    }),
+
+    updateOrganizationSettings: builder.mutation<Organization, Partial<Organization>>({
+      query: (data) => ({
+        url: '/organizations/settings',
+        method: 'PATCH',
+        body: data,
+      }),
+      invalidatesTags: ['Organization'],
+    }),
+
+    verifyCustomDomain: builder.mutation<DomainVerification, { customDomain: string }>({
+      query: (data) => ({
+        url: '/organizations/verify-domain',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['Organization'],
+    }),
+
+    // ==========================================
+    // NOUVEAUX ENDPOINTS - ABONNEMENT
+    // ==========================================
+
+    getSubscription: builder.query<Subscription, void>({
+      query: () => '/subscription',
+      providesTags: ['Subscription'],
+    }),
+
+    getSubscriptionPlans: builder.query<SubscriptionPlan[], void>({
+      query: () => '/subscription/plans',
+    }),
+
+    createCheckoutSession: builder.mutation<CheckoutSession, { planId: string }>({
+      query: (data) => ({
+        url: '/subscription/checkout',
+        method: 'POST',
+        body: data,
+      }),
+    }),
+
+    upgradeSubscription: builder.mutation<Subscription, { planId: string }>({
+      query: (data) => ({
+        url: '/subscription/upgrade',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['Subscription'],
+    }),
+
+    cancelSubscription: builder.mutation<void, void>({
+      query: () => ({
+        url: '/subscription/cancel',
+        method: 'POST',
+      }),
+      invalidatesTags: ['Subscription'],
+    }),
+
+    getInvoices: builder.query<SubscriptionInvoice[], void>({
+      query: () => '/subscription/invoices',
+      providesTags: ['Invoice'],
+    }),
+
+    getUsageMetrics: builder.query<UsageMetrics, void>({
+      query: () => '/subscription/usage',
+    }),
   }),
 });
 
@@ -2173,4 +2396,15 @@ export const {
   useGetPackageBySlugQuery,
   useGetGymMembershipsQuery,
   useGetAvailableProfessionalsQuery,
+  // New hooks
+  useGetOrganizationSettingsQuery,
+  useUpdateOrganizationSettingsMutation,
+  useVerifyCustomDomainMutation,
+  useGetSubscriptionQuery,
+  useGetSubscriptionPlansQuery,
+  useCreateCheckoutSessionMutation,
+  useUpgradeSubscriptionMutation,
+  useCancelSubscriptionMutation,
+  useGetInvoicesQuery,
+  useGetUsageMetricsQuery,
 } = api;

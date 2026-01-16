@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Calendar, Loader2, Sparkles, AlertCircle } from 'lucide-react';
 import { format, addMonths } from 'date-fns';
+import { fr } from 'date-fns/locale';
 import { useGeneratePeriodScheduleMutation } from '@/lib/redux/services/api';
 import toast from 'react-hot-toast';
 
@@ -33,6 +34,8 @@ export default function GeneratePeriodModal({
   const [professionalId, setProfessionalId] = useState(initialProfessionalId || '');
   const [periodMonths, setPeriodMonths] = useState(3); // 3 mois par défaut
   const [startDate, setStartDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [startTime, setStartTime] = useState('08:00'); // Heure de début par défaut
+  const [endTime, setEndTime] = useState('20:00');   // Heure de fin par défaut
 
   const [generatePeriod, { isLoading }] = useGeneratePeriodScheduleMutation();
 
@@ -48,12 +51,14 @@ export default function GeneratePeriodModal({
     }
 
     try {
-      console.log('📤 Envoi de la requête de génération:', { professionalId, startDate, endDate });
+      console.log('📤 Envoi de la requête de génération:', { professionalId, startDate, endDate, startTime, endTime });
 
       const result = await generatePeriod({
         professionalId,
         startDate,
         endDate,
+        startTime,
+        endTime,
       }).unwrap();
 
       console.log('✅ Réponse reçue:', result);
@@ -115,7 +120,7 @@ export default function GeneratePeriodModal({
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.9 }}
-          className="bg-white rounded-2xl shadow-2xl max-w-lg w-full"
+          className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] flex flex-col"
         >
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-spa-turquoise-50 to-spa-lavande-50">
@@ -147,17 +152,17 @@ export default function GeneratePeriodModal({
               <div className="text-sm text-blue-800">
                 <p className="font-semibold mb-1">Comment ça fonctionne ?</p>
                 <ul className="space-y-1 text-xs">
-                  <li>• Génère automatiquement les horaires depuis le template hebdomadaire</li>
-                  <li>• Ignore les jours sans horaire template</li>
-                  <li>• Évite les doublons (skip les dates existantes)</li>
-                  <li>• Gain de temps énorme !</li>
+                  <li>• Crée des disponibilités en masse pour la période sélectionnée</li>
+                  <li>• Utilise les horaires de travail du professionnel</li>
+                  <li>• Évite les doublons (ignore les dates existantes)</li>
+                  <li>• Gain de temps pour la gestion des horaires !</li>
                 </ul>
               </div>
             </div>
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          {/* Form - avec scroll si nécessaire */}
+          <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto flex-1">
             {/* Professionnel */}
             <div>
               <label className="label-spa">Professionnel *</label>
@@ -166,7 +171,6 @@ export default function GeneratePeriodModal({
                 onChange={(e) => setProfessionalId(e.target.value)}
                 className="input-spa"
                 required
-                disabled={!!initialProfessionalId}
               >
                 <option value="">Sélectionner un professionnel</option>
                 {professionals.map((prof) => (
@@ -211,6 +215,33 @@ export default function GeneratePeriodModal({
               </div>
             </div>
 
+            {/* Plage horaire */}
+            <div>
+              <label className="label-spa">Plage horaire *</label>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Début</label>
+                  <input
+                    type="time"
+                    value={startTime}
+                    onChange={(e) => setStartTime(e.target.value)}
+                    className="input-spa"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Fin</label>
+                  <input
+                    type="time"
+                    value={endTime}
+                    onChange={(e) => setEndTime(e.target.value)}
+                    className="input-spa"
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+
             {/* Résumé */}
             <div className="p-4 bg-gray-50 rounded-xl">
               <div className="flex items-center gap-2 mb-2">
@@ -220,11 +251,11 @@ export default function GeneratePeriodModal({
               <div className="space-y-1 text-sm text-gray-700">
                 <p>
                   <span className="font-medium">Début :</span>{' '}
-                  {format(new Date(startDate), 'dd MMMM yyyy', { locale: require('date-fns/locale/fr') })}
+                  {format(new Date(startDate), 'dd MMMM yyyy', { locale: fr })} à {startTime}
                 </p>
                 <p>
                   <span className="font-medium">Fin :</span>{' '}
-                  {format(new Date(endDate), 'dd MMMM yyyy', { locale: require('date-fns/locale/fr') })}
+                  {format(new Date(endDate), 'dd MMMM yyyy', { locale: fr })} à {endTime}
                 </p>
                 <p className="text-spa-turquoise-600 font-semibold mt-2">
                   ≈ {Math.round(periodMonths * 30)} jours à générer

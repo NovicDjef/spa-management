@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { format, addDays, subDays, startOfDay } from 'date-fns';
+import { format, addDays, subDays, startOfDay, startOfWeek } from 'date-fns';
 import CalendarHeader from './CalendarHeader';
 import CalendarGrid from './CalendarGrid';
 import HorizontalCalendarGrid from './HorizontalCalendarGrid';
 import SingleColumnCalendarGrid from './SingleColumnCalendarGrid';
+import ProfessionalWeeklyCalendarGrid from './ProfessionalWeeklyCalendarGrid';
 import BookingSidebar from './BookingSidebar';
 import BookingContextMenu from './BookingContextMenu';
 import EmptySlotContextMenu from './EmptySlotContextMenu';
@@ -114,6 +115,13 @@ export default function CalendarView({ userRole, userId }: CalendarViewProps) {
     professionalId: userRole === 'MASSOTHERAPEUTE' || userRole === 'ESTHETICIENNE' ? userId : undefined,
   });
 
+  // Log des réservations pour le débogage
+  React.useEffect(() => {
+    if (bookingsData) {
+      console.log('📅 Réservations chargées:', bookingsData.bookings);
+    }
+  }, [bookingsData]);
+
   // Fetch professionals
   const { data: professionalsData, isLoading: isLoadingProfessionals } = useGetUsersQuery({
     role: undefined, // Get all professionals
@@ -203,7 +211,7 @@ export default function CalendarView({ userRole, userId }: CalendarViewProps) {
   };
 
   // Vérifier si l'utilisateur peut créer des réservations
-  const canCreateBooking = userRole === 'ADMIN' || userRole === 'RECEPTIONISTE';
+  const canCreateBooking = userRole ? userRole === 'ADMIN' || userRole === 'RECEPTIONISTE' : false;
 
   // Handlers
   const handleSlotClick = (professionalId: string, date: Date, timeSlot: string) => {
@@ -654,7 +662,13 @@ export default function CalendarView({ userRole, userId }: CalendarViewProps) {
           setSidebarMode('booking');
           setShowSidebar(true);
         }}
-        onGenerateSchedule={() => setShowGeneratePeriodModal(true)}
+        onNewBreak={userRole && canCreateBooking ? () => {
+          setSelectedSlot(null);
+          setSelectedBooking(null);
+          setSidebarMode('break');
+          setShowSidebar(true);
+        } : undefined}
+        onGenerateSchedule={userRole && canCreateBooking ? () => setShowGeneratePeriodModal(true) : undefined}
         userRole={userRole}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
@@ -667,9 +681,9 @@ export default function CalendarView({ userRole, userId }: CalendarViewProps) {
           {/* Vue professionnelle : une seule colonne optimisée mobile */}
           {isProfessionalView && currentUser ? (
             <>
-              {console.log('✅ Affichage SingleColumnCalendarGrid pour:', currentUser.prenom, currentUser.nom)}
-              <SingleColumnCalendarGrid
-                date={selectedDate}
+              {console.log('✅ Affichage ProfessionalWeeklyCalendarGrid pour:', currentUser.prenom, currentUser.nom)}
+              <ProfessionalWeeklyCalendarGrid
+                currentDate={selectedDate}
                 professional={{
                   id: currentUser.id,
                   nom: currentUser.nom,
@@ -682,17 +696,19 @@ export default function CalendarView({ userRole, userId }: CalendarViewProps) {
                 breaks={allBreaks}
                 onBookingClick={handleBookingEdit}
                 onBookingContextMenu={handleBookingContextMenu}
-                onSlotClick={(timeSlot) => {
-                  // Convertir le timeSlot en date
+                onSlotClick={(timeSlot, dayOffset) => {
+                  // Calculer la date en fonction du jour de la semaine
+                  const startOfWeekDate = startOfWeek(selectedDate, { weekStartsOn: 1 });
+                  const slotDate = addDays(startOfWeekDate, dayOffset);
                   const [hours, minutes] = timeSlot.split(':').map(Number);
-                  const slotDate = new Date(selectedDate);
                   slotDate.setHours(hours, minutes, 0, 0);
                   handleSlotClick(currentUser.id, slotDate, timeSlot);
                 }}
-                onSlotContextMenu={(timeSlot, position) => {
-                  // Convertir le timeSlot en date
+                onSlotContextMenu={(timeSlot, dayOffset, position) => {
+                  // Calculer la date en fonction du jour de la semaine
+                  const startOfWeekDate = startOfWeek(selectedDate, { weekStartsOn: 1 });
+                  const slotDate = addDays(startOfWeekDate, dayOffset);
                   const [hours, minutes] = timeSlot.split(':').map(Number);
-                  const slotDate = new Date(selectedDate);
                   slotDate.setHours(hours, minutes, 0, 0);
                   handleSlotContextMenu(currentUser.id, slotDate, timeSlot, position);
                 }}
@@ -733,7 +749,12 @@ export default function CalendarView({ userRole, userId }: CalendarViewProps) {
           selectedSlot={selectedSlot}
           booking={selectedBooking}
           onSuccess={() => {
+            console.log('🔄 Rechargement des réservations après création');
             refetchBookings();
+            // Forcer un rechargement complet en changeant temporairement la date
+            const currentDate = selectedDate;
+            setSelectedDate(new Date(currentDate.getTime() + 1));
+            setTimeout(() => setSelectedDate(currentDate), 100);
           }}
           mode={sidebarMode}
         />
@@ -793,6 +814,7 @@ export default function CalendarView({ userRole, userId }: CalendarViewProps) {
       <GeneratePeriodModal
         isOpen={showGeneratePeriodModal}
         onClose={() => setShowGeneratePeriodModal(false)}
+        professionalId={professionals.length > 0 ? professionals[0].id : undefined}
         professionals={professionals}
         onSuccess={() => {
           refetchBookings();

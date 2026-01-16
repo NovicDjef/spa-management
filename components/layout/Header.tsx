@@ -149,7 +149,7 @@ export function Header({ user: userProp }: HeaderProps) {
           {user && (
             <div className="hidden md:flex items-center gap-3">
               {/* Bouton "Calendrier" pour admin et réceptionniste */}
-              {/* {(user.role === 'ADMIN' || user.role === 'RECEPTIONISTE') && (
+              {(user.role === 'ADMIN' || user.role === 'RECEPTIONISTE') && (
                 <Link href="/admin/calendar">
                   <motion.button
                     whileHover={{ scale: 1.05, y: -2 }}
@@ -160,7 +160,21 @@ export function Header({ user: userProp }: HeaderProps) {
                     <span>Calendrier</span>
                   </motion.button>
                 </Link>
-              )} */}
+              )}
+              <div className="h-8 w-px bg-gray-300 mx-1"></div>
+              {/* Bouton "Mon Calendrier" pour massothérapeutes et esthéticiennes */}
+              {(user.role === 'MASSOTHERAPEUTE' || user.role === 'ESTHETICIENNE') && (
+                <Link href="/professionnel/calendar">
+                  <motion.button
+                    whileHover={{ scale: 1.05, y: -2 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="relative px-4 py-2.5 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl shadow-md hover:shadow-lg transition-all flex items-center gap-2 font-medium"
+                  >
+                    <Calendar className="w-4 h-4" />
+                    <span>Mon Calendrier</span>
+                  </motion.button>
+                </Link>
+              )}
               <div className="h-8 w-px bg-gray-300 mx-1"></div>
               <Link href="/professionnel/profil" className="text-right hover:opacity-80 transition-opacity">
                 <p className="font-medium text-gray-800 text-sm cursor-pointer">{user.nom} {user.prenom}</p>
@@ -225,7 +239,7 @@ export function Header({ user: userProp }: HeaderProps) {
             </div>
             <div className="space-y-2">
               {/* Bouton "Calendrier" pour admin et réceptionniste */}
-              {/* {(user.role === 'ADMIN' || user.role === 'RECEPTIONISTE') && (
+              {(user.role === 'ADMIN' || user.role === 'RECEPTIONISTE') && (
                 <Link
                   href="/admin/calendar"
                   onClick={() => setShowMenu(false)}
@@ -234,7 +248,18 @@ export function Header({ user: userProp }: HeaderProps) {
                   <Calendar className="w-4 h-4" />
                   <span>Calendrier</span>
                 </Link>
-              )} */}
+              )}
+              {/* Bouton "Mon Calendrier" pour massothérapeutes et esthéticiennes */}
+              {(user.role === 'MASSOTHERAPEUTE' || user.role === 'ESTHETICIENNE') && (
+                <Link
+                  href="/professionnel/calendar"
+                  onClick={() => setShowMenu(false)}
+                  className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-3 rounded-2xl font-medium shadow-soft hover:shadow-soft-lg transition-all flex items-center justify-center gap-2"
+                >
+                  <Calendar className="w-4 h-4" />
+                  <span>Mon Calendrier</span>
+                </Link>
+              )}
               <Link
                 href="/professionnel/profil"
                 onClick={() => setShowMenu(false)}

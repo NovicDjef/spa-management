@@ -2,7 +2,7 @@
 
 import React, { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Plus, Search, X, Sparkles } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Plus, Search, X, Sparkles, Coffee } from 'lucide-react';
 import { format, parse } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -13,6 +13,7 @@ interface CalendarHeaderProps {
   onNext: () => void;
   onToday: () => void;
   onNewBooking: () => void;
+  onNewBreak?: () => void; // Nouveau callback pour créer une pause
   onGenerateSchedule?: () => void; // Nouveau callback pour générer les horaires
   userRole?: 'ADMIN' | 'RECEPTIONISTE' | 'MASSOTHERAPEUTE' | 'ESTHETICIENNE';
   searchQuery?: string;
@@ -158,7 +159,7 @@ export default function CalendarHeader({
             </motion.button>
 
             {/* Bouton Générer Horaires - Seulement pour ADMIN et SECRETAIRE */}
-            {canCreateBooking && onGenerateSchedule && (
+            {canCreateBooking && typeof onGenerateSchedule === 'function' && (
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -182,6 +183,20 @@ export default function CalendarHeader({
                 <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
                 <span className="hidden sm:inline">Nouvelle Réservation</span>
                 <span className="sm:hidden">Nouveau</span>
+              </motion.button>
+            )}
+
+            {/* Bouton Nouvelle pause - Seulement pour ADMIN et SECRETAIRE */}
+            {canCreateBooking && typeof onNewBreak === 'function' && (
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={onNewBreak}
+                className="btn-secondary flex items-center gap-2 text-xs sm:text-sm px-3 sm:px-4 py-2"
+              >
+                <Coffee className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="hidden sm:inline">Ajouter Pause</span>
+                <span className="sm:hidden">Pause</span>
               </motion.button>
             )}
           </div>

@@ -120,7 +120,7 @@ export default function AvailabilityBlockModal({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
           transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-          className="relative bg-white rounded-xl shadow-2xl max-w-md w-full border border-gray-200"
+          className="relative bg-white rounded-xl shadow-2xl max-w-md w-full border border-gray-200 max-h-[90vh] flex flex-col"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}

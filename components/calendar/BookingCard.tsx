@@ -30,7 +30,7 @@ export default function BookingCard({
 
   return (
     <div
-      className="absolute inset-0 bg-blue-500 border-l-4 border-blue-700 rounded-lg shadow-lg p-2 cursor-move hover:bg-blue-600 transition-all"
+      className="absolute inset-0 bg-green-500 border-l-4 border-green-700 rounded-lg shadow-lg p-2 cursor-move hover:bg-green-600 transition-all"
       onClick={(e) => {
         e.stopPropagation();
         onEdit(booking);

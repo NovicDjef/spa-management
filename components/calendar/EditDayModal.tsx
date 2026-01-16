@@ -104,10 +104,10 @@ export default function EditDayModal({
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.9 }}
-          className="bg-white rounded-2xl shadow-2xl max-w-md w-full"
+          className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] flex flex-col"
         >
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+          <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 sticky top-0 z-10 bg-white/80 backdrop-blur-sm">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center">
                 <Clock className="w-6 h-6 text-white" />
@@ -145,7 +145,7 @@ export default function EditDayModal({
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto flex-1">
             {/* Disponible / Indisponible */}
             <div>
               <label className="label-spa">Statut de la journée</label>
