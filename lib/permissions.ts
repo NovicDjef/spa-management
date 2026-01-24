@@ -16,7 +16,7 @@ export const PERMISSIONS = {
 
   // Permissions liées aux notes
   ADD_NOTE: ['ADMIN', 'MASSOTHERAPEUTE', 'ESTHETICIENNE'], // RECEPTIONISTE RETIRÉ
-  VIEW_NOTES: ['ADMIN', 'RECEPTIONISTE', 'MASSOTHERAPEUTE', 'ESTHETICIENNE'],
+  VIEW_NOTES: ['ADMIN', 'MASSOTHERAPEUTE', 'ESTHETICIENNE'], // RECEPTIONISTE RETIRÉ
   EDIT_OWN_NOTE: ['ADMIN', 'MASSOTHERAPEUTE', 'ESTHETICIENNE'], // Peuvent éditer leurs propres notes
   DELETE_NOTE: ['ADMIN'], // Seul l'admin peut supprimer les notes
 
@@ -73,47 +73,104 @@ export function isProfessional(userRole: Role | string | undefined | null): bool
 }
 
 /**
- * Vérifie si un utilisateur peut voir un client spécifique
- * Les admins et réceptionnistes peuvent voir tous les clients
- * Les professionnels peuvent voir uniquement leurs clients assignés
+ * Vérifie si un utilisateur peut voir le dossier complet d'un client spécifique
+ * Les admins peuvent voir tous les clients
+ * Les professionnels peuvent voir les clients si:
+ *   - Ils sont explicitement assignés au client (isAssigned = true)
+ *   - OU le type de service du client correspond à leur rôle
+ * Les réceptionnistes NE PEUVENT PAS voir les dossiers clients
  */
-export function canViewClient(userRole: Role | string | undefined | null, isAssigned: boolean = false): boolean {
+export function canViewClient(
+  userRole: Role | string | undefined | null,
+  isAssigned: boolean = false,
+  clientServiceType?: 'MASSOTHERAPIE' | 'ESTHETIQUE' | string | null
+): boolean {
   if (!userRole) return false;
 
-  // Admin et réceptionniste peuvent voir tous les clients
-  if (isAdminOrSecretary(userRole)) return true;
+  // Admin peut voir tous les clients
+  if (isAdmin(userRole)) return true;
 
-  // Les professionnels peuvent voir uniquement leurs clients assignés
-  if (isProfessional(userRole)) return isAssigned;
+  // Les professionnels peuvent voir leurs clients assignés OU les clients de leur type de service
+  if (isProfessional(userRole)) {
+    // Vérifie si le professionnel est assigné au client
+    if (isAssigned) return true;
 
+    // Vérifie si le type de service correspond au rôle du professionnel
+    if (clientServiceType) {
+      if (userRole === 'ESTHETICIENNE' && clientServiceType === 'ESTHETIQUE') return true;
+      if (userRole === 'MASSOTHERAPEUTE' && clientServiceType === 'MASSOTHERAPIE') return true;
+    }
+
+    return false;
+  }
+
+  // Les réceptionnistes NE PEUVENT PAS voir les dossiers clients
   return false;
 }
 
 /**
  * Vérifie si un utilisateur peut ajouter une note à un client
+ * Les admins peuvent ajouter des notes à tous les clients
+ * Les professionnels peuvent ajouter des notes si:
+ *   - Ils sont explicitement assignés au client (isAssigned = true)
+ *   - OU le type de service du client correspond à leur rôle
+ * Les réceptionnistes NE PEUVENT PAS ajouter de notes
  */
-export function canAddNote(userRole: Role | string | undefined | null, isAssigned: boolean = false): boolean {
+export function canAddNote(
+  userRole: Role | string | undefined | null,
+  isAssigned: boolean = false,
+  clientServiceType?: 'MASSOTHERAPIE' | 'ESTHETIQUE' | string | null
+): boolean {
   if (!userRole) return false;
 
-  // Admin et réceptionniste peuvent ajouter des notes à tous les clients
-  if (isAdminOrSecretary(userRole)) return true;
+  // Admin peut ajouter des notes à tous les clients
+  if (isAdmin(userRole)) return true;
 
-  // Les professionnels peuvent ajouter des notes uniquement à leurs clients assignés
-  if (isProfessional(userRole)) return isAssigned;
+  // Les professionnels peuvent ajouter des notes si assignés OU si le type de service correspond
+  if (isProfessional(userRole)) {
+    if (isAssigned) return true;
 
+    if (clientServiceType) {
+      if (userRole === 'ESTHETICIENNE' && clientServiceType === 'ESTHETIQUE') return true;
+      if (userRole === 'MASSOTHERAPEUTE' && clientServiceType === 'MASSOTHERAPIE') return true;
+    }
+
+    return false;
+  }
+
+  // Les réceptionnistes NE PEUVENT PAS ajouter de notes
   return false;
 }
 
 /**
- * Vérifie si un utilisateur peut éditer ou supprimer une note
+ * Vérifie si un utilisateur peut éditer une note
+ * Les admins peuvent éditer toutes les notes
+ * Les professionnels peuvent éditer leurs propres notes pendant 24h
  */
-export function canEditNote(userRole: Role | string | undefined | null, noteAuthorId: string, userId: string): boolean {
+export function canEditNote(
+  userRole: Role | string | undefined | null,
+  noteAuthorId: string,
+  userId: string,
+  noteCreatedAt?: string | Date
+): boolean {
   if (!userRole) return false;
 
-  // Seul l'admin peut éditer/supprimer toutes les notes
+  // L'admin peut éditer toutes les notes
   if (isAdmin(userRole)) return true;
 
-  // Personne d'autre ne peut éditer les notes (pas même les leurs)
+  // Les professionnels peuvent éditer leurs propres notes pendant 24h
+  if (isProfessional(userRole) && noteAuthorId === userId) {
+    // Si pas de date fournie, on autorise (vérification côté composant)
+    if (!noteCreatedAt) return true;
+
+    const noteDate = new Date(noteCreatedAt);
+    const now = new Date();
+    const diffInMs = now.getTime() - noteDate.getTime();
+    const diffInHours = diffInMs / (1000 * 60 * 60);
+
+    return diffInHours < 24;
+  }
+
   return false;
 }
 

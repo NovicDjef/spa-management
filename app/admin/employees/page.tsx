@@ -380,7 +380,7 @@ const handleToggleStatus = async (user: any) => {
                 >
                   <option value="ALL">Tous les rôles</option>
                   <option value="ADMIN">Administrateur</option>
-                  <option value="SECRETAIRE">Réceptionniste</option>
+                  <option value="RECEPTIONISTE">Réceptionniste</option>
                   <option value="MASSOTHERAPEUTE">Massothérapeute</option>
                   <option value="ESTHETICIENNE">Esthéticienne</option>
                 </select>
@@ -633,7 +633,7 @@ const handleToggleStatus = async (user: any) => {
                     onChange={(e) => setFormData({ ...formData, role: e.target.value as UserRole })}
                     className="input-spa"
                   >
-                    <option value="SECRETAIRE">Réceptionniste</option>
+                    <option value="RECEPTIONISTE">Réceptionniste</option>
                     <option value="MASSOTHERAPEUTE">Massothérapeute</option>
                     <option value="ESTHETICIENNE">Esthéticienne</option>
                     <option value="ADMIN">Administrateur</option>
@@ -870,7 +870,7 @@ const handleToggleStatus = async (user: any) => {
               onChange={(e) => setFormData({ ...formData, role: e.target.value as UserRole })}
               className="input-spa"
             >
-              <option value="SECRETAIRE">Réceptionniste</option>
+              <option value="RECEPTIONISTE">Réceptionniste</option>
               <option value="MASSOTHERAPEUTE">Massothérapeute</option>
               <option value="ESTHETICIENNE">Esthéticienne</option>
               <option value="ADMIN">Administrateur</option>

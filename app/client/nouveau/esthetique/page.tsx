@@ -7,8 +7,12 @@ import { InputField, SelectField, CheckboxField, RadioField } from '@/components
 import { ChevronLeft, ChevronRight, Check, Loader2, X, AlertCircle } from 'lucide-react';
 import { useCreateClientMutation } from '@/lib/redux/services/api';
 import { extractErrorMessage } from '@/lib/utils/errorHandler';
+import { MICRODERMABRASION_CONSENT, IPL_CONSENT, MANICURE_PEDICURE_QUESTIONS, MANICURE_PEDICURE_CONSENT } from '@/lib/constants/consent-texts';
 
 interface FormData {
+  // Sélection du service esthétique
+  selectedEstheticService: string;
+
   // Informations personnelles
   nom: string;
   prenom: string;
@@ -24,13 +28,7 @@ interface FormData {
   gender: string;
   assuranceCouvert: string;
 
-  // Informations esthétique
-  etatPeau: string;
-  etatPores: string;
-  coucheCornee: string;
-  irrigationSanguine: string;
-  impuretes: string;
-  sensibiliteCutanee: string;
+  // Informations esthétique (FACIAL - Habitudes & Soins)
   fumeur: string;
   niveauStress: string;
   expositionSoleil: string;
@@ -41,10 +39,43 @@ interface FormData {
   routineSoins: string;
   changementsRecents: string;
   preferencePeau: string;
+
+  // Diagnostic Peau (rempli par esthéticienne dans son espace)
+  etatPeau: string;
+  etatPores: string;
+  coucheCornee: string;
+  irrigationSanguine: string;
+  impuretes: string;
+  sensibiliteCutanee: string;
   diagnosticVisuelNotes: string;
+
+  // Microdermabrasion
+  microdermConsentement: boolean;
+
+  // IPL - Questionnaire client
+  iplBilanSante: string;
+  iplVeinsVarices: boolean;
+  iplAccutane: boolean;
+  iplInjectionsVarices: boolean;
+  iplAcideGlycolique: boolean;
+  iplInjectionBotox: boolean;
+  iplPeelingChimique: boolean;
+  iplAutresProduits: string;
+  iplZonesAEpiler: string[];
+  iplHerpesSimplex: boolean;
+  iplSkinCancer: boolean;
+  iplConsentement: boolean;
+
+  // Manicure/Pédicure
+  manicurePedicureInfo: any;
+  manicurePedicureConsent: boolean;
 }
 
 const initialFormData: FormData = {
+  // Sélection du service
+  selectedEstheticService: '',
+
+  // Informations personnelles
   nom: '',
   prenom: '',
   adresse: '',
@@ -58,12 +89,8 @@ const initialFormData: FormData = {
   occupation: '',
   gender: '',
   assuranceCouvert: '',
-  etatPeau: '',
-  etatPores: '',
-  coucheCornee: '',
-  irrigationSanguine: '',
-  impuretes: '',
-  sensibiliteCutanee: '',
+
+  // Habitudes & Soins (FACIAL)
   fumeur: '',
   niveauStress: '',
   expositionSoleil: '',
@@ -74,20 +101,65 @@ const initialFormData: FormData = {
   routineSoins: '',
   changementsRecents: '',
   preferencePeau: '',
+
+  // Diagnostic Peau (esthéticienne)
+  etatPeau: '',
+  etatPores: '',
+  coucheCornee: '',
+  irrigationSanguine: '',
+  impuretes: '',
+  sensibiliteCutanee: '',
   diagnosticVisuelNotes: '',
+
+  // Microdermabrasion
+  microdermConsentement: false,
+
+  // IPL
+  iplBilanSante: '',
+  iplVeinsVarices: false,
+  iplAccutane: false,
+  iplInjectionsVarices: false,
+  iplAcideGlycolique: false,
+  iplInjectionBotox: false,
+  iplPeelingChimique: false,
+  iplAutresProduits: '',
+  iplZonesAEpiler: [],
+  iplHerpesSimplex: false,
+  iplSkinCancer: false,
+  iplConsentement: false,
+
+  // Manicure/Pédicure
+  manicurePedicureInfo: {},
+  manicurePedicureConsent: false,
 };
 
 export default function EsthetiqueFormPage() {
   const router = useRouter();
   const [createClient, { isLoading }] = useCreateClientMutation();
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(0); // Commence à 0 pour la sélection du service
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [age, setAge] = useState<number | null>(null);
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  const totalSteps = 3;
+  // Calculer le nombre total d'étapes selon le service sélectionné
+  const getTotalSteps = () => {
+    switch (formData.selectedEstheticService) {
+      case 'FACIAL':
+        return 2; // Étape 0: Sélection, Étape 1: Infos, Étape 2: Habitudes
+      case 'MICRODERMABRASION':
+        return 3; // Étape 0: Sélection, Étape 1: Infos, Étape 2: Habitudes, Étape 3: Consentement
+      case 'IPL':
+        return 3; // Étape 0: Sélection, Étape 1: Infos, Étape 2: Questionnaire IPL, Étape 3: Consentement
+      case 'MANICURE_PEDICURE':
+        return 3; // Étape 0: Sélection, Étape 1: Infos, Étape 2: Questions, Étape 3: Consentement
+      default:
+        return 0; // Juste la sélection du service
+    }
+  };
+
+  const totalSteps = getTotalSteps();
 
   // Calculer l'âge à partir de la date de naissance
   const calculateAge = (dateNaissance: string): number | null => {
@@ -127,6 +199,14 @@ export default function EsthetiqueFormPage() {
   const validateStep = (step: number): boolean => {
     const newErrors: Record<string, string> = {};
 
+    // Validation étape 0 : Sélection du service
+    if (step === 0) {
+      if (!formData.selectedEstheticService) {
+        newErrors.selectedEstheticService = 'Veuillez sélectionner un service';
+      }
+    }
+
+    // Validation étape 1 : Informations personnelles
     if (step === 1) {
       if (!formData.nom) newErrors.nom = 'Le nom est requis';
       if (!formData.prenom) newErrors.prenom = 'Le prénom est requis';
@@ -144,10 +224,39 @@ export default function EsthetiqueFormPage() {
       if (!formData.assuranceCouvert) newErrors.assuranceCouvert = 'Veuillez indiquer si vous avez une assurance';
     }
 
+    // Validation étape 2 : Habitudes & Soins (pour FACIAL et MICRODERMABRASION) ou Questionnaire (IPL, MANICURE_PEDICURE)
     if (step === 2) {
-      if (!formData.etatPeau) newErrors.etatPeau = 'L\'état de la peau est requis';
-      if (!formData.fumeur) newErrors.fumeur = 'Ce champ est requis';
-      if (!formData.niveauStress) newErrors.niveauStress = 'Le niveau de stress est requis';
+      if (formData.selectedEstheticService === 'FACIAL' || formData.selectedEstheticService === 'MICRODERMABRASION') {
+        if (!formData.fumeur) newErrors.fumeur = 'Ce champ est requis';
+        if (!formData.niveauStress) newErrors.niveauStress = 'Le niveau de stress est requis';
+      }
+
+      if (formData.selectedEstheticService === 'IPL') {
+        if (!formData.iplZonesAEpiler || formData.iplZonesAEpiler.length === 0) {
+          newErrors.iplZonesAEpiler = 'Veuillez sélectionner au moins une zone à épiler';
+        }
+      }
+    }
+
+    // Validation étape 3 : Consentement (pour MICRODERMABRASION, IPL, MANICURE_PEDICURE)
+    if (step === 3) {
+      if (formData.selectedEstheticService === 'MICRODERMABRASION') {
+        if (!formData.microdermConsentement) {
+          newErrors.microdermConsentement = 'Vous devez accepter le consentement pour continuer';
+        }
+      }
+
+      if (formData.selectedEstheticService === 'IPL') {
+        if (!formData.iplConsentement) {
+          newErrors.iplConsentement = 'Vous devez accepter le consentement pour continuer';
+        }
+      }
+
+      if (formData.selectedEstheticService === 'MANICURE_PEDICURE') {
+        if (!formData.manicurePedicureConsent) {
+          newErrors.manicurePedicureConsent = 'Vous devez accepter le consentement pour continuer';
+        }
+      }
     }
 
     setErrors(newErrors);
@@ -162,17 +271,139 @@ export default function EsthetiqueFormPage() {
   };
 
   const prevStep = () => {
-    setCurrentStep((prev) => Math.max(prev - 1, 1));
+    setCurrentStep((prev) => Math.max(prev - 1, 0)); // Permet de revenir à l'étape 0 (sélection du service)
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Vérifier si le bouton SOUMETTRE doit être désactivé (consentement non accepté)
+  const isSubmitDisabled = () => {
+    // Si en cours de chargement
+    if (isLoading) return true;
+
+    // Si on est sur la dernière étape (étape de consentement)
+    if (currentStep === totalSteps) {
+      // Pour MICRODERMABRASION - consentement requis
+      if (formData.selectedEstheticService === 'MICRODERMABRASION') {
+        return !formData.microdermConsentement;
+      }
+
+      // Pour IPL - consentement requis
+      if (formData.selectedEstheticService === 'IPL') {
+        return !formData.iplConsentement;
+      }
+
+      // Pour MANICURE_PEDICURE - consentement requis
+      if (formData.selectedEstheticService === 'MANICURE_PEDICURE') {
+        return !formData.manicurePedicureConsent;
+      }
+    }
+
+    return false;
   };
 
   const handleSubmit = async () => {
     if (!validateStep(currentStep)) return;
 
-    const dataToSubmit = {
-  ...formData,
-  serviceType: 'ESTHETIQUE' as const,  // Ajoutez 'as const' pour forcer le type littéral
-};
+    const dataToSubmit: any = {
+      ...formData,
+      serviceType: 'ESTHETIQUE' as const,
+    };
+
+    // Nettoyer les champs vides selon le service sélectionné
+    if (formData.selectedEstheticService === 'IPL') {
+      // Pour IPL, supprimer les champs FACIAL/MICRODERMABRASION
+      delete dataToSubmit.fumeur;
+      delete dataToSubmit.niveauStress;
+      delete dataToSubmit.expositionSoleil;
+      delete dataToSubmit.protectionSolaire;
+      delete dataToSubmit.suffisanceEau;
+      delete dataToSubmit.travailExterieur;
+      delete dataToSubmit.bainChauds;
+      delete dataToSubmit.routineSoins;
+      delete dataToSubmit.changementsRecents;
+      delete dataToSubmit.preferencePeau;
+      delete dataToSubmit.etatPeau;
+      delete dataToSubmit.etatPores;
+      delete dataToSubmit.coucheCornee;
+      delete dataToSubmit.irrigationSanguine;
+      delete dataToSubmit.impuretes;
+      delete dataToSubmit.sensibiliteCutanee;
+      delete dataToSubmit.diagnosticVisuelNotes;
+      delete dataToSubmit.microdermConsentement;
+      delete dataToSubmit.manicurePedicureInfo;
+      delete dataToSubmit.manicurePedicureConsent;
+    } else if (formData.selectedEstheticService === 'FACIAL' || formData.selectedEstheticService === 'MICRODERMABRASION') {
+      // Pour FACIAL/MICRODERMABRASION, supprimer les champs IPL et MANICURE_PEDICURE
+      delete dataToSubmit.iplBilanSante;
+      delete dataToSubmit.iplVeinsVarices;
+      delete dataToSubmit.iplAccutane;
+      delete dataToSubmit.iplInjectionsVarices;
+      delete dataToSubmit.iplAcideGlycolique;
+      delete dataToSubmit.iplInjectionBotox;
+      delete dataToSubmit.iplPeelingChimique;
+      delete dataToSubmit.iplAutresProduits;
+      delete dataToSubmit.iplZonesAEpiler;
+      delete dataToSubmit.iplHerpesSimplex;
+      delete dataToSubmit.iplSkinCancer;
+      delete dataToSubmit.iplConsentement;
+      delete dataToSubmit.manicurePedicureInfo;
+      delete dataToSubmit.manicurePedicureConsent;
+
+      // Convertir les chaînes vides en null pour les enums optionnels
+      if (dataToSubmit.fumeur === '') dataToSubmit.fumeur = null;
+      if (dataToSubmit.expositionSoleil === '') dataToSubmit.expositionSoleil = null;
+      if (dataToSubmit.protectionSolaire === '') dataToSubmit.protectionSolaire = null;
+      if (dataToSubmit.suffisanceEau === '') dataToSubmit.suffisanceEau = null;
+      if (dataToSubmit.travailExterieur === '') dataToSubmit.travailExterieur = null;
+      if (dataToSubmit.bainChauds === '') dataToSubmit.bainChauds = null;
+    } else if (formData.selectedEstheticService === 'MANICURE_PEDICURE') {
+      // Pour MANICURE_PEDICURE, supprimer les champs FACIAL/MICRODERMABRASION et IPL
+      delete dataToSubmit.fumeur;
+      delete dataToSubmit.niveauStress;
+      delete dataToSubmit.expositionSoleil;
+      delete dataToSubmit.protectionSolaire;
+      delete dataToSubmit.suffisanceEau;
+      delete dataToSubmit.travailExterieur;
+      delete dataToSubmit.bainChauds;
+      delete dataToSubmit.routineSoins;
+      delete dataToSubmit.changementsRecents;
+      delete dataToSubmit.preferencePeau;
+      delete dataToSubmit.etatPeau;
+      delete dataToSubmit.etatPores;
+      delete dataToSubmit.coucheCornee;
+      delete dataToSubmit.irrigationSanguine;
+      delete dataToSubmit.impuretes;
+      delete dataToSubmit.sensibiliteCutanee;
+      delete dataToSubmit.diagnosticVisuelNotes;
+      delete dataToSubmit.microdermConsentement;
+      delete dataToSubmit.iplBilanSante;
+      delete dataToSubmit.iplVeinsVarices;
+      delete dataToSubmit.iplAccutane;
+      delete dataToSubmit.iplInjectionsVarices;
+      delete dataToSubmit.iplAcideGlycolique;
+      delete dataToSubmit.iplInjectionBotox;
+      delete dataToSubmit.iplPeelingChimique;
+      delete dataToSubmit.iplAutresProduits;
+      delete dataToSubmit.iplZonesAEpiler;
+      delete dataToSubmit.iplHerpesSimplex;
+      delete dataToSubmit.iplSkinCancer;
+      delete dataToSubmit.iplConsentement;
+    }
+
+    // Ajouter la date de consentement pour MICRODERMABRASION
+    if (formData.selectedEstheticService === 'MICRODERMABRASION' && formData.microdermConsentement) {
+      dataToSubmit.microdermConsentDate = new Date().toISOString();
+    }
+
+    // Ajouter la date de consentement pour IPL
+    if (formData.selectedEstheticService === 'IPL' && formData.iplConsentement) {
+      dataToSubmit.iplConsentDate = new Date().toISOString();
+    }
+
+    // Ajouter la date de consentement pour MANICURE_PEDICURE
+    if (formData.selectedEstheticService === 'MANICURE_PEDICURE' && formData.manicurePedicureConsent) {
+      dataToSubmit.manicurePedicureConsentDate = new Date().toISOString();
+    }
 
     console.log('='.repeat(80));
     console.log('📤 SOUMISSION DU FORMULAIRE ESTHÉTIQUE');
@@ -205,11 +436,47 @@ export default function EsthetiqueFormPage() {
   };
 
   const renderProgressBar = () => {
-    const steps = [
-      { number: 1, label: 'Personnel' },
-      { number: 2, label: 'Diagnostic Peau' },
-      { number: 3, label: 'Habitudes & Soins' },
-    ];
+    // Générer les étapes en fonction du service sélectionné
+    const getSteps = () => {
+      const baseSteps = [
+        { number: 0, label: 'Service' },
+        { number: 1, label: 'Personnel' },
+      ];
+
+      switch (formData.selectedEstheticService) {
+        case 'FACIAL':
+          return [
+            ...baseSteps,
+            { number: 2, label: 'Habitudes & Soins' },
+          ];
+
+        case 'MICRODERMABRASION':
+          return [
+            ...baseSteps,
+            { number: 2, label: 'Habitudes & Soins' },
+            { number: 3, label: 'Consentement' },
+          ];
+
+        case 'IPL':
+          return [
+            ...baseSteps,
+            { number: 2, label: 'Questionnaire' },
+            { number: 3, label: 'Consentement' },
+          ];
+
+        case 'MANICURE_PEDICURE':
+          return [
+            ...baseSteps,
+            { number: 2, label: 'Questions' },
+            { number: 3, label: 'Consentement' },
+          ];
+
+        default:
+          return [{ number: 0, label: 'Service' }];
+      }
+    };
+
+    const steps = getSteps();
 
     return (
       <div className="mb-8">
@@ -259,6 +526,105 @@ export default function EsthetiqueFormPage() {
     );
   };
 
+  // ÉTAPE 0 : Sélection du service esthétique
+  const renderStep0 = () => (
+    <motion.div
+      key="step0"
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+      transition={{ duration: 0.3 }}
+    >
+      <h2 className="text-2xl font-bold text-gray-800 mb-6">
+        Pour quel service souhaitez-vous vous enregistrer ?
+      </h2>
+
+      <p className="text-gray-600 mb-8">
+        Sélectionnez le type de soin esthétique qui vous intéresse. Selon votre choix,
+        nous vous demanderons de remplir les informations appropriées.
+      </p>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* FACIAL */}
+        <div
+          onClick={() => {
+            setFormData({ ...formData, selectedEstheticService: 'FACIAL' });
+            setErrors({});
+          }}
+          className={`p-6 rounded-lg border-2 cursor-pointer transition-all ${
+            formData.selectedEstheticService === 'FACIAL'
+              ? 'border-spa-lavande-500 bg-spa-lavande-50 shadow-lg'
+              : 'border-gray-200 hover:border-spa-lavande-300 hover:shadow-md'
+          }`}
+        >
+          <h3 className="text-xl font-semibold text-gray-800 mb-2">Soins du visage (Facial)</h3>
+          <p className="text-sm text-gray-600">
+            Soins classiques pour le visage, nettoyage de peau, hydratation
+          </p>
+        </div>
+
+        {/* MICRODERMABRASION */}
+        <div
+          onClick={() => {
+            setFormData({ ...formData, selectedEstheticService: 'MICRODERMABRASION' });
+            setErrors({});
+          }}
+          className={`p-6 rounded-lg border-2 cursor-pointer transition-all ${
+            formData.selectedEstheticService === 'MICRODERMABRASION'
+              ? 'border-spa-rose-500 bg-spa-rose-50 shadow-lg'
+              : 'border-gray-200 hover:border-spa-rose-300 hover:shadow-md'
+          }`}
+        >
+          <h3 className="text-xl font-semibold text-gray-800 mb-2">Microdermabrasion</h3>
+          <p className="text-sm text-gray-600">
+            Exfoliation mécanique de la peau pour réduire les imperfections
+          </p>
+        </div>
+
+        {/* IPL (ÉPILATION) */}
+        <div
+          onClick={() => {
+            setFormData({ ...formData, selectedEstheticService: 'IPL' });
+            setErrors({});
+          }}
+          className={`p-6 rounded-lg border-2 cursor-pointer transition-all ${
+            formData.selectedEstheticService === 'IPL'
+              ? 'border-spa-turquoise-500 bg-spa-turquoise-50 shadow-lg'
+              : 'border-gray-200 hover:border-spa-turquoise-300 hover:shadow-md'
+          }`}
+        >
+          <h3 className="text-xl font-semibold text-gray-800 mb-2">IPL (Épilation)</h3>
+          <p className="text-sm text-gray-600">
+            Épilation à la lumière intense pulsée - Traitement IPL Venus Versa
+          </p>
+        </div>
+
+        {/* MANICURE / PÉDICURE */}
+        <div
+          onClick={() => {
+            setFormData({ ...formData, selectedEstheticService: 'MANICURE_PEDICURE' });
+            setErrors({});
+          }}
+          className={`p-6 rounded-lg border-2 cursor-pointer transition-all ${
+            formData.selectedEstheticService === 'MANICURE_PEDICURE'
+              ? 'border-purple-500 bg-purple-50 shadow-lg'
+              : 'border-gray-200 hover:border-purple-300 hover:shadow-md'
+          }`}
+        >
+          <h3 className="text-xl font-semibold text-gray-800 mb-2">Manicure / Pédicure</h3>
+          <p className="text-sm text-gray-600">
+            Soins des mains et des pieds, pose de vernis
+          </p>
+        </div>
+      </div>
+
+      {errors.selectedEstheticService && (
+        <p className="text-red-600 text-sm mt-4">{errors.selectedEstheticService}</p>
+      )}
+    </motion.div>
+  );
+
+  // ÉTAPE 1 : Informations personnelles (commune à tous les services)
   const renderStep1 = () => (
     <motion.div
       key="step1"
@@ -432,106 +798,158 @@ export default function EsthetiqueFormPage() {
     </motion.div>
   );
 
-  const renderStep2 = () => (
-    <motion.div
-      key="step2"
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -20 }}
-      transition={{ duration: 0.3 }}
-    >
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">Diagnostic de la Peau</h2>
+  // ÉTAPE 2 : Contenu différent selon le service choisi
+  const renderStep2 = () => {
+    // Pour FACIAL et MICRODERMABRASION : Habitudes & Soins
+    if (formData.selectedEstheticService === 'FACIAL' || formData.selectedEstheticService === 'MICRODERMABRASION') {
+      return (
+        <motion.div
+          key="step2-habitudes"
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -20 }}
+          transition={{ duration: 0.3 }}
+        >
+          <h2 className="text-2xl font-bold text-gray-800 mb-6">Habitudes de Vie & Soins</h2>
 
-      <SelectField
-        label="État de la peau"
-        name="etatPeau"
-        value={formData.etatPeau}
-        onChange={handleInputChange}
-        error={errors.etatPeau}
-        options={[
-          { value: 'NORMALE', label: 'Normale' },
-          { value: 'SECHE', label: 'Sèche' },
-          { value: 'GRASSE', label: 'Grasse' },
-          { value: 'MIXTE', label: 'Mixte' },
-          { value: 'SENSIBLE', label: 'Sensible' },
-        ]}
-        placeholder="Sélectionnez..."
-        required
-      />
+          <SelectField
+            label="Exposition au soleil"
+            name="expositionSoleil"
+            value={formData.expositionSoleil}
+            onChange={handleInputChange}
+            options={[
+              { value: 'RARE', label: 'Rare' },
+              { value: 'MODEREE', label: 'Modérée' },
+              { value: 'FREQUENTE', label: 'Fréquente' },
+              { value: 'TRES_FREQUENTE', label: 'Très fréquente' },
+            ]}
+            placeholder="Sélectionnez..."
+          />
 
-      <SelectField
-        label="État des pores"
-        name="etatPores"
-        value={formData.etatPores}
-        onChange={handleInputChange}
-        options={[
-          { value: 'FINS', label: 'Fins' },
-          { value: 'DILATES', label: 'Dilatés' },
-          { value: 'OBSTRUES', label: 'Obstrués' },
-        ]}
-        placeholder="Sélectionnez..."
-        className="mt-6"
-      />
+          <div className="mt-6">
+            <label className="label-spa">Protection solaire</label>
+            <div className="flex gap-6 mt-2">
+              <RadioField
+                label="Toujours"
+                name="protectionSolaire"
+                value="TOUJOURS"
+                checked={formData.protectionSolaire === 'TOUJOURS'}
+                onChange={handleInputChange}
+              />
+              <RadioField
+                label="Souvent"
+                name="protectionSolaire"
+                value="SOUVENT"
+                checked={formData.protectionSolaire === 'SOUVENT'}
+                onChange={handleInputChange}
+              />
+              <RadioField
+                label="Rarement"
+                name="protectionSolaire"
+                value="RAREMENT"
+                checked={formData.protectionSolaire === 'RAREMENT'}
+                onChange={handleInputChange}
+              />
+              <RadioField
+                label="Jamais"
+                name="protectionSolaire"
+                value="JAMAIS"
+                checked={formData.protectionSolaire === 'JAMAIS'}
+                onChange={handleInputChange}
+              />
+            </div>
+          </div>
 
-      <SelectField
-        label="Couche cornée"
-        name="coucheCornee"
-        value={formData.coucheCornee}
-        onChange={handleInputChange}
-        options={[
-          { value: 'FINE', label: 'Fine' },
-          { value: 'EPAISSE', label: 'Épaisse' },
-          { value: 'DESQUAMATION', label: 'Desquamation' },
-        ]}
-        placeholder="Sélectionnez..."
-        className="mt-6"
-      />
+          <div className="mt-6">
+            <label className="label-spa">Buvez-vous suffisamment d'eau? (1.5L/jour minimum)</label>
+            <div className="flex gap-6 mt-2">
+              <RadioField
+                label="Oui"
+                name="suffisanceEau"
+                value="OUI"
+                checked={formData.suffisanceEau === 'OUI'}
+                onChange={handleInputChange}
+              />
+              <RadioField
+                label="Non"
+                name="suffisanceEau"
+                value="NON"
+                checked={formData.suffisanceEau === 'NON'}
+                onChange={handleInputChange}
+              />
+            </div>
+          </div>
 
-      <SelectField
-        label="Irrigation sanguine"
-        name="irrigationSanguine"
-        value={formData.irrigationSanguine}
-        onChange={handleInputChange}
-        options={[
-          { value: 'NORMALE', label: 'Normale' },
-          { value: 'FAIBLE', label: 'Faible' },
-          { value: 'FORTE', label: 'Forte (couperose)' },
-        ]}
-        placeholder="Sélectionnez..."
-        className="mt-6"
-      />
+          <div className="mt-6">
+            <label className="label-spa">Travaillez-vous à l'extérieur?</label>
+            <div className="flex gap-6 mt-2">
+              <RadioField
+                label="Oui"
+                name="travailExterieur"
+                value="OUI"
+                checked={formData.travailExterieur === 'OUI'}
+                onChange={handleInputChange}
+              />
+              <RadioField
+                label="Non"
+                name="travailExterieur"
+                value="NON"
+                checked={formData.travailExterieur === 'NON'}
+                onChange={handleInputChange}
+              />
+            </div>
+          </div>
 
-      <SelectField
-        label="Impuretés"
-        name="impuretes"
-        value={formData.impuretes}
-        onChange={handleInputChange}
-        options={[
-          { value: 'AUCUNE', label: 'Aucune' },
-          { value: 'LEGERES', label: 'Légères' },
-          { value: 'MODEREES', label: 'Modérées' },
-          { value: 'IMPORTANTES', label: 'Importantes' },
-        ]}
-        placeholder="Sélectionnez..."
-        className="mt-6"
-      />
+          <div className="mt-6">
+            <label className="label-spa">Prenez-vous des bains chauds fréquemment?</label>
+            <div className="flex gap-6 mt-2">
+              <RadioField
+                label="Oui"
+                name="bainChauds"
+                value="OUI"
+                checked={formData.bainChauds === 'OUI'}
+                onChange={handleInputChange}
+              />
+              <RadioField
+                label="Non"
+                name="bainChauds"
+                value="NON"
+                checked={formData.bainChauds === 'NON'}
+                onChange={handleInputChange}
+              />
+            </div>
+          </div>
 
-      <SelectField
-        label="Sensibilité cutanée"
-        name="sensibiliteCutanee"
-        value={formData.sensibiliteCutanee}
-        onChange={handleInputChange}
-        options={[
-          { value: 'AUCUNE', label: 'Aucune' },
-          { value: 'LEGERE', label: 'Légère' },
-          { value: 'MOYENNE', label: 'Moyenne' },
-          { value: 'FORTE', label: 'Forte' },
-        ]}
-        placeholder="Sélectionnez..."
-        className="mt-6"
-      />
+          <InputField
+            label="Routine de soins actuelle (produits utilisés)"
+            name="routineSoins"
+            value={formData.routineSoins}
+            onChange={handleInputChange}
+            rows={4}
+            placeholder="Ex: nettoyant le matin, crème hydratante..."
+            className="mt-6"
+          />
 
-      <div className="mt-6">
+          <InputField
+            label="Changements récents de la peau (acné, irritations, etc.)"
+            name="changementsRecents"
+            value={formData.changementsRecents}
+            onChange={handleInputChange}
+            rows={3}
+            className="mt-6"
+          />
+
+          <InputField
+            label="Préférences pour les soins de la peau"
+            name="preferencePeau"
+            value={formData.preferencePeau}
+            onChange={handleInputChange}
+            rows={3}
+            placeholder="Ex: produits naturels, anti-âge, hydratation intense..."
+            className="mt-6"
+          />
+
+          <div className="mt-6">
         <label className="label-spa">
           Fumeur <span className="text-spa-rose-500">*</span>
         </label>
@@ -577,166 +995,638 @@ export default function EsthetiqueFormPage() {
         className="mt-6"
         required
       />
-    </motion.div>
-  );
+        </motion.div>
+      );
+    }
 
-  const renderStep3 = () => (
-    <motion.div
-      key="step3"
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -20 }}
-      transition={{ duration: 0.3 }}
-    >
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">Habitudes de Vie & Soins</h2>
+    // Questionnaire IPL
+    if (formData.selectedEstheticService === 'IPL') {
+      return (
+        <motion.div
+          key="step2-ipl"
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -20 }}
+          transition={{ duration: 0.3 }}
+        >
+          <h2 className="text-2xl font-bold text-gray-800 mb-6">
+            Questionnaire IPL - Épilation à la Lumière Intense Pulsée
+          </h2>
 
-      <SelectField
-        label="Exposition au soleil"
-        name="expositionSoleil"
-        value={formData.expositionSoleil}
-        onChange={handleInputChange}
-        options={[
-          { value: 'RARE', label: 'Rare' },
-          { value: 'MODEREE', label: 'Modérée' },
-          { value: 'FREQUENTE', label: 'Fréquente' },
-          { value: 'TRES_FREQUENTE', label: 'Très fréquente' },
-        ]}
-        placeholder="Sélectionnez..."
-      />
+          {/* Bilan de santé */}
+          <InputField
+            label="Bilan de santé (antécédents médicaux, médicaments, etc.)"
+            name="iplBilanSante"
+            value={formData.iplBilanSante}
+            onChange={handleInputChange}
+            rows={4}
+            placeholder="Décrivez votre état de santé général, vos antécédents médicaux pertinents, les médicaments que vous prenez..."
+            className="mb-6"
+          />
 
-      <div className="mt-6">
-        <label className="label-spa">Protection solaire</label>
-        <div className="flex gap-6 mt-2">
-          <RadioField
-            label="Toujours"
-            name="protectionSolaire"
-            value="TOUJOURS"
-            checked={formData.protectionSolaire === 'TOUJOURS'}
-            onChange={handleInputChange}
-          />
-          <RadioField
-            label="Souvent"
-            name="protectionSolaire"
-            value="SOUVENT"
-            checked={formData.protectionSolaire === 'SOUVENT'}
-            onChange={handleInputChange}
-          />
-          <RadioField
-            label="Rarement"
-            name="protectionSolaire"
-            value="RAREMENT"
-            checked={formData.protectionSolaire === 'RAREMENT'}
-            onChange={handleInputChange}
-          />
-          <RadioField
-            label="Jamais"
-            name="protectionSolaire"
-            value="JAMAIS"
-            checked={formData.protectionSolaire === 'JAMAIS'}
-            onChange={handleInputChange}
-          />
-        </div>
-      </div>
+          {/* Questions médicales OUI/NON */}
+          <div className="bg-gray-50 p-6 rounded-lg mb-6">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">
+              Conditions médicales
+            </h3>
 
-      <div className="mt-6">
-        <label className="label-spa">Buvez-vous suffisamment d'eau? (1.5L/jour minimum)</label>
-        <div className="flex gap-6 mt-2">
-          <RadioField
-            label="Oui"
-            name="suffisanceEau"
-            value="OUI"
-            checked={formData.suffisanceEau === 'OUI'}
-            onChange={handleInputChange}
-          />
-          <RadioField
-            label="Non"
-            name="suffisanceEau"
-            value="NON"
-            checked={formData.suffisanceEau === 'NON'}
-            onChange={handleInputChange}
-          />
-        </div>
-      </div>
+            <div className="space-y-4">
+              <div>
+                <label className="label-spa">Avez-vous des veines variqueuses?</label>
+                <div className="flex gap-6 mt-2">
+                  <RadioField
+                    label="Oui"
+                    name="iplVeinsVarices"
+                    value="true"
+                    checked={formData.iplVeinsVarices === true}
+                    onChange={(e) => setFormData({ ...formData, iplVeinsVarices: e.target.value === 'true' })}
+                  />
+                  <RadioField
+                    label="Non"
+                    name="iplVeinsVarices"
+                    value="false"
+                    checked={formData.iplVeinsVarices === false}
+                    onChange={(e) => setFormData({ ...formData, iplVeinsVarices: e.target.value === 'true' })}
+                  />
+                </div>
+              </div>
 
-      <div className="mt-6">
-        <label className="label-spa">Travaillez-vous à l'extérieur?</label>
-        <div className="flex gap-6 mt-2">
-          <RadioField
-            label="Oui"
-            name="travailExterieur"
-            value="OUI"
-            checked={formData.travailExterieur === 'OUI'}
+              <div>
+                <label className="label-spa">Avez-vous pris de l'Accutane (isotrétinoïne) dans les 6 derniers mois?</label>
+                <div className="flex gap-6 mt-2">
+                  <RadioField
+                    label="Oui"
+                    name="iplAccutane"
+                    value="true"
+                    checked={formData.iplAccutane === true}
+                    onChange={(e) => setFormData({ ...formData, iplAccutane: e.target.value === 'true' })}
+                  />
+                  <RadioField
+                    label="Non"
+                    name="iplAccutane"
+                    value="false"
+                    checked={formData.iplAccutane === false}
+                    onChange={(e) => setFormData({ ...formData, iplAccutane: e.target.value === 'true' })}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="label-spa">Avez-vous eu des injections de sclérothérapie pour les varices?</label>
+                <div className="flex gap-6 mt-2">
+                  <RadioField
+                    label="Oui"
+                    name="iplInjectionsVarices"
+                    value="true"
+                    checked={formData.iplInjectionsVarices === true}
+                    onChange={(e) => setFormData({ ...formData, iplInjectionsVarices: e.target.value === 'true' })}
+                  />
+                  <RadioField
+                    label="Non"
+                    name="iplInjectionsVarices"
+                    value="false"
+                    checked={formData.iplInjectionsVarices === false}
+                    onChange={(e) => setFormData({ ...formData, iplInjectionsVarices: e.target.value === 'true' })}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="label-spa">Utilisez-vous de l'acide glycolique ou d'autres AHA?</label>
+                <div className="flex gap-6 mt-2">
+                  <RadioField
+                    label="Oui"
+                    name="iplAcideGlycolique"
+                    value="true"
+                    checked={formData.iplAcideGlycolique === true}
+                    onChange={(e) => setFormData({ ...formData, iplAcideGlycolique: e.target.value === 'true' })}
+                  />
+                  <RadioField
+                    label="Non"
+                    name="iplAcideGlycolique"
+                    value="false"
+                    checked={formData.iplAcideGlycolique === false}
+                    onChange={(e) => setFormData({ ...formData, iplAcideGlycolique: e.target.value === 'true' })}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="label-spa">Avez-vous eu des injections de Botox récemment?</label>
+                <div className="flex gap-6 mt-2">
+                  <RadioField
+                    label="Oui"
+                    name="iplInjectionBotox"
+                    value="true"
+                    checked={formData.iplInjectionBotox === true}
+                    onChange={(e) => setFormData({ ...formData, iplInjectionBotox: e.target.value === 'true' })}
+                  />
+                  <RadioField
+                    label="Non"
+                    name="iplInjectionBotox"
+                    value="false"
+                    checked={formData.iplInjectionBotox === false}
+                    onChange={(e) => setFormData({ ...formData, iplInjectionBotox: e.target.value === 'true' })}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="label-spa">Avez-vous eu un peeling chimique dans les 2 dernières semaines?</label>
+                <div className="flex gap-6 mt-2">
+                  <RadioField
+                    label="Oui"
+                    name="iplPeelingChimique"
+                    value="true"
+                    checked={formData.iplPeelingChimique === true}
+                    onChange={(e) => setFormData({ ...formData, iplPeelingChimique: e.target.value === 'true' })}
+                  />
+                  <RadioField
+                    label="Non"
+                    name="iplPeelingChimique"
+                    value="false"
+                    checked={formData.iplPeelingChimique === false}
+                    onChange={(e) => setFormData({ ...formData, iplPeelingChimique: e.target.value === 'true' })}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="label-spa">Avez-vous des antécédents d'herpès simplex (feu sauvage)?</label>
+                <div className="flex gap-6 mt-2">
+                  <RadioField
+                    label="Oui"
+                    name="iplHerpesSimplex"
+                    value="true"
+                    checked={formData.iplHerpesSimplex === true}
+                    onChange={(e) => setFormData({ ...formData, iplHerpesSimplex: e.target.value === 'true' })}
+                  />
+                  <RadioField
+                    label="Non"
+                    name="iplHerpesSimplex"
+                    value="false"
+                    checked={formData.iplHerpesSimplex === false}
+                    onChange={(e) => setFormData({ ...formData, iplHerpesSimplex: e.target.value === 'true' })}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="label-spa">Avez-vous des antécédents de cancer de la peau?</label>
+                <div className="flex gap-6 mt-2">
+                  <RadioField
+                    label="Oui"
+                    name="iplSkinCancer"
+                    value="true"
+                    checked={formData.iplSkinCancer === true}
+                    onChange={(e) => setFormData({ ...formData, iplSkinCancer: e.target.value === 'true' })}
+                  />
+                  <RadioField
+                    label="Non"
+                    name="iplSkinCancer"
+                    value="false"
+                    checked={formData.iplSkinCancer === false}
+                    onChange={(e) => setFormData({ ...formData, iplSkinCancer: e.target.value === 'true' })}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Autres produits */}
+          <InputField
+            label="Autres produits ou traitements utilisés"
+            name="iplAutresProduits"
+            value={formData.iplAutresProduits}
             onChange={handleInputChange}
+            rows={3}
+            placeholder="Ex: crèmes, lotions, autres traitements dermatologiques..."
+            className="mb-6"
           />
-          <RadioField
-            label="Non"
-            name="travailExterieur"
-            value="NON"
-            checked={formData.travailExterieur === 'NON'}
-            onChange={handleInputChange}
-          />
-        </div>
-      </div>
 
-      <div className="mt-6">
-        <label className="label-spa">Prenez-vous des bains chauds fréquemment?</label>
-        <div className="flex gap-6 mt-2">
-          <RadioField
-            label="Oui"
-            name="bainChauds"
-            value="OUI"
-            checked={formData.bainChauds === 'OUI'}
-            onChange={handleInputChange}
-          />
-          <RadioField
-            label="Non"
-            name="bainChauds"
-            value="NON"
-            checked={formData.bainChauds === 'NON'}
-            onChange={handleInputChange}
-          />
-        </div>
-      </div>
+          {/* Zones à épiler */}
+          <div className="bg-blue-50 p-6 rounded-lg mb-6">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">
+              Zones à épiler <span className="text-spa-rose-500">*</span>
+            </h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Sélectionnez toutes les zones que vous souhaitez traiter avec l'IPL
+            </p>
 
-      <InputField
-        label="Routine de soins actuelle (produits utilisés)"
-        name="routineSoins"
-        value={formData.routineSoins}
-        onChange={handleInputChange}
-        rows={4}
-        placeholder="Ex: nettoyant le matin, crème hydratante..."
-        className="mt-6"
-      />
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {[
+                'Visage',
+                'Menton',
+                'Lèvre supérieure',
+                'Joues',
+                'Cou',
+                'Aisselles',
+                'Bras complets',
+                'Avant-bras',
+                'Mains',
+                'Poitrine',
+                'Abdomen',
+                'Dos',
+                'Maillot',
+                'Maillot brésilien',
+                'Maillot intégral',
+                'Cuisses',
+                'Jambes complètes',
+                'Demi-jambes',
+                'Pieds',
+              ].map((zone) => (
+                <div key={zone} className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id={`zone-${zone}`}
+                    checked={formData.iplZonesAEpiler?.includes(zone) || false}
+                    onChange={(e) => {
+                      const currentZones = formData.iplZonesAEpiler || [];
+                      const newZones = e.target.checked
+                        ? [...currentZones, zone]
+                        : currentZones.filter((z: string) => z !== zone);
+                      setFormData({ ...formData, iplZonesAEpiler: newZones });
+                    }}
+                    className="h-4 w-4 text-spa-rose-500 rounded border-gray-300 focus:ring-spa-lavande-500"
+                  />
+                  <label htmlFor={`zone-${zone}`} className="text-sm text-gray-700">
+                    {zone}
+                  </label>
+                </div>
+              ))}
+            </div>
+            {errors.iplZonesAEpiler && (
+              <p className="text-red-600 text-sm mt-2">{errors.iplZonesAEpiler}</p>
+            )}
+          </div>
+        </motion.div>
+      );
+    }
 
-      <InputField
-        label="Changements récents de la peau (acné, irritations, etc.)"
-        name="changementsRecents"
-        value={formData.changementsRecents}
-        onChange={handleInputChange}
-        rows={3}
-        className="mt-6"
-      />
+    // Questionnaire MANICURE_PEDICURE
+    if (formData.selectedEstheticService === 'MANICURE_PEDICURE') {
+      return (
+        <motion.div
+          key="step2-manicure"
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -20 }}
+          transition={{ duration: 0.3 }}
+        >
+          <h2 className="text-2xl font-bold text-gray-800 mb-6">
+            Questionnaire Manicure / Pédicure
+          </h2>
 
-      <InputField
-        label="Préférences pour les soins de la peau"
-        name="preferencePeau"
-        value={formData.preferencePeau}
-        onChange={handleInputChange}
-        rows={3}
-        placeholder="Ex: produits naturels, anti-âge, hydratation intense..."
-        className="mt-6"
-      />
+          <p className="text-gray-600 mb-6">
+            Veuillez répondre aux questions suivantes pour nous aider à mieux vous servir.
+          </p>
 
-      <InputField
-        label="Notes du diagnostic visuel (à remplir par l'esthéticienne)"
-        name="diagnosticVisuelNotes"
-        value={formData.diagnosticVisuelNotes}
-        onChange={handleInputChange}
-        rows={4}
-        className="mt-6"
-      />
-    </motion.div>
-  );
+          <div className="space-y-6">
+            {MANICURE_PEDICURE_QUESTIONS.map((q, index) => {
+              if (q.type === 'yes_no') {
+                return (
+                  <div key={index}>
+                    <label className="label-spa">{q.question}</label>
+                    <div className="flex gap-6 mt-2">
+                      <RadioField
+                        label="Oui"
+                        name={`manicure_q${index}`}
+                        value="OUI"
+                        checked={formData.manicurePedicureInfo?.[`q${index}`] === 'OUI'}
+                        onChange={(e) => {
+                          setFormData({
+                            ...formData,
+                            manicurePedicureInfo: {
+                              ...formData.manicurePedicureInfo,
+                              [`q${index}`]: e.target.value
+                            }
+                          });
+                        }}
+                      />
+                      <RadioField
+                        label="Non"
+                        name={`manicure_q${index}`}
+                        value="NON"
+                        checked={formData.manicurePedicureInfo?.[`q${index}`] === 'NON'}
+                        onChange={(e) => {
+                          setFormData({
+                            ...formData,
+                            manicurePedicureInfo: {
+                              ...formData.manicurePedicureInfo,
+                              [`q${index}`]: e.target.value
+                            }
+                          });
+                        }}
+                      />
+                    </div>
+                  </div>
+                );
+              } else if (q.type === 'text') {
+                return (
+                  <InputField
+                    key={index}
+                    label={q.question}
+                    name={`manicure_q${index}`}
+                    value={formData.manicurePedicureInfo?.[`q${index}`] || ''}
+                    onChange={(e) => {
+                      setFormData({
+                        ...formData,
+                        manicurePedicureInfo: {
+                          ...formData.manicurePedicureInfo,
+                          [`q${index}`]: e.target.value
+                        }
+                      });
+                    }}
+                    rows={3}
+                    placeholder="Veuillez préciser..."
+                  />
+                );
+              }
+              return null;
+            })}
+          </div>
+
+          {/* Informations supplémentaires */}
+          <div className="mt-6 bg-blue-50 p-4 rounded-lg border border-blue-200">
+            <p className="text-sm text-blue-800">
+              <strong>Note :</strong> Ces informations nous aident à adapter nos services
+              à vos besoins spécifiques et à assurer votre sécurité pendant le traitement.
+            </p>
+          </div>
+        </motion.div>
+      );
+    }
+
+    return null;
+  };
+
+  const renderStep3 = () => {
+    // Étape 3 : Consentement (pour MICRODERMABRASION, IPL, MANICURE_PEDICURE)
+    if (formData.selectedEstheticService === 'MICRODERMABRASION') {
+      return (
+        <motion.div
+          key="step3"
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -20 }}
+          transition={{ duration: 0.3 }}
+        >
+          <h2 className="text-2xl font-bold text-gray-800 mb-6">
+            {MICRODERMABRASION_CONSENT.title}
+          </h2>
+
+          {/* Sections du consentement */}
+          {MICRODERMABRASION_CONSENT.sections.map((section, index) => (
+            <div key={index} className="mb-6">
+              {section.title && (
+                <h3 className="text-lg font-semibold text-spa-lavande-700 mb-3">
+                  {section.title}
+                </h3>
+              )}
+              {section.content.length > 0 && (
+                <ul className="list-disc list-inside space-y-2 text-gray-700">
+                  {section.content.map((item, idx) => (
+                    <li key={idx} className="text-sm leading-relaxed">
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          ))}
+
+          {/* Contre-indications */}
+          <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
+            <h3 className="text-lg font-semibold text-red-800 mb-3">
+              {MICRODERMABRASION_CONSENT.contraindications.title}
+            </h3>
+            <ul className="list-disc list-inside space-y-2 text-red-700">
+              {MICRODERMABRASION_CONSENT.contraindications.items.map((item, idx) => (
+                <li key={idx} className="text-sm">
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Accord de consentement */}
+          <div className="bg-gray-50 p-6 rounded-lg mb-6">
+            <p className="text-gray-800 mb-4 leading-relaxed">
+              {MICRODERMABRASION_CONSENT.agreement.replace('__ [NOM CLIENT] __', formData.nom + ' ' + formData.prenom)}
+            </p>
+
+            {/* Checkbox de consentement */}
+            <div className="flex items-start gap-3 mt-6">
+              <input
+                type="checkbox"
+                id="microdermConsentement"
+                name="microdermConsentement"
+                checked={formData.microdermConsentement}
+                onChange={(e) => setFormData({ ...formData, microdermConsentement: e.target.checked })}
+                className="mt-1 h-5 w-5 text-spa-rose-500 rounded border-gray-300 focus:ring-spa-lavande-500"
+                required
+              />
+              <label htmlFor="microdermConsentement" className="text-gray-700 font-medium">
+                Je confirme avoir lu et compris le formulaire de consentement ci-dessus.
+                J'accepte les conditions et reconnais les risques associés au traitement de microdermabrasion. *
+              </label>
+            </div>
+
+            {errors.microdermConsentement && (
+              <p className="text-red-600 text-sm mt-2">{errors.microdermConsentement}</p>
+            )}
+          </div>
+
+          {/* Informations sur les signatures */}
+          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+            <p className="text-sm text-blue-800">
+              <strong>Note :</strong> En cochant la case ci-dessus et en soumettant ce formulaire,
+              vous confirmez votre consentement éclairé pour le traitement de microdermabrasion.
+              La date de consentement sera automatiquement enregistrée.
+            </p>
+          </div>
+        </motion.div>
+      );
+    }
+
+    // Consentement IPL
+    if (formData.selectedEstheticService === 'IPL') {
+      return (
+        <motion.div
+          key="step3-ipl"
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -20 }}
+          transition={{ duration: 0.3 }}
+        >
+          <h2 className="text-2xl font-bold text-gray-800 mb-6">
+            {IPL_CONSENT.title}
+          </h2>
+
+          {/* Introduction */}
+          <div className="bg-gray-50 p-6 rounded-lg mb-6">
+            <p className="text-gray-700 leading-relaxed whitespace-pre-line">
+              {IPL_CONSENT.introduction}
+            </p>
+          </div>
+
+          {/* Procédures */}
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold text-spa-lavande-700 mb-3">
+              Procédures et reconnaissances
+            </h3>
+            <ul className="list-disc list-inside space-y-2 text-gray-700">
+              {IPL_CONSENT.procedures.map((procedure, idx) => (
+                <li key={idx} className="text-sm leading-relaxed">
+                  {procedure}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Acknowledgment */}
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold text-spa-lavande-700 mb-3">
+              Reconnaissances
+            </h3>
+            <ul className="list-disc list-inside space-y-2 text-gray-700">
+              {IPL_CONSENT.acknowledgment.map((ack, idx) => (
+                <li key={idx} className="text-sm leading-relaxed">
+                  {ack}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Statement */}
+          <div className="bg-blue-50 p-4 rounded-lg mb-6">
+            <p className="text-blue-900 font-medium">
+              {IPL_CONSENT.statement}
+            </p>
+          </div>
+
+          {/* Accord de consentement */}
+          <div className="bg-gray-50 p-6 rounded-lg mb-6">
+            <p className="text-gray-800 mb-4">
+              Client: <strong>{formData.nom} {formData.prenom}</strong>
+            </p>
+
+            {/* Checkbox de consentement */}
+            <div className="flex items-start gap-3 mt-6">
+              <input
+                type="checkbox"
+                id="iplConsentement"
+                name="iplConsentement"
+                checked={formData.iplConsentement}
+                onChange={(e) => setFormData({ ...formData, iplConsentement: e.target.checked })}
+                className="mt-1 h-5 w-5 text-spa-rose-500 rounded border-gray-300 focus:ring-spa-lavande-500"
+                required
+              />
+              <label htmlFor="iplConsentement" className="text-gray-700 font-medium">
+                Je confirme avoir lu et compris le formulaire de consentement ci-dessus.
+                Je consens à la procédure d'épilation IPL (Lumière Intense Pulsée) et accepte
+                les conditions mentionnées. *
+              </label>
+            </div>
+
+            {errors.iplConsentement && (
+              <p className="text-red-600 text-sm mt-2">{errors.iplConsentement}</p>
+            )}
+          </div>
+
+          {/* Informations sur les signatures */}
+          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+            <p className="text-sm text-blue-800">
+              <strong>Note :</strong> En cochant la case ci-dessus et en soumettant ce formulaire,
+              vous confirmez votre consentement éclairé pour le traitement IPL.
+              La date de consentement sera automatiquement enregistrée.
+            </p>
+          </div>
+        </motion.div>
+      );
+    }
+
+    // Consentement MANICURE_PEDICURE
+    if (formData.selectedEstheticService === 'MANICURE_PEDICURE') {
+      return (
+        <motion.div
+          key="step3-manicure"
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -20 }}
+          transition={{ duration: 0.3 }}
+        >
+          <h2 className="text-2xl font-bold text-gray-800 mb-6">
+            {MANICURE_PEDICURE_CONSENT.title}
+          </h2>
+
+          {/* Introduction */}
+          <div className="bg-gray-50 p-6 rounded-lg mb-6">
+            <p className="text-gray-700 leading-relaxed">
+              {MANICURE_PEDICURE_CONSENT.introduction}
+            </p>
+          </div>
+
+          {/* Sections du consentement */}
+          {MANICURE_PEDICURE_CONSENT.sections.map((section, index) => (
+            <div key={index} className="mb-6">
+              {section.title && (
+                <h3 className="text-lg font-semibold text-spa-lavande-700 mb-3">
+                  {section.title}
+                </h3>
+              )}
+              <ul className="list-disc list-inside space-y-2 text-gray-700">
+                {section.content.map((item, idx) => (
+                  <li key={idx} className="text-sm leading-relaxed">
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+
+          {/* Accord de consentement */}
+          <div className="bg-gray-50 p-6 rounded-lg mb-6">
+            <p className="text-gray-800 mb-4 leading-relaxed">
+              {MANICURE_PEDICURE_CONSENT.agreement.replace('__ [NOM CLIENT] __', formData.nom + ' ' + formData.prenom)}
+            </p>
+
+            {/* Checkbox de consentement */}
+            <div className="flex items-start gap-3 mt-6">
+              <input
+                type="checkbox"
+                id="manicurePedicureConsent"
+                name="manicurePedicureConsent"
+                checked={formData.manicurePedicureConsent}
+                onChange={(e) => setFormData({ ...formData, manicurePedicureConsent: e.target.checked })}
+                className="mt-1 h-5 w-5 text-spa-rose-500 rounded border-gray-300 focus:ring-spa-lavande-500"
+                required
+              />
+              <label htmlFor="manicurePedicureConsent" className="text-gray-700 font-medium">
+                Je confirme avoir lu et compris le formulaire de consentement ci-dessus.
+                J'accepte les conditions et reconnais les risques associés aux soins de manicure/pédicure. *
+              </label>
+            </div>
+
+            {errors.manicurePedicureConsent && (
+              <p className="text-red-600 text-sm mt-2">{errors.manicurePedicureConsent}</p>
+            )}
+          </div>
+
+          {/* Informations sur les signatures */}
+          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+            <p className="text-sm text-blue-800">
+              <strong>Note :</strong> En cochant la case ci-dessus et en soumettant ce formulaire,
+              vous confirmez votre consentement éclairé pour les soins de manicure/pédicure.
+              La date de consentement sera automatiquement enregistrée.
+            </p>
+          </div>
+        </motion.div>
+      );
+    }
+
+    return null;
+  };
 
   return (
     <div className="min-h-screen py-8 px-4">
@@ -759,6 +1649,7 @@ export default function EsthetiqueFormPage() {
         {/* Formulaire */}
         <div className="card-spa p-8">
           <AnimatePresence mode="wait">
+            {currentStep === 0 && renderStep0()}
             {currentStep === 1 && renderStep1()}
             {currentStep === 2 && renderStep2()}
             {currentStep === 3 && renderStep3()}
@@ -858,21 +1749,21 @@ export default function EsthetiqueFormPage() {
               /* Bouton Soumettre */
               <button
                 onClick={handleSubmit}
-                disabled={isLoading}
+                disabled={isSubmitDisabled()}
                 className="
                   btn-primary
                   flex items-center gap-2
                   text-sm md:text-base
                   px-4 md:px-6 py-2 md:py-3
-          
+
                   /* FIX iPad */
                   opacity-100
                   bg-primary
                   text-white
-          
+
                   disabled:opacity-60
                   disabled:cursor-not-allowed
-          
+
                   /* Hover uniquement desktop */
                   md:hover:bg-primary/90
                 "
@@ -981,4 +1872,5 @@ export default function EsthetiqueFormPage() {
       )}
     </div>
   );
-}
+  }
+  

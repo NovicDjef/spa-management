@@ -408,23 +408,27 @@ export default function AdminAvisPage() {
       {/* Modal de détails d'avis */}
       <AnimatePresence>
         {showReviewModal && selectedReview && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            onClick={closeReviewModal}
+          >
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col"
             >
-              {/* En-tête du modal */}
-              <div className="bg-gradient-to-r from-spa-lavande-500 to-spa-rose-500 p-6">
+              {/* En-tête du modal - fixe */}
+              <div className="bg-gradient-to-r from-spa-lavande-500 to-spa-rose-500 p-4 sm:p-6 flex-shrink-0 rounded-t-2xl">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center">
-                      <MessageSquare className="w-6 h-6 text-spa-lavande-600" />
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-full flex items-center justify-center flex-shrink-0">
+                      <MessageSquare className="w-5 h-5 sm:w-6 sm:h-6 text-spa-lavande-600" />
                     </div>
                     <div>
-                      <h2 className="text-xl font-bold text-white">Détails de l'avis</h2>
-                      <p className="text-sm text-white/80">
+                      <h2 className="text-lg sm:text-xl font-bold text-white">Détails de l'avis</h2>
+                      <p className="text-xs sm:text-sm text-white/80">
                         {new Date(selectedReview.createdAt).toLocaleDateString('fr-CA', {
                           year: 'numeric',
                           month: 'long',
@@ -442,16 +446,16 @@ export default function AdminAvisPage() {
                 </div>
               </div>
 
-              {/* Contenu du modal */}
-              <div className="p-6 space-y-6">
+              {/* Contenu du modal - scrollable */}
+              <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto flex-1">
                 {/* Professionnel */}
                 <div>
                   <label className="text-sm font-semibold text-gray-700 mb-2 block">
                     Professionnel évalué
                   </label>
-                  <div className="flex items-center gap-3 p-4 bg-spa-turquoise-50 rounded-xl">
-                    <div className="w-12 h-12 bg-spa-turquoise-100 rounded-full flex items-center justify-center">
-                      <User className="w-6 h-6 text-spa-turquoise-600" />
+                  <div className="flex items-center gap-3 p-3 sm:p-4 bg-spa-turquoise-50 rounded-xl">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-spa-turquoise-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <User className="w-5 h-5 sm:w-6 sm:h-6 text-spa-turquoise-600" />
                     </div>
                     <div>
                       <p className="font-semibold text-gray-800">
@@ -469,10 +473,10 @@ export default function AdminAvisPage() {
                   <label className="text-sm font-semibold text-gray-700 mb-2 block">
                     Note attribuée
                   </label>
-                  <div className="flex items-center gap-3 p-4 bg-yellow-50 rounded-xl">
+                  <div className="flex items-center gap-3 p-3 sm:p-4 bg-yellow-50 rounded-xl">
                     <StarRating value={selectedReview.rating} readonly size="lg" />
                     <div className="ml-2">
-                      <p className="text-2xl font-bold text-gray-800">{selectedReview.rating}</p>
+                      <p className="text-xl sm:text-2xl font-bold text-gray-800">{selectedReview.rating}</p>
                       <p className="text-sm text-gray-600">sur 5 étoiles</p>
                     </div>
                   </div>
@@ -484,13 +488,13 @@ export default function AdminAvisPage() {
                     Commentaire
                   </label>
                   {selectedReview.comment ? (
-                    <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
-                      <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                    <div className="p-3 sm:p-4 bg-gray-50 rounded-xl border border-gray-200">
+                      <p className="text-gray-700 leading-relaxed whitespace-pre-wrap text-sm sm:text-base">
                         {selectedReview.comment}
                       </p>
                     </div>
                   ) : (
-                    <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+                    <div className="p-3 sm:p-4 bg-gray-50 rounded-xl border border-gray-200">
                       <p className="text-gray-400 italic text-center">Aucun commentaire laissé</p>
                     </div>
                   )}
@@ -501,10 +505,10 @@ export default function AdminAvisPage() {
                   <label className="text-sm font-semibold text-gray-700 mb-2 block">
                     Date et heure de soumission
                   </label>
-                  <div className="flex items-center gap-2 p-4 bg-spa-beige-50 rounded-xl">
-                    <Calendar className="w-5 h-5 text-gray-500" />
+                  <div className="flex items-center gap-2 p-3 sm:p-4 bg-spa-beige-50 rounded-xl">
+                    <Calendar className="w-5 h-5 text-gray-500 flex-shrink-0" />
                     <div>
-                      <p className="font-medium text-gray-800">
+                      <p className="font-medium text-gray-800 text-sm sm:text-base">
                         {new Date(selectedReview.createdAt).toLocaleDateString('fr-CA', {
                           weekday: 'long',
                           year: 'numeric',
@@ -523,11 +527,11 @@ export default function AdminAvisPage() {
                 </div>
               </div>
 
-              {/* Pied du modal */}
-              <div className="bg-gray-50 px-6 py-4 flex justify-end">
+              {/* Pied du modal - fixe */}
+              <div className="bg-gray-50 px-4 sm:px-6 py-3 sm:py-4 flex justify-end flex-shrink-0 rounded-b-2xl border-t border-gray-200">
                 <button
                   onClick={closeReviewModal}
-                  className="px-6 py-2 bg-spa-turquoise-500 text-white rounded-lg hover:bg-spa-turquoise-600 transition-colors font-medium"
+                  className="px-5 sm:px-6 py-2 bg-spa-turquoise-500 text-white rounded-lg hover:bg-spa-turquoise-600 transition-colors font-medium text-sm sm:text-base"
                 >
                   Fermer
                 </button>

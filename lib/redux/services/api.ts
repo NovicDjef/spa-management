@@ -101,6 +101,33 @@ export interface UpdateClientData {
   interventionsChirurgicales?: string;
   grossesse?: boolean;
   moisGrossesse?: number;
+
+  // Champs esthétiques
+  etatPeau?: string;
+  etatPores?: string;
+  coucheCornee?: string;
+  irrigationSanguine?: string;
+  impuretes?: string;
+  sensibiliteCutanee?: string;
+  fumeur?: string;
+  niveauStress?: string;
+  expositionSoleil?: string;
+  protectionSolaire?: string;
+  suffisanceEau?: string;
+  travailExterieur?: string;
+  bainChauds?: string;
+
+  // IPL
+  iplBilanSante?: string;
+  iplZonesAEpiler?: string[];
+  iplRegionsTraitees?: any;
+  iplDateUtilisation?: string;
+  iplCommentaires?: string;
+  iplTypePeau?: string;
+  iplConsiderationPeau?: any;
+
+  // MANICURE/PEDICURE
+  manicurePedicureInfo?: any;
 }
 
 export interface Note {
@@ -954,7 +981,7 @@ export const api = createApi({
       invalidatesTags: ['Client'],
     }),
 
-    // CLIENTS - Liste des clients (avec permissions)
+    // CLIENTS - Liste des clients (avec permissions et pagination)
     getClients: builder.query<
       {
         clients: Client[];
@@ -965,31 +992,44 @@ export const api = createApi({
           totalPages: number;
         };
       },
-      { search?: string; serviceType?: string; limit?: number }
+      { search?: string; serviceType?: string; limit?: number; page?: number }
     >({
-      query: ({ search, serviceType, limit }) => {
+      query: ({ search, serviceType, limit, page }) => {
         const params = new URLSearchParams();
         if (search) params.append('search', search);
         if (serviceType && serviceType !== 'ALL') params.append('serviceType', serviceType);
-        // Utiliser une limite élevée pour récupérer tous les clients lors d'une recherche
         if (limit) params.append('limit', limit.toString());
+        if (page) params.append('page', page.toString());
         return `/clients?${params.toString()}`;
       },
       transformResponse: (response: any) => {
-        // L'API retourne { success: true, data: { clients: [...], pagination: {...} } }
-        // On extrait { clients: [...], pagination: {...} }
         return response.data || response;
       },
       providesTags: ['Client'],
     }),
 
-    // CLIENTS - Clients assignés au professionnel connecté
-    // Note: L'endpoint /clients retourne automatiquement les clients assignés selon le rôle
-    getAssignedClients: builder.query<{ clients: Client[] }, void>({
-      query: () => '/clients',
+    // CLIENTS - Clients assignés au professionnel connecté (avec pagination et recherche)
+    getAssignedClients: builder.query<
+      {
+        clients: Client[];
+        pagination?: {
+          page: number;
+          limit: number;
+          total: number;
+          totalPages: number;
+        };
+      },
+      { page?: number; limit?: number; search?: string } | void
+    >({
+      query: (params) => {
+        const queryParams = new URLSearchParams();
+        if (params?.page) queryParams.append('page', params.page.toString());
+        if (params?.limit) queryParams.append('limit', params.limit.toString());
+        if (params?.search) queryParams.append('search', params.search);
+        const queryString = queryParams.toString();
+        return `/clients${queryString ? `?${queryString}` : ''}`;
+      },
       transformResponse: (response: any) => {
-        // L'API retourne { success: true, data: { clients: [...] } }
-        // On extrait juste { clients: [...] }
         const result = response.data || response;
         return result;
       },

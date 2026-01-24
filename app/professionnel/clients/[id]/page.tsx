@@ -27,6 +27,8 @@ import { useGetClientByIdQuery } from '@/lib/redux/services/api';
 import { useAppSelector } from '@/lib/redux/hooks';
 import { BodyMap } from '@/components/forms/BodyMap';
 import { EditClientModal } from '@/components/clients/EditClientModal';
+import { DossierEsthetique } from '@/components/clients/DossierEsthetique';
+import { canViewClient } from '@/lib/permissions';
 
 // Mapping entre les labels et les IDs du BodyMap
 const LABEL_TO_ZONE_ID: Record<string, string> = {
@@ -96,7 +98,7 @@ export default function ClientDetailPage() {
   // Récupérer les notes depuis le client (incluses dans la réponse de /clients/:id)
   const notes = client?.notes || [];
 
-  const [activeTab, setActiveTab] = useState<'info' | 'notes'>('info');
+  const [activeTab, setActiveTab] = useState<'info' | 'notes' | 'dossier-esthetique'>('info');
   const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [emailCopied, setEmailCopied] = useState(false);
@@ -180,21 +182,21 @@ export default function ClientDetailPage() {
     );
   }
 
-if (!client) {
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-spa-beige-50 via-white to-spa-menthe-50">
-      <Header user={currentUser ?? undefined} />
-      <div className="container-spa py-20 px-4 flex flex-col items-center justify-center">
-        {/* Illustration moderne */}
-        <div className="relative mb-8">
-          <div className="absolute -inset-2 bg-spa-rose-100 rounded-full opacity-30 blur-xl animate-pulse-slow"></div>
-          <div className="relative bg-spa-rose-50 p-6 rounded-full shadow-lg">
-            <AlertCircle className="w-16 h-16 text-spa-rose-500" strokeWidth={1.5} />
+  if (!client) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-spa-beige-50 via-white to-spa-menthe-50">
+        <Header user={currentUser ?? undefined} />
+        <div className="container-spa py-20 px-4 flex flex-col items-center justify-center">
+          {/* Illustration moderne */}
+          <div className="relative mb-8">
+            <div className="absolute -inset-2 bg-spa-rose-100 rounded-full opacity-30 blur-xl animate-pulse-slow"></div>
+            <div className="relative bg-spa-rose-50 p-6 rounded-full shadow-lg">
+              <AlertCircle className="w-16 h-16 text-spa-rose-500" strokeWidth={1.5} />
+            </div>
           </div>
-        </div>
 
-        {/* Titre avec effet de dégradé */}
-        <h2 className="text-3xl font-bold mb-3 bg-clip-text text-transparent bg-gradient-to-r from-spa-rose-600 to-spa-menthe-600">
+          {/* Titre avec effet de dégradé */}
+          <h2 className="text-3xl font-bold mb-3 bg-clip-text text-transparent bg-gradient-to-r from-spa-rose-600 to-spa-menthe-600">
           Accès restreint
         </h2>
 
@@ -220,8 +222,52 @@ if (!client) {
       </div>
     </div>
   );
-}
+  }
 
+  // Vérifier les permissions d'accès au dossier client
+  const isAssigned = client.assignedTo?.id === currentUser?.id;
+  const hasPermission = canViewClient(currentUser?.role, isAssigned, client.serviceType);
+
+  if (!hasPermission) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-spa-beige-50 via-white to-spa-menthe-50">
+        <Header user={currentUser ?? undefined} />
+        <div className="container-spa py-20 px-4 flex flex-col items-center justify-center">
+          {/* Illustration */}
+          <div className="relative mb-8">
+            <div className="absolute -inset-2 bg-red-100 rounded-full opacity-30 blur-xl animate-pulse-slow"></div>
+            <div className="relative bg-red-50 p-6 rounded-full shadow-lg">
+              <AlertCircle className="w-16 h-16 text-red-500" strokeWidth={1.5} />
+            </div>
+          </div>
+
+          {/* Titre */}
+          <h2 className="text-3xl font-bold mb-3 bg-clip-text text-transparent bg-gradient-to-r from-red-600 to-orange-600">
+            Accès Refusé
+          </h2>
+
+          {/* Message */}
+          <p className="text-lg text-gray-600 max-w-md text-center mb-8 leading-relaxed">
+            {currentUser?.role === 'RECEPTIONISTE'
+              ? 'Les réceptionnistes n\'ont pas accès aux dossiers des clients. Seuls les administrateurs et les professionnels assignés peuvent consulter ces informations.'
+              : 'Vous n\'avez pas accès à ce dossier client. Seuls les professionnels assignés à ce client peuvent le consulter.'}
+          </p>
+
+          {/* Bouton retour */}
+          <button
+            onClick={() => router.push('/professionnel/clients')}
+            className="group relative inline-flex items-center justify-center px-6 py-3 overflow-hidden rounded-full bg-red-600 text-white shadow-md transition-all duration-300 hover:shadow-lg active:scale-95"
+          >
+            <span className="absolute inset-0 bg-gradient-to-r from-red-500 to-orange-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
+            <span className="relative flex items-center gap-2">
+              <ArrowLeft className="w-4 h-4" />
+              Retour à la liste des clients
+            </span>
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const age = client.dateNaissance ? calculateAge(client.dateNaissance) : null;
 
@@ -406,6 +452,23 @@ if (!client) {
                 )}
               </div>
             </button>
+
+            {/* Onglet Dossier Esthétique - Seulement pour les clients esthétiques */}
+            {client?.serviceType === 'ESTHETIQUE' && currentUser?.role === 'ESTHETICIENNE' && (
+              <button
+                onClick={() => setActiveTab('dossier-esthetique')}
+                className={`flex-1 min-w-[140px] px-4 sm:px-6 py-3 rounded-xl font-medium transition-all ${
+                  activeTab === 'dossier-esthetique'
+                    ? 'bg-spa-rose-500 text-white shadow-soft'
+                    : 'bg-white text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <div className="flex items-center justify-center gap-2">
+                  <Wand2 className="w-5 h-5" />
+                  <span className="text-sm sm:text-base">Dossier Esthétique</span>
+                </div>
+              </button>
+            )}
           </div>
 
           {/* Bouton Reçu assurance - Pleine largeur sur mobile */}
@@ -865,6 +928,13 @@ if (!client) {
                   )}
                 </div>
               )}
+            </div>
+          ) : activeTab === 'dossier-esthetique' ? (
+            <div className="card-spa p-8">
+              <h2 className="text-xl font-bold text-gray-800 mb-6">
+                Dossier Esthétique - Compléter les informations
+              </h2>
+              <DossierEsthetique client={client} />
             </div>
           ) : (
             <div className="space-y-8">

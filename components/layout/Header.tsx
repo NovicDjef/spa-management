@@ -37,12 +37,14 @@ export function Header({ user: userProp }: HeaderProps) {
 
   // Utiliser les données du backend en priorité, puis Redux, puis le prop
   const reduxUser = useAppSelector((state) => state.auth.user);
-  const user = profileData || reduxUser || userProp;
 
-  // Éviter l'erreur d'hydration
+  // Éviter l'erreur d'hydration - ne pas utiliser user avant le montage côté client
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  // Ne récupérer l'utilisateur qu'après le montage pour éviter les différences d'hydratation
+  const user = isMounted ? (profileData || reduxUser || userProp) : null;
 
   const handleLogout = async () => {
     try {

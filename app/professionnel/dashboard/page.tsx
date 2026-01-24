@@ -48,7 +48,16 @@ interface Professional {
 }
 
 export default function DashboardPage() {
-  const currentUser = useAppSelector((state) => state.auth.user);
+  const [isMounted, setIsMounted] = useState(false);
+  const reduxUser = useAppSelector((state) => state.auth.user);
+
+  // Éviter l'erreur d'hydration - attendre le montage côté client
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Ne pas utiliser l'utilisateur avant le montage pour éviter les différences d'hydratation
+  const currentUser = isMounted ? reduxUser : null;
 
   // Utiliser la bonne requête selon le rôle
   const isProfessional = currentUser?.role === 'MASSOTHERAPEUTE' || currentUser?.role === 'ESTHETICIENNE';
@@ -57,44 +66,144 @@ export default function DashboardPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('ALL');
 
-  // Pour les professionnels : récupérer uniquement leurs clients assignés
-  const { data: assignedClientsData, isLoading: isLoadingAssignedClients, refetch: refetchAssignedClients } = useGetAssignedClientsQuery(undefined, {
+  // États pour la pagination (admin/réceptionniste)
+  const [currentPage, setCurrentPage] = useState(1);
+  const [accumulatedClients, setAccumulatedClients] = useState<Client[]>([]);
+  const [prevSearchQuery, setPrevSearchQuery] = useState('');
+  const [prevFilter, setPrevFilter] = useState('ALL');
+  const CLIENTS_PER_PAGE = 20;
+
+  // État pour la pagination des professionnels
+  const [professionalDisplayLimit, setProfessionalDisplayLimit] = useState(CLIENTS_PER_PAGE);
+
+  // Pour les professionnels : récupérer TOUS leurs clients assignés
+  const { data: assignedClientsData, isLoading: isLoadingAssignedClients, isFetching: isFetchingAssignedClients, refetch: refetchAssignedClients } = useGetAssignedClientsQuery({
+    limit: 1000, // Charger tous les clients pour avoir le total correct
+  }, {
     skip: !isProfessional,
   });
 
-  // Pour les admin/réceptionniste : récupérer tous les clients avec recherche et filtres
-  const { data: allClientsData, isLoading: isLoadingAllClients, refetch: refetchAllClients } = useGetClientsQuery({
+  // Total réel des clients assignés
+  const allAssignedClients = assignedClientsData?.clients || [];
+  const totalProfessionalClients = allAssignedClients.length;
+
+  // Pour les admin/réceptionniste : récupérer les clients avec pagination
+  // Quand on recherche, on charge TOUS les résultats (recherche côté serveur)
+  const { data: allClientsData, isLoading: isLoadingAllClients, isFetching: isFetchingClients, refetch: refetchAllClients } = useGetClientsQuery({
     search: searchQuery || undefined,
     serviceType: selectedFilter !== 'ALL' ? selectedFilter : undefined,
-    limit: 10000, // Limite élevée pour récupérer TOUS les clients (recherche dans toute la base)
+    limit: searchQuery ? 1000 : CLIENTS_PER_PAGE, // Si recherche: tous les résultats, sinon: pagination
+    page: searchQuery ? 1 : currentPage, // Si recherche: page 1, sinon: page courante
   }, {
     skip: isProfessional,
   });
+
+  // Effet pour accumuler les clients lors du chargement progressif
+  useEffect(() => {
+    if (!isProfessional && allClientsData?.clients) {
+      // Détecter si la recherche ou le filtre a changé
+      const searchChanged = searchQuery !== prevSearchQuery;
+      const filterChanged = selectedFilter !== prevFilter;
+
+      if (searchChanged || filterChanged) {
+        // Si recherche ou filtre a changé: remplacer les clients et réinitialiser la page
+        setAccumulatedClients(allClientsData.clients);
+        setCurrentPage(1);
+        setPrevSearchQuery(searchQuery);
+        setPrevFilter(selectedFilter);
+      } else if (currentPage === 1) {
+        // Première page (ou retour sur la page): remplacer
+        setAccumulatedClients(allClientsData.clients);
+      } else {
+        // Pages suivantes: ajouter aux clients existants
+        setAccumulatedClients(prev => {
+          const existingIds = new Set(prev.map(c => c.id));
+          const newClients = allClientsData.clients.filter(c => !existingIds.has(c.id));
+          return [...prev, ...newClients];
+        });
+      }
+    }
+  }, [allClientsData, currentPage, searchQuery, selectedFilter, isProfessional, prevSearchQuery, prevFilter]);
 
   const {
     data: usersData,
     isLoading: isLoadingUsers,
     error: usersError,
     refetch: refetchUsers
-  } = useGetUsersQuery({}, {
-    // Refetch automatique si la requête échoue
-    refetchOnMountOrArgChange: true,
-  });
+  } = useGetUsersQuery({});
   const [assignClient, { isLoading: isAssigning }] = useAssignClientMutation();
   const [unassignClient, { isLoading: isUnassigning }] = useUnassignClientMutation();
   const { data: assignmentHistoryData, isLoading: isLoadingHistory } = useGetAssignmentHistoryQuery({ limit: 10 });
 
-  // Déterminer quelle source de clients utiliser
-  const clients = isProfessional
-    ? (assignedClientsData?.clients || [])
-    : (allClientsData?.clients || []);
+  // Pour les professionnels: filtrer et paginer côté client
+  const searchedProfessionalClients = useMemo(() => {
+    if (!isProfessional) return [];
+    if (!searchQuery) return allAssignedClients;
+    const query = searchQuery.toLowerCase();
+    return allAssignedClients.filter(client =>
+      client.nom.toLowerCase().includes(query) ||
+      client.prenom.toLowerCase().includes(query) ||
+      client.courriel.toLowerCase().includes(query) ||
+      (client.telCellulaire && client.telCellulaire.includes(query))
+    );
+  }, [isProfessional, allAssignedClients, searchQuery]);
 
-  // Nombre total de clients (utiliser pagination.total pour admin/réceptionniste)
+  // Clients à afficher pour les professionnels (paginés côté client) - mémorisé
+  const displayedProfessionalClients = useMemo(() => {
+    if (searchQuery) {
+      return searchedProfessionalClients; // Recherche: tous les résultats
+    }
+    return searchedProfessionalClients.slice(0, professionalDisplayLimit); // Pas de recherche: limité
+  }, [searchedProfessionalClients, searchQuery, professionalDisplayLimit]);
+
+  // Déterminer quelle source de clients utiliser - mémorisé
+  const clients = useMemo(() => {
+    return isProfessional ? displayedProfessionalClients : accumulatedClients;
+  }, [isProfessional, displayedProfessionalClients, accumulatedClients]);
+
+  // Nombre total de clients
   const totalClientsCount = isProfessional
-    ? clients.length  // Pour les professionnels : nombre de clients assignés
+    ? totalProfessionalClients  // Pour les professionnels : total réel
     : (allClientsData?.pagination?.total || clients.length);  // Pour admin/réceptionniste : total de la pagination
 
-  const isLoading = isProfessional ? isLoadingAssignedClients : isLoadingAllClients;
+  // Vérifier s'il y a plus de clients à charger (admin/réceptionniste)
+  const hasMoreClients = !isProfessional && !searchQuery && selectedFilter === 'ALL' &&
+    allClientsData?.pagination &&
+    allClientsData.pagination.page < allClientsData.pagination.totalPages;
+
+  // Vérifier s'il y a plus de clients à afficher (professionnels)
+  const totalAssignedClients = totalProfessionalClients;
+  const hasMoreAssignedClients = isProfessional && !searchQuery && professionalDisplayLimit < totalProfessionalClients;
+
+  const isLoading = isProfessional ? isLoadingAssignedClients : (isLoadingAllClients && currentPage === 1);
+  const isLoadingMore = !isProfessional && isFetchingClients && currentPage > 1;
+
+  // Fonction pour charger plus de clients (admin/réceptionniste)
+  const handleLoadMore = () => {
+    if (hasMoreClients && !isFetchingClients) {
+      setCurrentPage(prev => prev + 1);
+    }
+  };
+
+  // Fonctions pour les professionnels
+  const handleLoadMoreProfessional = () => {
+    if (hasMoreAssignedClients) {
+      setProfessionalDisplayLimit(prev => prev + CLIENTS_PER_PAGE);
+    }
+  };
+
+  const handleShowAllProfessional = () => {
+    setProfessionalDisplayLimit(totalProfessionalClients);
+  };
+
+  // Gérer le changement de recherche
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    // Réinitialiser les limites quand on efface la recherche
+    if (!value) {
+      setProfessionalDisplayLimit(CLIENTS_PER_PAGE);
+    }
+  };
 
   // Filtrer uniquement les professionnels (massothérapeutes et esthéticiennes)
   // Utiliser useMemo pour éviter de recalculer à chaque render
@@ -120,48 +229,23 @@ export default function DashboardPage() {
     return activeProfessionals;
   }, [usersData]);
 
-  const [filteredClients, setFilteredClients] = useState<Client[]>([]);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [selectedProfessional, setSelectedProfessional] = useState('');
   const [copiedEmailId, setCopiedEmailId] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  useEffect(() => {
-    filterClients();
-  }, [clients, searchQuery, selectedFilter]);
-
-  const filterClients = () => {
-    // Pour admin/réceptionniste : l'API fait la recherche côté serveur, on utilise les résultats directement
-    // Pour professionnels : on fait la recherche côté client (car assignedClients ne supporte pas la recherche serveur)
-    if (!isProfessional) {
-      // Admin/Réceptionniste : utiliser les résultats de l'API directement (déjà filtrés par le backend)
-      setFilteredClients(clients);
-      return;
-    }
-
-    // Professionnels : filtrage côté client
+  // Filtrer les clients avec useMemo pour éviter les re-renders infinis
+  const filteredClients = useMemo(() => {
     let filtered = [...clients];
 
-    // Filter by search query
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        (client) =>
-          client.nom.toLowerCase().includes(query) ||
-          client.prenom.toLowerCase().includes(query) ||
-          client.courriel.toLowerCase().includes(query) ||
-          client.telCellulaire.includes(query)
-      );
-    }
-
-    // Filter by service type
+    // Filtre par type de service (côté client uniquement si pas de filtre serveur)
     if (selectedFilter !== 'ALL') {
       filtered = filtered.filter((client) => client.serviceType === selectedFilter);
     }
 
-    setFilteredClients(filtered);
-  };
+    return filtered;
+  }, [clients, selectedFilter]);
 
   const handleAssignClient = (clientId: string) => {
     const client = clients.find((c) => c.id === clientId);
@@ -212,6 +296,9 @@ export default function DashboardPage() {
       if (isProfessional) {
         await refetchAssignedClients();
       } else {
+        // Réinitialiser à la première page
+        setCurrentPage(1);
+        setAccumulatedClients([]);
         await refetchAllClients();
       }
     } catch (error) {
@@ -290,11 +377,6 @@ export default function DashboardPage() {
       </div>
     );
   }
-
-  // Log pour déboguer l'affichage
-  console.log('📋 Dashboard - Rôle utilisateur:', currentUser.role);
-  console.log('📋 Dashboard - isProfessional:', isProfessional);
-  console.log('📋 Dashboard - Affichage:', (currentUser.role === 'ADMIN' || currentUser.role === 'RECEPTIONISTE') ? 'GRILLE (Admin/Réceptionniste)' : 'LISTE (Techniciens)');
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-spa-beige-50 via-white to-spa-turquoise-50">
@@ -461,7 +543,7 @@ export default function DashboardPage() {
           className="mb-8 sm:mb-14"
         >
           <SearchBar
-            onSearch={setSearchQuery}
+            onSearch={handleSearchChange}
             onFilterChange={setSelectedFilter}
           />
         </motion.div>
@@ -521,6 +603,7 @@ export default function DashboardPage() {
               </motion.div>
             ) : (
               /* Affichage pour MASSOTHERAPEUTE et ESTHETICIENNE : Format liste avec infos masquées */
+              <>
               <div className="space-y-3 -mt-[10px] sm:mt-4">
                 {filteredClients.map((client, index) => {
                   const notesCount = client.notes?.length || 0;
@@ -636,6 +719,100 @@ export default function DashboardPage() {
                     </motion.div>
                   );
                 })}
+              </div>
+
+              {/* Boutons de pagination pour Professionnels */}
+              {!searchQuery && (
+                <div className="mt-6 flex flex-col items-center gap-3">
+                  {/* Indicateur de progression */}
+                  <p className="text-sm text-gray-600">
+                    {filteredClients.length} client{filteredClients.length !== 1 ? 's' : ''} affiché{filteredClients.length !== 1 ? 's' : ''} sur {totalAssignedClients}
+                  </p>
+
+                  {/* Boutons */}
+                  {hasMoreAssignedClients && (
+                    <div className="flex flex-wrap justify-center gap-3">
+                      <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={handleLoadMoreProfessional}
+                        disabled={isFetchingAssignedClients}
+                        className="flex items-center gap-2 px-5 py-2.5 bg-white border-2 border-spa-turquoise-500 text-spa-turquoise-600 rounded-xl font-medium hover:bg-spa-turquoise-50 transition-all disabled:opacity-50"
+                      >
+                        {isFetchingAssignedClients ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            Chargement...
+                          </>
+                        ) : (
+                          <>
+                            <Users className="w-4 h-4" />
+                            Charger {Math.min(CLIENTS_PER_PAGE, totalAssignedClients - filteredClients.length)} de plus
+                          </>
+                        )}
+                      </motion.button>
+
+                      <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={handleShowAllProfessional}
+                        disabled={isFetchingAssignedClients}
+                        className="flex items-center gap-2 px-5 py-2.5 bg-spa-turquoise-500 text-white rounded-xl font-medium hover:bg-spa-turquoise-600 transition-all disabled:opacity-50"
+                      >
+                        <Users className="w-4 h-4" />
+                        Voir tous ({totalAssignedClients})
+                      </motion.button>
+                    </div>
+                  )}
+
+                  {/* Message si tous les clients sont affichés */}
+                  {!hasMoreAssignedClients && filteredClients.length > 0 && (
+                    <p className="text-sm text-gray-500 italic">
+                      ✓ Tous vos clients sont affichés
+                    </p>
+                  )}
+                </div>
+              )}
+              </>
+            )}
+
+            {/* Bouton Charger Plus (Admin/Réceptionniste seulement, pas de recherche) */}
+            {(currentUser.role === 'ADMIN' || currentUser.role === 'RECEPTIONISTE') && (
+              <div className="mt-8 flex flex-col items-center gap-4">
+                {/* Indicateur de progression */}
+                <p className="text-sm text-gray-600">
+                  {filteredClients.length} client{filteredClients.length !== 1 ? 's' : ''} affiché{filteredClients.length !== 1 ? 's' : ''} sur {totalClientsCount}
+                </p>
+
+                {/* Bouton Charger Plus */}
+                {hasMoreClients && (
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={handleLoadMore}
+                    disabled={isLoadingMore}
+                    className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-spa-turquoise-500 to-spa-menthe-500 text-white rounded-xl font-medium shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isLoadingMore ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        Chargement...
+                      </>
+                    ) : (
+                      <>
+                        <Users className="w-5 h-5" />
+                        Charger plus de clients
+                      </>
+                    )}
+                  </motion.button>
+                )}
+
+                {/* Message si tous les clients sont chargés */}
+                {!hasMoreClients && filteredClients.length >= totalClientsCount && filteredClients.length > 0 && !searchQuery && selectedFilter === 'ALL' && (
+                  <p className="text-sm text-gray-500 italic">
+                    ✓ Tous les clients sont affichés
+                  </p>
+                )}
               </div>
             )}
           </>

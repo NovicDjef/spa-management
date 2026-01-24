@@ -1,5 +1,4 @@
 import { configureStore } from '@reduxjs/toolkit';
-import { setupListeners } from '@reduxjs/toolkit/query';
 import { api } from './services/api';
 import authReducer from './slices/authSlice';
 
@@ -16,8 +15,8 @@ export const makeStore = () => {
     devTools: process.env.NODE_ENV !== 'production',
   });
 
-  // Configuration pour refetchOnFocus et refetchOnReconnect
-  setupListeners(store.dispatch);
+  // Note: setupListeners désactivé pour éviter les refreshs automatiques
+  // quand la fenêtre reprend le focus ou la connexion réseau revient
 
   return store;
 };

@@ -31,22 +31,23 @@ export function NotesList({ notes, isLoading = false, currentUserId, currentUser
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
 
-  // Vérifier si une note peut être modifiée (24h + auteur + rôle MASSOTHERAPEUTE ou ADMIN)
+  // Vérifier si une note peut être modifiée (24h + auteur + rôle professionnel ou ADMIN)
   const canEditNote = (note: Note): boolean => {
     if (!currentUserId || !currentUserRole) return false;
-    
+
     // Vérifier que c'est la note de l'utilisateur actuel
     if (note.author.id !== currentUserId) return false;
-    
-    // Vérifier le rôle (MASSOTHERAPEUTE ou ADMIN)
-    if (currentUserRole !== 'MASSOTHERAPEUTE' && currentUserRole !== 'ADMIN') return false;
-    
+
+    // Vérifier le rôle (MASSOTHERAPEUTE, ESTHETICIENNE ou ADMIN)
+    const allowedRoles = ['MASSOTHERAPEUTE', 'ESTHETICIENNE', 'ADMIN'];
+    if (!allowedRoles.includes(currentUserRole)) return false;
+
     // Vérifier que moins de 24h se sont écoulées
     const noteDate = new Date(note.createdAt);
     const now = new Date();
     const diffInMs = now.getTime() - noteDate.getTime();
     const diffInHours = diffInMs / (1000 * 60 * 60);
-    
+
     return diffInHours < 24;
   };
 
