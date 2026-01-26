@@ -125,9 +125,27 @@ export interface UpdateClientData {
   iplCommentaires?: string;
   iplTypePeau?: string;
   iplConsiderationPeau?: any;
+  iplVeinsVarices?: boolean;
+  iplAccutane?: boolean;
+  iplInjectionsVarices?: boolean;
+  iplAcideGlycolique?: boolean;
+  iplInjectionBotox?: boolean;
+  iplPeelingChimique?: boolean;
+  iplAutresProduits?: string;
+  iplHerpesSimplex?: boolean;
+  iplSkinCancer?: boolean;
+  iplConsentement?: boolean;
+  iplConsentDate?: string;
+
+  // MICRODERMABRASION
+  microdermConsentement?: boolean;
+  microdermConsentDate?: string;
 
   // MANICURE/PEDICURE
   manicurePedicureInfo?: any;
+
+  // Services complétés (pour le dossier esthétique)
+  servicesCompletes?: string[];
 }
 
 export interface Note {
